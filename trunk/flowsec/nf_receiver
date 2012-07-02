@@ -1,0 +1,184 @@
+#!/usr/bin/perl -w
+use strict;
+
+#$| = 0;
+
+my $PORT	= "9801";
+my $VERSION	= "2012-06-03.01";
+my $UMASK	= 0777;					# umask pro nove vytvarene adresare
+my $COLLECTOR	= "localhost:9901";		# output data dir
+my $KEY	= "";		# key used for encryption 
+
+# moduly
+use lib '/usr/local/net/lib';
+use lib '/usr/local/lib';
+use xmon;
+use Getopt::Std;
+use IO::Socket;
+#use POSIX ":sys_wait_h";
+use POSIX qw(strftime);
+use File::Basename;
+use IO::Compress::Gzip qw(gzip $GzipError) ;
+use MIME::Base64 qw(decode_base64 encode_base64);
+
+
+my %OPTS;		# Options from command line
+my $CIPHER;
+
+# debug rutine
+sub debug {
+	my ($level, $msg, @arg) = @_;
+
+	mylog("D $msg", @arg) if ($DEBUG >= $level);
+}
+
+sub decrypt_data($) {
+	my ($data) = @_;
+
+	if (!defined($CIPHER)) {
+		use Crypt::CBC;
+		$CIPHER = Crypt::CBC->new(	-key =>  $KEY,
+									-cipher => 'Blowfish');
+	}
+
+	return $CIPHER->decrypt(decode_base64($data));
+}
+
+
+# Lestener thread
+sub run_listener() {
+
+	$SIG{CHLD} = 'IGNORE';
+
+	my $base_sock = new IO::Socket::INET( LocalPort => $PORT,
+   	                           Proto => 'tcp',
+   	                           Listen => 5,
+   	                           Resue => 1);
+	if (!$base_sock) {
+		mylog("Can't create TCP socket. $!.");
+		return ; 
+	}
+	mylog("Listening on TCP $PORT.");
+
+	my $col_sock = new IO::Socket::INET( PeerAddr => $COLLECTOR,
+								Proto => 'udp');
+
+	if (!$col_sock) {
+		mylog("Can't create UDP socket. $!.");
+		return ; 
+	}
+	mylog("UDP data will be send to $COLLECTOR.");
+
+	while (my $sock = $base_sock->accept()) {
+		my $pid = fork();
+		mylog("Can't fork process $!.") unless defined($pid);
+		if ($pid == 0) {
+			$SIG{CHLD} = '';
+
+			# test number of connected clients and close socket if the number if > 20 
+			my $numproc = `ps ax | grep nf_receiver | wc |cut -c1-7`;
+			chomp $numproc;
+			if ($numproc > 35 ) {
+				mylog("LISTENER: Too many process run (%s), skipping client  (%s)", $numproc, $sock->peerhost());
+				close $sock;
+				exit(0);
+			}
+			my $start = time();
+			my $peerhost = $sock->peerhost();
+			mylog("nf_sender connected from %s.", $peerhost);
+
+			while (my $row = <$sock>) {
+				chomp $row;
+				my ($cmd, $data) = split(" ", $row);
+				if (!defined($cmd)) {
+					mylog("Invalid command", $cmd);
+					print $sock "510 Invalid command\n";
+					next;
+				}
+
+				if ($cmd eq "DE") {
+					if ($KEY eq "") {
+						mylog("Encryption not supported by server");
+						print $sock "420 Encryption not supported by server\n";
+						next;
+					}
+					$data = decrypt_data($data);
+				} elsif ($cmd eq "D") {
+					if ($KEY ne "") {
+						mylog("Encryption required by server");
+						print $sock "430 Encryption required by server\n";
+						next;
+					}
+					$data = decode_base64($data);
+				} else {
+					mylog("Invalid command", $cmd);
+					print $sock "510 Invalid command\n";
+					next;
+				}
+
+				if (defined($data)) {
+					my $ret = $col_sock->send($data);
+	#				printf "$ret\n";
+					if (!defined($ret) || $ret == 0 ) {
+						mylog("Can not handle data to collector ($COLLECTOR/UDP). $!.");
+						print $sock "410 Can not handle data to collector.\n";
+						next;
+					}
+				} else {
+					print $sock "520 Invalida data from client\n";
+					next;
+				}
+
+				print $sock "200 OK\n";
+				
+			}
+			exit(0);
+			close $sock;
+		}
+	}
+	close $base_sock;
+}
+
+# help
+sub usage() {
+	printf "nf_receiver daemon\n";
+	printf "Usage:\n";
+	printf "    %s -d <debug_level> -u <username> -p <listen on port> -c <address of collector>:<port> -k <key to encrypt data>\n", $0;
+	exit 1;
+}
+
+# Hlavni telo 
+$SIG{CHLD} = sub { wait(); };
+
+if (!getopt("d:u:p:c:k:", \%OPTS) || defined($OPTS{"?"})) {
+	usage();	
+	exit 1;
+}
+
+if (defined($OPTS{"d"})) {
+	$DEBUG = $OPTS{"d"};
+}
+
+if (defined($OPTS{"u"})) {
+	chuser($OPTS{"u"});
+}
+
+if (defined($OPTS{"c"})) {
+	$COLLECTOR = $OPTS{"c"};;
+}
+
+if (defined($OPTS{"k"})) {
+	$KEY = $OPTS{"k"};;
+}
+
+if (defined($OPTS{"p"})) {
+	$PORT = $OPTS{"p"};;
+}
+
+if ($DEBUG == 0) {
+	daemonize();
+}
+
+mylog("Server started with debug level %d, version %s.", $DEBUG, $VERSION);
+run_listener();
+
