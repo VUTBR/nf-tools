@@ -11,14 +11,14 @@ $flow1 = NFlow->new(
 			);  
 
 
-my (@items) = $flow->get_items();
+my (@cols) = $flow->get_columns();
 
-push(@items, "srcurid");
-push(@items, "dsturid");
+push(@cols, "srcurid");
+push(@cols, "dsturid");
 
 $flow2 = Flow->new(
 			ffile => [ 'output.flow' ],
-			items => [ @items ],
+			columns => [ @cols ],
 			compressed => 0
 			);  
 
