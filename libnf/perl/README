@@ -1,0 +1,65 @@
+
+=head1 NAME
+
+NFlow - Interface to manipulate with netflow data stored in nfdump/ncap files
+
+=head1 SYNOPSIS
+
+  use NFlow;
+  $flow = NFlow->new( 
+                  ffile => "filename.nfcap", 
+                  filer => "src net 147.229.3.0/24",
+                  start => time() - 60 * 20,
+                  end => time() - 60 * 10,
+                 );
+
+  while (my $rowa = $flow->get_next()) {
+        print Dumper(\$row);
+  } 
+
+=head1 DESCRIPTION
+   xxxxx
+
+The new() method creates a new NFlow object. It accepts a list of
+argument => value pairs selected from the following list:
+
+  Argument        Description
+  --------        -----------
+  ffile           file or reference to array of files to process
+  fdir            directory or reference to array of directories to process
+  filter
+  aggregation 
+  compressed     defines whether a new created file will be compressed or not (default 1)
+  columns        list of supported items for newly created files
+  start          specify the time window for processing flows. both start and and or either can be cpecified 
+  end           
+  
+
+The NFlow class supports following methods
+
+  Method          Description
+  --------        -----------
+  get_columns()     returns the list of items supported by particular file
+  get_rows()      returns the number of flow records (rows) in processed file(files)
+  get_next()      move to next record in the file and returns hashref of flow 
+                  items  (eg. $row->{srcip}, $row->{dstip})  
+  store_row($hashref)     store row on the current position; returns 1 if operation was succesfull
+  add_row($hashrow)       add the new row at the and of the file 
+  
+  close()         close all open flow files
+ 
+Internal variables
+  Variable        Description
+  --------        -----------
+  $flow->files    array ref to list of files that will br peocessed 
+  $flow->row_ref  hashref to currently processed flow
+  $flow->row_id   id (position) of the record in the processed file
+  $flow->file     name of the currently processed file 
+  $flow->rows     total number of rows in the processed file 
+  $flow->...
+  ...
+ 
+
+Handling errors 
+ NFlow::err - the error code
+ NFlow::errstr - error string 
