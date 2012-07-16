@@ -67,7 +67,7 @@ sub run_listener() {
 		mylog("Can't create UDP socket. $!.");
 		return ; 
 	}
-	mylog("UDP data will be send to $COLLECTOR.");
+	mylog("UDP data will be sent to $COLLECTOR.");
 
 	while (my $sock = $base_sock->accept()) {
 		my $pid = fork();
@@ -79,7 +79,7 @@ sub run_listener() {
 			my $numproc = `ps ax | grep nf_receiver | wc |cut -c1-7`;
 			chomp $numproc;
 			if ($numproc > 35 ) {
-				mylog("LISTENER: Too many process run (%s), skipping client  (%s)", $numproc, $sock->peerhost());
+				mylog("LISTENER: Too many processes run (%s), skipping client (%s)", $numproc, $sock->peerhost());
 				close $sock;
 				exit(0);
 			}
@@ -120,8 +120,8 @@ sub run_listener() {
 					my $ret = $col_sock->send($data);
 	#				printf "$ret\n";
 					if (!defined($ret) || $ret == 0 ) {
-						mylog("Can not handle data to collector ($COLLECTOR/UDP). $!.");
-						print $sock "410 Can not handle data to collector.\n";
+						mylog("Cannot pass data to collector ($COLLECTOR/UDP). $!.");
+						print $sock "410 Cannot pass data to collector.\n";
 						next;
 					}
 				} else {

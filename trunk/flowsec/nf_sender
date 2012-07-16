@@ -100,7 +100,7 @@ sub encrypt_data($) {
 			1;
 		} or do {
 			my $error = $@;
-			mylog("Can not load module Crypt::CBC (%s). Encryption can not be used.", $error);
+			mylog("Cannot load module Crypt::CBC (%s). Encryption can't be used.", $error);
 			return undef;
 		};
 		#use Crypt::CBC;
@@ -204,7 +204,7 @@ sub run_tcp_sender() {
 	for (;;) {
 		foreach my $dbfile (sort glob("$QUEUEDIR/*.queue")) {
 			if (!defined ( switch_db($dbfile))) {
-				mylog("Can not open file %s from queue", $dbfile);
+				mylog("Cannot open file %s from queue", $dbfile);
 			}
 			# DB file opened, process data
 			debug(8, "Processing data from queue (%s)", $dbfile);
@@ -316,7 +316,7 @@ if ($pid == 0) {
 		if (time() - $time1 > 60*60) {
 			$nsecs = 1;
 		}
-		mylog("We will try reconnect to nf_receiver in %d secs.", $nsecs );
+		mylog("We will try to reconnect to nf_receiver in %d secs.", $nsecs );
 		sleep($nsecs);
 		if ($nsecs < 120) {
 			$nsecs = $nsecs * 3;
