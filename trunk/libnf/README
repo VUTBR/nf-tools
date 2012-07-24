@@ -1,0 +1,22 @@
+Obsah:
+------------------------------
+subor.c
+subor.h
+subor.i
+MakeFile.sh
+script.py
+
+
+subor.[c,h] - obycajny program v C pre vypis hlavicky v nfdump subore
+subor.i		- "interface file" urceny pre vstup do SWIG
+MakeFile.sh	- skript na spustenie swig, gcc a ld
+script.py	- jednoduchy skript na volanie funkcii z C
+
+Spustenie:
+------------------------------
+1. ./MakeFile.sh
+2. ./script.py -r <nfdump file>
+
+Make clean:
+------------------------------
+./MakeFile.sh clean
