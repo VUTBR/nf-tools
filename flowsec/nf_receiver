@@ -3,29 +3,89 @@ use strict;
 
 #$| = 0;
 
-my $PORT	= "9801";
-my $VERSION	= "2012-06-03.01";
-my $UMASK	= 0777;					# umask pro nove vytvarene adresare
-my $COLLECTOR	= "localhost:9901";		# output data dir
-my $KEY	= "";		# key used for encryption 
+my $PORT        = "9801";
+my $VERSION	    = "2012-06-03.01";
+my $UMASK	      = 0777;					      # umask for new directories
+my $COLLECTOR	  = "localhost:9901";		# output data dir
+my $KEY         = "";		              # key used for encryption 
+my $DEBUG	      = 0;
+my $LOGNAME	    = substr($0, rindex($0, "/") + 1);
+my $LOGFACILITY	= "daemon.info";
 
-# moduly
+# modules
 use lib '/usr/local/net/lib';
 use lib '/usr/local/lib';
-use xmon;
 use Getopt::Std;
 use IO::Socket;
 #use POSIX ":sys_wait_h";
-use POSIX qw(strftime);
+use POSIX qw(strftime setsid);
 use File::Basename;
 use IO::Compress::Gzip qw(gzip $GzipError) ;
 use MIME::Base64 qw(decode_base64 encode_base64);
-
+use Sys::Syslog qw(:standard :extended);
 
 my %OPTS;		# Options from command line
 my $CIPHER;
 
-# debug rutine
+# log routine
+sub mylog {
+	my ($msg, @par) = @_;
+	my $lmsg = sprintf($msg, @par);
+	if ($DEBUG > 0) {
+	  printf "%s[%d]: %s\n", strftime("%Y-%m-%d.%H:%M:%S", localtime), $$, $lmsg;
+	}
+	setlogsock('unix');
+	openlog("$LOGNAME\[$$\]", 'ndelay', 'user');
+	syslog($LOGFACILITY, $lmsg);
+}
+
+# process daemonization
+sub daemonize() {
+	chdir '/'			            or die "Can't chdir to /: $!";
+	open STDIN, '/dev/null'		or die "Can't read /dev/null: $!";
+	open STDOUT, '>/dev/null'	or die "Can't write to /dev/null: $!";
+	defined(my $pid = fork)		or die "Can't fork: $!";
+	exit if $pid;
+	setsid				            or die "Can't start a new session: $!";
+	open STDERR, '>&STDOUT'		or die "Can't dup stdout: $!";
+}
+
+# change user 
+sub chuser($) {
+	my ($user) = @_;
+
+	my ($login,$pass,$uid,$gid) = getpwnam($user);
+	# gid must be changed before uid, at least on my computer :)
+	$( = $gid;
+	$) = $gid;
+	$< = $uid;
+	$> = $uid;
+
+	## Check that we managed to change Group/User IDs properly...
+	## Change warn to die if it's important to you
+	if (  ((split(/ /,$)))[0] ne $gid) || ((split(/ /,$())[0] ne $gid)  ) {
+		warn "Couldn't Change Group ID!\n";
+	}
+
+	if (  ($> ne $uid) || ($< ne $uid)  ) {
+		mylog("Couldn't Change User ID!\n");
+		die "Couldn't Change User ID!\n";
+	}
+
+	mylog("switch to user %s (uid: %d, gid: %d)", $user, $uid, $gid);
+
+	## We don't need these anymore...
+	undef($login);
+	undef($pass);
+	undef($uid);
+	undef($gid);
+
+	# and so the program will actually RUN at this user:
+	fork and wait and exit;
+}
+
+
+# debug routine
 sub debug {
 	my ($level, $msg, @arg) = @_;
 
@@ -45,15 +105,15 @@ sub decrypt_data($) {
 }
 
 
-# Lestener thread
+# Listener thread
 sub run_listener() {
 
 	$SIG{CHLD} = 'IGNORE';
 
 	my $base_sock = new IO::Socket::INET( LocalPort => $PORT,
-   	                           Proto => 'tcp',
-   	                           Listen => 5,
-   	                           Resue => 1);
+   	                                    Proto => 'tcp',
+   	                                    Listen => 5,
+   	                                    Resue => 1);
 	if (!$base_sock) {
 		mylog("Can't create TCP socket. $!.");
 		return ; 
@@ -61,7 +121,7 @@ sub run_listener() {
 	mylog("Listening on TCP $PORT.");
 
 	my $col_sock = new IO::Socket::INET( PeerAddr => $COLLECTOR,
-								Proto => 'udp');
+								                       Proto => 'udp');
 
 	if (!$col_sock) {
 		mylog("Can't create UDP socket. $!.");
@@ -125,7 +185,7 @@ sub run_listener() {
 						next;
 					}
 				} else {
-					print $sock "520 Invalida data from client\n";
+					print $sock "520 Invalid data from client\n";
 					next;
 				}
 
@@ -143,11 +203,11 @@ sub run_listener() {
 sub usage() {
 	printf "nf_receiver daemon\n";
 	printf "Usage:\n";
-	printf "    %s -d <debug_level> -u <username> -p <listen on port> -c <address of collector>:<port> -k <key to encrypt data>\n", $0;
+	printf "    %s -d <debug level> -u <username> -p <listen on port> -c <address of collector>:<port> -k <key to encrypt data>\n", $0;
 	exit 1;
 }
 
-# Hlavni telo 
+# Main body
 $SIG{CHLD} = sub { wait(); };
 
 if (!getopt("d:u:p:c:k:", \%OPTS) || defined($OPTS{"?"})) {
