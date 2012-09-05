@@ -2,6 +2,7 @@ NAME=flowsec
 
 all:
 	pdflatex $(NAME).tex
+	pdflatex $(NAME).tex
 	open $(NAME).pdf
 .PHONY: clean
 
