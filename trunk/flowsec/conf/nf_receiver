@@ -1,0 +1,11 @@
+# nf_receiver config file
+#
+# author: Brno University of Technology (Adam Stepanek, Tomas Podermanski - tpoder@cis.vutbr.cz)
+#
+# syntax:
+# -d <debug_level> -u <username> -P <TCP port to listen> -C <address of collector>:<port> -k <key to encrypt data>
+#
+# None of these options are compulsory, default values will be used if not set.
+# For more information see manual page 'man nf_receiver'.
+             
+-d 0 -P 9990 -C 127.0.0.1:9001

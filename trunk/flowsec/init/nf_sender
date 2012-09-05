@@ -1,0 +1,70 @@
+#!/bin/bash
+#
+# description: This script starts/stops nf_sender daemon
+# author: Brno University of Technology (Adam Stepanek, Tomas Podermanski - tpoder@cis.vutbr.cz)
+#
+
+CONFIG="/etc/sysconfig/nf_sender"
+DAEMON="/usr/bin/nf_sender"
+LOCKFILE="/var/lock/subsys/nf_sender"
+
+# === default values ====
+DEBUG_LEVEL="0"
+PORT="9990"
+ADDRESS="127.0.0.1:9001"
+
+FLAGS="-d ${DEBUG_LEVEL} -P ${PORT} -C ${ADDRESS}"
+
+. /etc/init.d/functions   # no idea why it is here
+
+function process_cfg() {
+	if [ ! -e "$CONFIG" ] ; then
+		daemon " $DAEMON $FLAGS"
+	else
+		cat $CONFIG | grep -v "^#" | while read ln
+		do
+			if [ "$ln" != "" ] ; then
+				daemon " $DAEMON $ln"
+				break
+			fi
+		done
+	fi
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	if [ -f $LOCKFILE ]; then
+		echo "$DAEMON is already running..."
+	else	
+		touch $LOCKFILE || exit 1		
+		process_cfg
+		echo $"Starting $DAEMON"
+	fi
+		
+        ;;
+  
+  stop)
+	if [ -f $LOCKFILE ]; then
+		echo -n $"Stopping $DAEMON "
+		kill $(ps ax | grep $DAEMON | grep perl | cut -c 1-6)
+		success;
+		rm -f $LOCKFILE
+		echo
+	else
+		echo "$DAEMON is not running..."
+	fi
+        ;;
+  
+  restart|reload)
+	$0 stop
+	sleep 2
+        $0 start
+        ;;
+
+  *)
+        echo $"Usage: $0 {start|stop|restart}"
+        exit 1
+esac
+
+exit 0

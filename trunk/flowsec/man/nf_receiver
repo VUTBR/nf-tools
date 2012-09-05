@@ -1,0 +1,43 @@
+.\" Manpage for nf_receiver daemon.
+.\" Contact tpoder@cis.vutbr.cz to correct errors or typos.
+.TH man 1 "30 July 2012" "1.0" "nf_receiver daemon man page"
+
+.SH NAME
+nf_receiver \- securely receives NetFlow records and sends them to NetFlow collector
+
+.SH SYNOPSIS
+.BR "nf_receiver " "[" "-d " "level] [" "-u " "username] [" "-P " "port] [" "-C " "address:port] [" "-k " "key]"
+
+.SH DESCRIPTION
+nf_receiver daemon is a tool that receives secure NetFlow records on TCP port and passes them to NetFlow collector that runs on the address and port specified by the option -C.
+
+.SH OPTIONS
+.TP
+.BR "-d " "level"
+Debugging. Sets the debug level. If not set, debugging is disabled.
+.TP
+.BR "-u " "username"
+Set the daemon to run as a different user.
+.TP
+.BR "-P " "port"
+TCP port. nf_receiver expects NetFlow records on this port.
+.TP
+.BR "-C " "address:port"
+Address of NetFlow collector and port that it is running on.
+.TP
+.BR "-k " "key"
+Key to encrypt data.
+
+.SH EXAMPLES
+The following is how to start daemon with debug level 1, listening on the port 9001 and passing records to 127.0.0.1:9990.
+.TP
+.BR "       " "nf_receiver -d 1 -p 9001 -C 127.0.0.1:9990"
+
+.SH SEE ALSO
+nf_sender(1)
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Brno University of Technology (Tomas Podermanski \- tpoder@cis.vutbr.cz, Adam Stepanek)
