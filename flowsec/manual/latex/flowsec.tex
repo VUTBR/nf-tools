@@ -95,9 +95,7 @@ Conceptual Sender and Receiver are implemented, respectively, as \texttt{nf\text
 
 Sender consists of two threads: UPD server and TCP client. UDP server receives NetFlow records from the exporter and saves them to Buffer. TCP client picks up records from Buffer, sends them to Receiver and provides a general communication with Receiver.
 
-Buffer as seen in the Figure \ref{reliable-arch} is a directory \texttt{/tmp/flow.queue/} where the cache files are saved.
-
-\textbf{Tady by mělo být popsané jak se tam vytváří a mažou ty dočasné soubory. Nejsem si úplně přesně jistý, jestli jsem to správně pochopil.}
+Buffer as seen in the Figure \ref{reliable-arch} is represented by a directory \texttt{/tmp/flow.queue/} where the cache files are saved. A file is created every 5 minutes in the queue. When the connection to Receiver is working correctly the data is sent immediately to Receiver. If the connection fails the queue files are stored on the sender's side until a new connection is established. Subsequently, the data to Receiver are sent in the same order as were previously received from the NetFlow probe.
 
 \subsection{Receiver}
 
@@ -107,7 +105,7 @@ Receiver has only one thread. It ensures receiving of NetFlow records and passin
 
 If the connection between Sender and Receiver fails, Sender tries to re-establish the connection after one second. Every next unsuccessful attempt makes the time three times longer, ie. three seconds, nine seconds, twenty seven seconds and so on. Maximum waiting time is 243 seconds. It means once in 243 seconds Sender tries to establish the connection to Receiver until it succeeds.
 
-\textbf{A někde by tady určitě mělo být ohledně toho šifrování.}
+The communication can be optionally encrypted with a shared key using the Blowfish cipher. For this purpose the option \texttt{-k <key>} have to be set to the same value on both sides. If the keys don't match Receiver refuses to accept the data and these are kept in the queue. However, the data in the queue is kept unencrypted.
 
 \section{Installation and Usage}
 
