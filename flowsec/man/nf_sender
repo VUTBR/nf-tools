@@ -1,0 +1,43 @@
+.\" Manpage for nf_sender daemon.
+.\" Contact tpoder@cis.vutbr.cz to correct errors or typos.
+.TH man 1 "30 July 2012" "1.0" "nf_sender daemon man page"
+
+.SH NAME
+nf_sender \- receives NetFlow records on UDP port and sends them securely to nf_receiver daemon
+
+.SH SYNOPSIS
+.BR "nf_sender " "[" "-d " "level] [" "-u " "username] [" "-P " "port] [" "-C " "address:port] [" "-k " "key]"
+
+.SH DESCRIPTION
+nf_sender daemon is a tool that receives NetFlow records on UDP port and sends them securely to nf_receiver daemon that runs on the address and port specified by the option -C. Records are encrypted by the Blowfish cipher.
+
+.SH OPTIONS
+.TP
+.BR "-d " "level"
+Debugging. Set the debug level. If not set, debugging is disabled.
+.TP
+.BR "-u " "username"
+Set the daemon to run as a different user. 
+.TP
+.BR "-P " "port"
+UDP port. nf_sender expecxts NetFlow records on this port.
+.TP
+.BR "-C " "address:port"
+Address of nf_receiver daemon and port that it is running on.
+.TP
+.BR "-k " "key"
+Key to encrypt data.
+
+.SH EXAMPLES
+The following is how to start daemon with debug level 1, listening on the port 9001 and sending records to 127.0.0.1:9990.
+.TP
+.BR "       " "nf_sender -d 1 -p 9001 -C 127.0.0.1:9990"
+
+.SH SEE ALSO
+nf_receiver(1)
+
+.SH BUGS
+No known bugs.
+
+.SH AUTHOR
+Brno University of Technology (Tomas Podermanski - tpoder@cis.vutbr.cz, Adam Stepanek)

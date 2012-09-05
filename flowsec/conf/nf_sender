@@ -1,0 +1,11 @@
+# nf_sender config file
+#
+# author: Brno University of Technology (Adam Stepanek, Tomas Podermanski - tpoder@cis.vutbr.cz)
+#
+# syntax:
+# -d <debug_level> -u <username> -P <UDP port to listen> -C <address of nf_listener>:<port> -k <key to encrypt data>
+#
+# None of these options are compulsory, default values will be used if not set.
+# For more information see manual page 'man nf_sender'.
+             
+-d 0 -P 9001 -C 127.0.0.1:9990

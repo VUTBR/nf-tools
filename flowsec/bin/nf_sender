@@ -1,0 +1,327 @@
+#!/usr/bin/perl -w
+use strict;
+
+#$| = 0;
+
+my $PORT	= "9801";
+my $VERSION	= "2012-06-03.02";
+my $UMASK	= 0777;					# umask pro nove vytvarene adresare
+my $RECEIVER	= "localhost:9901";		# output data dir
+my $QUEUEDIR	= "/tmp/flow.queue";
+my $QUEUEFILE	= "%Y-%m-%d.%H.%M.%S.qdb";			# strftime will be applied to the contant
+my $MAXQUEUESTEP =	60 * 2;			# maximum number of seconds to sore data in a single queuefile 
+my $KEY			 = "";					# the key used for encryption 
+my $DEBUG		 = 0;
+my $LOGNAME		 = substr($0, rindex($0, "/") + 1);;
+my $LOGFACILITY	 = "daemon.info";
+
+
+use Getopt::Std;
+use IO::Socket;
+use POSIX qw(strftime setsid);
+#use File::Basename;
+#use IO::Compress::Gzip qw(gzip $GzipError) ;
+use MIME::Base64 qw(decode_base64 encode_base64);
+use DB_File;
+#use BerkeleyDB;
+use IO::Select;
+use Sys::Syslog qw(:DEFAULT setlogsock);
+
+my %OPTS;		# Options from command line
+my ($DB, @DBARR, $CIPHER);
+
+# log rutine
+sub mylog {
+	my ($msg, @par) = @_;
+	my $lmsg = sprintf($msg, @par);
+	if ($DEBUG > 0) {
+		printf "%s[%d]: %s\n", strftime("%Y-%m-%d.%H:%M:%S", localtime), $$, $lmsg;
+	}
+	setlogsock('unix');
+	openlog("$LOGNAME\[$$\]", 'ndelay', 'user');
+	syslog($LOGFACILITY, $lmsg);
+}
+
+# daemonize subrutine
+sub daemonize() {
+	chdir '/'                   or die "Can't chdir to /: $!";
+	open STDIN, '/dev/null'     or die "Can't read /dev/null: $!";
+	open STDOUT, '>/dev/null'   or die "Can't write to /dev/null: $!";
+	defined(my $pid = fork)     or die "Can't fork: $!";
+	exit if $pid;
+	setsid                      or die "Can't start a new session: $!";
+	open STDERR, '>&STDOUT'     or die "Can't dup stdout: $!";
+}
+
+
+# debug rutine
+sub debug {
+	my ($level, $msg, @arg) = @_;
+
+	mylog("D $msg", @arg) if ($DEBUG >= $level);
+}
+
+
+# opens DB file specified by $file and tie to $DBARR
+# rutine also utie previously tied DB 
+# if the file name is uncpecified the new file name is created based on date 
+sub switch_db {
+	my ($file) = @_;
+
+	if (!defined($file)) {
+		$file = strftime("$QUEUEDIR/$QUEUEFILE", gmtime);
+	}
+
+	if (defined($DB)) {
+		undef $DB;
+		untie @DBARR;
+	}
+
+	debug(8, "Opening DB file %s", $file); 
+
+	if ($DB = tie @DBARR, "DB_File", $file, O_RDWR|O_CREAT, 0666, $DB_RECNO) {
+#	if ($DB = tie @DBARR, "BerkeleyDB::Recno", 
+#				-Filename => $file, 
+#				-Flags => DB_CREATE ) {
+		return $file;
+	} else {
+		mylog("Cannot open file $file: $!");
+		return undef;
+	}
+} 
+
+sub encrypt_data($) {
+	my ($data) = @_;
+
+	if (!defined($CIPHER) && defined($KEY) && $KEY ne "") {
+		eval { 
+			require Crypt::CBC;
+			Crypt::CBC->import();
+			1;
+		} or do {
+			my $error = $@;
+			mylog("Cannot load module Crypt::CBC (%s). Encryption can't be used.", $error);
+			return undef;
+		};
+		#use Crypt::CBC;
+		$CIPHER = Crypt::CBC->new( 	-key =>  $KEY,
+									-cipher => 'Blowfish'); 
+	} 
+
+	return encode_base64($CIPHER->encrypt(decode_base64($data)), "");
+	
+}
+
+# Lestener thread
+sub run_udp_listener() {
+
+	$SIG{CHLD} = 'IGNORE';
+
+	my $base_sock = new IO::Socket::INET( LocalPort => $PORT,
+   	                           Proto => 'udp');
+	mylog("Can't create socket. $!\n") unless($base_sock);
+	mylog("Listening on UDP $PORT.");
+
+	my $dbfile = switch_db();
+
+	if (!defined($dbfile)) {
+		mylog("Can not initialize queue %s", $QUEUEDIR);
+		return; 
+	}
+
+	my $data;
+	my $x = 0;
+	my $time1 = time();
+	my $lastqeued ;
+	while ($base_sock->recv($data, 2048)) {
+		my $time2 = time();
+		$x++;
+		debug(10, "RECEIVED UDP: %s...", substr(encode_base64($data), 0, 10));
+		push(@DBARR, encode_base64($data, ""));
+
+		# flag indicicating that we shoul queueup the data
+		my $queueup = 0;
+
+		# test whether queue is already processed  by sender subrutine
+		if ($time2 - $time1 > 1) {
+			# if we know the name of the last queued file we will chek only existence of that file
+			# if the file does not exists or is not defined we can check whether there are some more
+			# file in the queuedir
+			if ( ! defined($lastqeued) || ! -f $lastqeued ) {
+				$queueup = 1;	# we expect that there are no item in queue
+				foreach (sort glob("$QUEUEDIR/*.queue")) {
+					$lastqeued = $_;
+					$queueup = 0;			# we have found something in the queue that was not processed yet
+				}
+
+
+			} else {
+				$queueup = 0;				# the lastqued file still exixsts, do not queueup the curren file
+			}
+		}
+
+		# we reached the maximum time for queue
+		if ($time2 - $time1 > $MAXQUEUESTEP) {
+			$queueup = 1;
+		}
+
+		# switch queuefile if there are conditions to switch queue 
+		if ($queueup) {
+			my $dbfile_orig = $dbfile;
+			$dbfile = switch_db();
+			rename($dbfile_orig, $dbfile_orig.".queue");
+			$time1 = $time2;
+		}
+
+#		foreach (@DBARR) {	
+#			printf "D: $_\n";
+#		}
+#		sleep 10 ;
+	}
+} 
+
+
+# sender thread
+sub run_tcp_sender() {
+
+#	$SIG{CHLD} = 'IGNORE';
+
+	my $sock = new IO::Socket::INET( PeerAddr => $RECEIVER,
+								Proto => 'tcp',
+								Type     => SOCK_STREAM,
+								Timeout => 5);
+
+	if (!$sock) {
+		mylog("Can't create socket to %s. $!", $RECEIVER);
+		return undef;
+	} 
+	mylog("Connected to nf_receiver ($RECEIVER).");
+	
+	my $select = IO::Select->new();
+	$select->add($sock);
+
+	my $x  = 0;	
+	for (;;) {
+		foreach my $dbfile (sort glob("$QUEUEDIR/*.queue")) {
+			if (!defined ( switch_db($dbfile))) {
+				mylog("Cannot open file %s from queue", $dbfile);
+			}
+			# DB file opened, process data
+			debug(8, "Processing data from queue (%s)", $dbfile);
+			foreach (@DBARR) {
+				my $data = shift @DBARR;
+				my $cmd = "D";
+
+				if ($KEY ne "") {
+					$cmd = "DE";
+					$data = encrypt_data($data);
+				}
+
+				printf "$cmd $data\n" if ($DEBUG > 100);;
+
+				if (!$sock->send($cmd." ".$data."\n")) {
+					mylog("Connection to nf_receiver closed.");
+					return; 
+				}
+
+				my $ret = undef;;
+				my @read_from = $select->can_read(60);
+
+				foreach (@read_from) {
+					$ret = <$_>;
+					chomp $ret if defined($ret);
+				}
+				# check response code
+				if (!defined($ret) || $ret ne "200 OK") {
+					if (!defined($ret)) {
+						mylog("The response from nf_receiver timeouted or failed. Disconnecting.");
+						close($sock);
+						return undef;
+					}
+
+					mylog("The nf_receiver returned the error code '%s'. Disconnecting.", $ret);
+					close($sock);
+					return undef;
+				} else {
+	#				shift @DBARR;
+				}
+			}
+		
+			unlink ($dbfile) if (scalar @DBARR == 0);
+		}
+		sleep 1;
+	} 
+}
+
+
+# help
+sub usage() {
+	printf "nf_sender daemon\n";
+	printf "Usage:\n";
+	printf "    %s -d <debug_level> -u <username> -P <UDP port to listen> -C <address of nf_listener>:<port> \n", $0;
+	exit 1;
+}
+
+# Hlavni telo 
+$SIG{CHLD} = sub { wait(); };
+
+if (!getopt("d:u:P:C", \%OPTS) || defined($OPTS{"?"})) {
+	usage();	
+	exit 1;
+}
+
+if (defined($OPTS{"d"})) {
+	$DEBUG = $OPTS{"d"};
+}
+
+if (defined($OPTS{"u"})) {
+	chuser($OPTS{"u"});
+}
+
+if (defined($OPTS{"C"})) {
+	$RECEIVER = $OPTS{"C"};;
+}
+
+if (defined($OPTS{"P"})) {
+	$PORT = $OPTS{"P"};;
+}
+
+if (defined($OPTS{"k"})) {
+    $KEY = $OPTS{"k"};;
+}
+
+if ($DEBUG == 0) {
+	daemonize();
+}
+
+mylog("nf_sender started with debug level %d, version %s.", $DEBUG, $VERSION);
+
+my $pid = fork();
+
+if ($pid == -1) {
+	mylog("Can't fork ");
+	exit(1);
+}
+
+if ($pid == 0) {
+	switch_db();
+	run_udp_listener();
+} else {
+	my $nsecs = 1;	
+	for (;;) {
+		my $time1 = time();
+		run_tcp_sender(); 
+
+		# the sender was running for more than 60 minutes. We set reconnect time to 1
+		if (time() - $time1 > 60*60) {
+			$nsecs = 1;
+		}
+		mylog("We will try to reconnect to nf_receiver in %d secs.", $nsecs );
+		sleep($nsecs);
+		if ($nsecs < 120) {
+			$nsecs = $nsecs * 3;
+		}
+	}
+}
+
+
