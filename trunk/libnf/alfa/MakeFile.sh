@@ -2,7 +2,10 @@
 
 clean="clean"
 path="../nfdump/bin"
-pythonv="2.6"
+#pythonv="2.6"
+pythonv=$(python -V 2>&1 | cut -f 2 -d" " | cut -f 1,2 -d".")
+
+echo "Python version ${pythonv}"
 
 if [[ $1 = $clean ]] ; then
 	rm $path/nfreader.o
