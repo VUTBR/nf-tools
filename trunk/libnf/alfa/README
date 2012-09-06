@@ -13,11 +13,16 @@ TEST INFO
 |Swig verion 2.0.4	 |
 ======================
 
+== Required packages ===
+- gcc
+- swig
+- python-devel
 
 === Prepare nfdump ===
 
 1. Download nfdump: http://sourceforge.net/projects/nfdump/
-2. Rename root directory from "nfdump-1.x.x" to: "nfdump"
+2. Link root directory from "nfdump-1.x.x" to: "nfdump"
+   ln -s nfdump-1.x.x nfdump 
 3. cd nfdump
 4. ./configure
 5. make
@@ -32,7 +37,7 @@ TEST INFO
 === Prepare nflib_alfa version ===
 
 10. Download nflib_alfa: 
-11. Uncompress nflib_alfa dir near root dir of nfdump
+11. Uncompress nflib_alfa dir next to nfdump's root dir 
 12. cd nflib_alfa
 13. ./MakeFile.sh
 	COMMENT_1: It copies some files to ../nfdump/bin
