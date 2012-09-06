@@ -2,6 +2,7 @@
 
 clean="clean"
 path="../nfdump/bin"
+pythonv="2.6"
 
 if [[ $1 = $clean ]] ; then
 	rm $path/nfreader.o
@@ -16,7 +17,7 @@ else
 	swig -python nfreader.i
 	echo -e "swig....OK"
 
-	gcc -c $path/nfreader.c -D main=oldmain nfreader_wrap.c -I /usr/include/python2.7
+	gcc -c $path/nfreader.c -D main=oldmain nfreader_wrap.c -I /usr/include/python${pythonv}
 	echo -e "gcc.....OK"
 
 	cp script.py $path
