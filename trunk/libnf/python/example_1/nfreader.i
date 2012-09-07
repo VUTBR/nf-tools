@@ -24,7 +24,17 @@
    if ($2) free($2);
 }
 
+
 %{
+  #include <setjmp.h>
+  #include <signal.h>
+
+  static sigjmp_buf timeout;
+
+  static void backout(int sig) {
+    siglongjmp(timeout, sig);
+  }
+
 	int main( int argc, char **argv );
 	#include "../nfdump/bin/nffile.h"
 	#include "../nfdump/bin/nfx.h"
@@ -32,4 +42,20 @@
 	#include "../nfdump/bin/flist.h"
 %}
 
+%include <exception.i>
+
+%exception {
+  if (!sigsetjmp(timeout, 1)) {
+    signal(SIGINT,backout); // Check return?
+    $action
+  }
+  else {
+    // raise a Python exception
+    SWIG_exception(SWIG_RuntimeError, "Timeout in $decl");
+  }
+}
+
+
 int main( int argc, char **argv );
+
+%exception;
