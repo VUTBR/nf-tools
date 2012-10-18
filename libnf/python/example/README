@@ -1,0 +1,21 @@
+Program dump all extension maps in nfdump file.
+
+TEST INFO
+======================
+|Linux Ubuntu 12.04.1|
+|Python version 2.7  |
+|Swig verion 2.0.4   |
+======================
+
+== Required packages ===
+- gcc
+- swig
+- python-devel
+
+=== Prepare nfdump ===
+1.	Download nfdump: http://sourceforge.net/projects/nfdump/
+2.	Link root directory from "nfdump-1.x.x" to: "nfdump"
+	ln -s nfdump-1.x.x nfdump
+3.	From example dir run make.sh script. It runs automake on 
+	nfdump.
+4.	run ./script <nfdump file>
