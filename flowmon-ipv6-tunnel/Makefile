@@ -1,21 +1,5 @@
 # -----------------------------------------------------------------------
-#
-#    Company: INVEA-TECH a.s.
-#
-#    Project: Invea Ethernet Monitoring Plugin
-#
-#    $Id: Makefile 12 2011-06-16 11:24:07Z celeda $
-#
-# -----------------------------------------------------------------------
-#
-#    (c) Copyright 2010 INVEA-TECH a.s.
-#    All rights reserved.
-#
-#    Please review the terms of the license agreement before using this
-#    file. If you are not an authorized user, please destroy this
-#    source code file and notify INVEA-TECH a.s. immediately that you
-#    inadvertently received an unauthorized copy.
-#
+# Written by: Pavel Celeda
 # -----------------------------------------------------------------------
 
 PLUGIN = flowmon_tunnel_ipv6
