@@ -50,7 +50,7 @@ NFDUMP = nfdump-1.6.8p1
 $(NFDUMP).tar.gz:
 		@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
 		@echo "!!                                                     !!"
-		@echo "!!  If utomatic download fails please get nfdump       !!"
+		@echo "!!  If automatic download fails please get nfdump      !!"
 		@echo "!!  sources manually                                   !!"
 		@echo "!!                                                     !!"
 		@echo "!!  VERSION: $(NFDUMP)                            !!"
