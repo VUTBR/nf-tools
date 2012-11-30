@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+/* multiple use of version for both perl and nfdump */
+#define NFL_VERSION VRESION
+#undef VERSION
+
 #define NFL_LOG			"Net::NfDump: "
 
 /* names of attribudes used in result/input hash */
@@ -48,5 +52,12 @@
 /* extend NF_XX codes with code idicates thet we already to read the next record */
 #define NF_OK      1
 
-void libnf_main(void);
+
+int libnf_init(void);
+int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
+int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
+SV * libnf_read_row(int handle);
+int libnf_write_row(int handle, HV * hashref);
+void libnf_finish(int handle);
+
 

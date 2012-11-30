@@ -4,6 +4,9 @@
 #include "perl.h"
 #include "XSUB.h"
 
+#include "libnf.h"
+#include "bit_array.h"
+
 #include "config.h"
 
 #include <stdio.h>
@@ -30,9 +33,7 @@
 #include "nfnet.h"
 #include "bookkeeper.h"
 #include "nfxstat.h"
-#include "collector.h"
 #include "nf_common.h"
-#include "netflow_v5_v7.h"
 #include "rbtree.h"
 #include "nftree.h"
 #include "nfprof.h"
@@ -55,8 +56,6 @@
 #include <stdlib.h>
 #include <errno.h>
 
-#include "libnf.h"
-#include "bit_array.h"
 
 #ifdef HAVE_STDINT_H
 #include <stdint.h>

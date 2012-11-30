@@ -6,11 +6,16 @@ use Net::NfDump;
 use Data::Dumper;
 
 # list of files to read
-my $flist = ["t/data/dump1.nfcap", "t/data/dump2.nfcap"];
+#my $flist = ["t/data/dump1.nfcap", "t/data/dump2.nfcap"];
+my $flist = [ qx "find -L /data/netflow/2012-11-26/01  -type f " ];
+
+chomp(@{$flist});
+
+print Dumper(\$flist);
 
 # instance of source and destination files
 my $flow_src = new Net::NfDump(InputFiles => $flist, Filter => "proto icmp");
-my $flow_dst = new Net::NfDump(OutputFile => "out", Ident => "myident");
+my $flow_dst = new Net::NfDump(OutputFile => "/data/netflow/nfdump.out", Ident => "myident");
 
 # statistics counters
 my $bytes = 0;
