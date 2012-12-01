@@ -71,7 +71,7 @@ static char data_string[STRINGSIZE];
 
 /* list of maps used in file taht we create */
 typedef struct libnf_file_list_s {
-	char*			 			*filename;
+	char			 			*filename;
 	struct libnf_file_list_s 	*next;
 } libnf_file_list_t;
 
@@ -95,9 +95,14 @@ typedef struct libnf_instance_s {
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
 //	stat_record_t			stat_record;
-	uint64_t				total_bytes;
-	uint32_t				total_flows;
-	uint32_t				skipped_blocks;
+	uint64_t				processed_bytes;		/* read statistics */
+	uint64_t				total_files;
+	uint64_t				processed_files;
+	uint64_t				processed_blocks;
+	uint64_t				skipped_blocks;
+	uint64_t				processed_records;
+	char 					*current_filename;		/* currently processed file name */
+	uint64_t				current_processed_blocks;
 //	uint32_t				is_anonymized;
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
@@ -301,6 +306,34 @@ nffile_t *nffile = NULL;
 	
 	return newRV((SV *)res);
 }
+
+/* returns the information about instance */
+SV * libnf_instance_info(int handle) {
+libnf_instance_t *instance = libnf_instances[handle];
+HV *res;
+
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG);
+		return 0;
+	}
+
+	res = (HV *)sv_2mortal((SV *)newHV());
+
+	if ( instance->current_filename != NULL && instance->nffile_r != NULL ) {
+		int nblocs = instance->nffile_r->file_header->NumBlocks;
+		HV_STORE_PV(res, "current_filename", instance->current_filename);
+		HV_STORE_NV(res, "current_processed_blocks", instance->current_processed_blocks);
+		HV_STORE_NV(res, "current_total_blocks", nblocs);
+	}
+	HV_STORE_NV(res, "total_files", instance->total_files);
+	HV_STORE_NV(res, "processed_files", instance->processed_files);
+	HV_STORE_NV(res, "processed_blocks", instance->processed_blocks);
+	HV_STORE_NV(res, "processed_bytes", instance->processed_bytes);
+	HV_STORE_NV(res, "processed_records", instance->processed_records);
+
+	return newRV((SV *)res);
+}
+
 
 
 /* converts master_record to perl structures (hashref) */
@@ -512,6 +545,8 @@ int i;
 	}
 
 	instance = malloc(sizeof(libnf_instance_t));
+	memset(instance, 0, sizeof(libnf_instance_t));
+
 	if (instance == NULL) {
 		croak("% can not allocate memory for instance:", NFL_LOG );
 		return 0;
@@ -631,6 +666,7 @@ int i;
 	pfile->next = NULL;
 	pfile->filename = NULL;
 	instance->files = pfile;
+	instance->total_files = numfiles + 1;
 
 	for (i = 0; i <= numfiles; i++) {
 		STRLEN l;
@@ -711,6 +747,8 @@ begin:
 		// get next data block from file
 		if (instance->nffile_r) {
 			ret = ReadBlock(instance->nffile_r);
+			instance->processed_blocks++;
+			instance->current_processed_blocks++;
 		} else {	
 			ret = NF_EOF;		/* the firt file in the list */
 		}
@@ -732,30 +770,29 @@ begin:
 					return NULL;
 				}
 				instance->nffile_r = OpenFile((char *)instance->files->filename, instance->nffile_r);
-				if ( instance->nffile_r  ) {
-					/* prepare instance->files to nex unread file */
-					libnf_file_list_t *next = instance->files->next;
-					free(instance->files->filename);
-					free(instance->files);
-					instance->files = next;
-					/*
-					// Update global time span window
-					if ( next->stat_record->first_seen < t_first_flow )
-						t_first_flow = next->stat_record->first_seen;
-					if ( next->stat_record->last_seen > t_last_flow ) 
-						t_last_flow = next->stat_record->last_seen;
-					*/
-					// continue with next file
-					goto begin;
-				} else {
+				instance->processed_files++;
+				instance->current_processed_blocks = 0;
+
+				libnf_file_list_t *next = instance->files->next;
+
+				/* prepare instance->files to nex unread file */
+				if (instance->current_filename != NULL) {
+					free(instance->current_filename);
+				}
+				instance->current_filename = instance->files->filename;
+				free(instance->files);
+				instance->files = next;
+
+				if ( instance->nffile_r == NULL ) {
 					croak("%s can not read file %s", NFL_LOG, instance->files->filename);
 					return NULL;
 				}
+				goto begin;
 			}
 
 			default:
 				// successfully read block
-				instance->total_bytes += ret;
+				instance->processed_bytes += ret;
 		}
 
 		if ( instance->nffile_r->block_header->id == Large_BLOCK_Type ) {
@@ -814,7 +851,7 @@ begin:
 		goto begin;
 	} 
 
-	instance->total_flows++;
+	instance->processed_records++;
 	master_record = &(instance->extension_map_list.slot[map_id]->master_record);
 	instance->engine->nfrecord = (uint64_t *)master_record;
 
