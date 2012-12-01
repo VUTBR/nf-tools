@@ -24,6 +24,11 @@ int
 libnf_init()
 
 
+SV * 
+libnf_instance_info(handle)
+	int handle
+
+
 int 
 libnf_read_files(handle, filter, window_start, window_end, files)
 	int handle

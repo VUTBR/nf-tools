@@ -20,6 +20,9 @@ print Dumper(\$flist);
 my $flow_src = new Net::NfDump(InputFiles => $flist, Filter => "any");
 my $flow_dst = new Net::NfDump(OutputFile => "/data/netflow/nfdump.out", Ident => "myident");
 
+local $SIG{ALRM} = sub { print Dumper($flow_src->info()); alarm(1); };
+
+alarm(1);
 
 # statistics counters
 my $bytes = 0;
@@ -28,6 +31,7 @@ my $pkts = 0;
 
 # exec query 
 $flow_src->query();
+my $cnt = 0;
 
 while ($ref = $flow_src->read()) {
 
@@ -47,7 +51,7 @@ printf "bytes=$bytes, pkts=$pkts, flows=$flows\n";
 $flow_src->close();
 $flow_dst->close();
 
-my $ret = $flow_src->info("/data/netflow/nfdump.out");
-print Dumper(\$ret);
+#my $ret = $flow_src->info("/data/netflow/nfdump.out");
+#print Dumper(\$ret);
 
 

@@ -143,17 +143,41 @@ sub new {
 	return $class;
 }
 
-=head2 info
+=head2 file_info
 Reads information from nfdump file header. It provides various atributes 
 like number of blocks, version, flags, statistics, etc.  related to the file. 
 Return has hreference with items
 
 =cut
 
+=head2 info
+Returns the information the current state of processing input files. It 
+returns information about already processed files, blocks, records. Those
+information can be usefull for guessing time of processing whole 
+dataset. 
+
+=cut
+
 sub info {
 	my ($self, $file) = @_;
 
-	return Net::NfDump::libnf_file_info($file); 
+	my $ref =  Net::NfDump::libnf_instance_info($self->{handle}); 
+
+	if ($ref->{'total_files'} > 0 && $ref->{'current_total_blocks'} > 0) {
+		my $totf = $ref->{'total_files'};
+		my $cp = $ref->{'current_processed_blocks'} / $ref->{'current_total_blocks'} * 100;
+		$ref->{'percent'} = ($ref->{'processed_files'}  - 1 )/ $totf * 100 + $cp / $totf;
+	}
+
+	if (defined($self->{read_started})) {
+		my $etime = time() - $self->{read_started};
+		$ref->{'elapsed_time'} = $etime;
+		$ref->{'remaining_time'} = $etime / ($ref->{'percent'} / 100) - $etime;
+	}
+
+	return $ref;
+
+	
 }
 
 
@@ -179,6 +203,7 @@ sub query {
 					$o->{InputFiles});	
 
 	$self->{read_prepared} = 1;
+	$self->{read_started} = time();
 
 }
 
