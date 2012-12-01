@@ -94,6 +94,7 @@ typedef struct libnf_instance_s {
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
+//	stat_record_t			stat_record;
 	uint64_t				total_bytes;
 	uint32_t				total_flows;
 	uint32_t				skipped_blocks;
@@ -160,7 +161,7 @@ static char		Ident[IDENTLEN];
 
 /* defining macros for storing numbers and strings into hash */
 #define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
-#define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(s)), 0)
+#define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
 /* function to store IPv4 or IPv6 address into hash */
 void static inline HV_STORE_AV(HV *r, char *k, ip_addr_t *a, int is6 ) {
@@ -246,6 +247,60 @@ STRLEN len;
 	return 0;
 }
 
+/* returns the information about file get from file header */
+SV * libnf_file_info(char *file) {
+HV *res;
+nffile_t *nffile = NULL;
+
+	res = (HV *)sv_2mortal((SV *)newHV());
+
+	nffile = OpenFile((char *)file, nffile);
+	if ( nffile == NULL ) {
+		return NULL;
+	}
+
+	HV_STORE_NV(res, "version", nffile->file_header->version);
+	HV_STORE_NV(res, "blocks", nffile->file_header->NumBlocks);
+	HV_STORE_NV(res, "compressed", nffile->file_header->flags & FLAG_COMPRESSED);
+	HV_STORE_NV(res, "anonymized", nffile->file_header->flags & FLAG_ANONYMIZED);
+	HV_STORE_NV(res, "catalog", nffile->file_header->flags & FLAG_CATALOG);
+	HV_STORE_PV(res, "ident", nffile->file_header->ident);
+
+	if (nffile->stat_record != NULL) {
+		HV_STORE_NV(res, "flows", nffile->stat_record->numflows);
+		HV_STORE_NV(res, "bytes", nffile->stat_record->numbytes);
+		HV_STORE_NV(res, "packets", nffile->stat_record->numpackets);
+		
+		HV_STORE_NV(res, "flows_tcp", nffile->stat_record->numflows_tcp);
+		HV_STORE_NV(res, "bytes_tcp", nffile->stat_record->numbytes_tcp);
+		HV_STORE_NV(res, "packets_tcp", nffile->stat_record->numpackets_tcp);
+
+		HV_STORE_NV(res, "flows_udp", nffile->stat_record->numflows_udp);
+		HV_STORE_NV(res, "bytes_udp", nffile->stat_record->numbytes_udp);
+		HV_STORE_NV(res, "packets_udp", nffile->stat_record->numpackets_udp);
+
+		HV_STORE_NV(res, "flows_icmp", nffile->stat_record->numflows_icmp);
+		HV_STORE_NV(res, "bytes_icmp", nffile->stat_record->numbytes_icmp);
+		HV_STORE_NV(res, "packets_icmp", nffile->stat_record->numpackets_icmp);
+
+		HV_STORE_NV(res, "flows_other", nffile->stat_record->numflows_other);
+		HV_STORE_NV(res, "bytes_other", nffile->stat_record->numbytes_other);
+		HV_STORE_NV(res, "packets_other", nffile->stat_record->numpackets_other);
+
+		HV_STORE_NV(res, "first", nffile->stat_record->first_seen);
+		HV_STORE_NV(res, "last", nffile->stat_record->last_seen);
+		HV_STORE_NV(res, "msec_first", nffile->stat_record->msec_first);
+		HV_STORE_NV(res, "msec_last", nffile->stat_record->msec_last);
+
+		HV_STORE_NV(res, "sequence_failures", nffile->stat_record->sequence_failure);
+	}
+
+	CloseFile(nffile);
+	DisposeFile(nffile);
+	
+	
+	return newRV((SV *)res);
+}
 
 
 /* converts master_record to perl structures (hashref) */
@@ -260,6 +315,8 @@ int i=0;
 	HV_STORE_NV(res, NFL_MSEC_FIRST, rec->msec_first);
 	HV_STORE_NV(res, NFL_LAST, rec->last);
 	HV_STORE_NV(res, NFL_MSEC_LAST, rec->msec_last);
+
+	HV_STORE_NV(res, NFL_PROT, rec->prot);
 	
 	// Required extension 1 - IP addresses 
 	// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
@@ -267,6 +324,9 @@ int i=0;
 	// that v6.srcaddr and v6.dst addr points to same structure 
 	HV_STORE_AV(res, NFL_SRCADDR, (ip_addr_t *)&rec->v6.srcaddr, rec->flags & FLAG_IPV6_ADDR);
 	HV_STORE_AV(res, NFL_DSTADDR, (ip_addr_t *)&rec->v6.dstaddr, rec->flags & FLAG_IPV6_ADDR);
+
+	HV_STORE_NV(res, NFL_SRCPORT, rec->srcport);
+	HV_STORE_NV(res, NFL_DSTPORT, rec->dstport);
 
 	// Required extension 2,3 - counters
 	HV_STORE_NV(res, NFL_DPKTS, rec->dPkts);
@@ -828,11 +888,9 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_MSEC_LAST)) {
 			rec.msec_last = SvUV(sv);
  
-		// bytes, packets
-		} else if ( CMP_STR(key, NFL_DPKTS)) {
-			rec.dPkts = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_DOCTETS)) {
-			rec.dOctets = SvUV(sv);
+		// preotocol
+		} else if ( CMP_STR(key, NFL_PROT)) {
+			rec.prot = SvUV(sv);
 		
 		// BASIC ITEMS SRC/DST ADDR/PORTS
 		} else if ( CMP_STR(key, NFL_SRCADDR)) {
@@ -865,6 +923,18 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_AGGR_FLOWS) ) {
 			rec.aggr_flows = SvUV(sv);
 			bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
+
+		// src/dst port
+		} else if ( CMP_STR(key, NFL_SRCPORT)) {
+			rec.srcport = SvUV(sv);
+		} else if ( CMP_STR(key, NFL_DSTPORT)) {
+			rec.dstport = SvUV(sv);
+
+		// bytes, packets
+		} else if ( CMP_STR(key, NFL_DPKTS)) {
+			rec.dPkts = SvUV(sv);
+		} else if ( CMP_STR(key, NFL_DOCTETS)) {
+			rec.dOctets = SvUV(sv);
 
 		// INPUT + OUTPUT interface 
 		} else if ( CMP_STR(key, NFL_INPUT) ) {
@@ -1011,6 +1081,8 @@ bit_array_t ext;
 	rec.ext_map = map->map_id;
 	rec.type = CommonRecordType;
 
+	UpdateStat(instance->nffile_w->stat_record, &rec);
+
 /*
 	rec.first = 10;
 	rec.last = 110;
@@ -1039,7 +1111,8 @@ libnf_instance_t *instance = libnf_instances[handle];
 				fprintf(stderr, "Failed to write output buffer: '%s'" , strerror(errno));
 			}
 		}
-		CloseFile(instance->nffile_w);
+//		CloseFile(instance->nffile_w);
+		CloseUpdateFile(instance->nffile_w, NULL );
 		DisposeFile(instance->nffile_w);
 	}
 

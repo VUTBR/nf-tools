@@ -15,6 +15,11 @@ MODULE = Net::NfDump		PACKAGE = Net::NfDump
 INCLUDE: const-xs.inc
 
 
+SV * 
+libnf_file_info(file)
+	char * file
+
+
 int 
 libnf_init()
 

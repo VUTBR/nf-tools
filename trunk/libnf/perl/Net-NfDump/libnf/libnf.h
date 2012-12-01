@@ -14,8 +14,11 @@
 #define NFL_MSEC_FIRST 	"msec_first"
 #define NFL_LAST	 	"last"
 #define NFL_MSEC_LAST 	"msec_last"
+#define NFL_PROT	 	"protocol"
 #define NFL_SRCADDR 	"srcip"
 #define NFL_DSTADDR		"dstip"
+#define NFL_SRCPORT 	"srcport"
+#define NFL_DSTPORT 	"dstport"
 #define NFL_DPKTS		"pkts"
 #define NFL_DOCTETS		"bytes"
 #define NFL_AGGR_FLOWS	"flows"
@@ -53,6 +56,7 @@
 #define NF_OK      1
 
 
+SV * libnf_file_info(char *file);
 int libnf_init(void);
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);

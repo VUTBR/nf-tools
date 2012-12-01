@@ -138,9 +138,24 @@ sub new {
 
 	$class->{read_prepared} = 0;
 	$class->{write_prepared} = 0;
+	$class->{closed} = 0;
 
 	return $class;
 }
+
+=head2 info
+Reads information from nfdump file header. It provides various atributes 
+like number of blocks, version, flags, statistics, etc.  related to the file. 
+Return has hreference with items
+
+=cut
+
+sub info {
+	my ($self, $file) = @_;
+
+	return Net::NfDump::libnf_file_info($file); 
+}
+
 
 =head2 query
 Query method can be used in two ways. If the string argument is the 
@@ -242,13 +257,16 @@ sub close {
 
 	$self->{read_prepared} = 0;
 	$self->{write_prepared} = 0;
+	$self->{closed} = 1;
 }
 
 sub DESTROY {
 	my ($self) = @_;
 
 	# handle, row reference
-	Net::NfDump::libnf_finish($self->{handle});
+	if (!$self->{closed}) {
+		Net::NfDump::libnf_finish($self->{handle});
+	}
 }
 
 
