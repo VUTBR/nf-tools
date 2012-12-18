@@ -43,7 +43,7 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-Net::IP::LPM - Perl implementation of Longest Prefix Match algo
+Net::IP::LPM - Perl implementation of Longest Prefix Match 
 
 =head1 SYNOPSIS
 
@@ -75,8 +75,9 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match algo
 
 The module Net::IP::LPM implements the Longest Prefix Matxh algo 
 for bosth IPv4 and IPv6 protocols. Module divides prefixes into 
-intervals of numbers and them uses range match search to perform 
-fast lookups. 
+intervals of numbers and them uses range search to match proper 
+prefix. 
+
 
 Module also allows to store builded database into file. It is usefull 
 when the module is used on large database (for example full BGP tables 
@@ -84,12 +85,18 @@ containing over half of milion records). The separate script can
 download and prepare prebuilded database and another one can just use
 the prepared database and perform fast lookups. 
 
+=head1 PERFORMANCE
+
+The module is able to match  prox 30 000 lookups per second on 
+complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
+hardware (2.4GhZ Xeon CPU)
+
 =head1 CLASS METHODS
 
 
 =head2  new - Class Constructor
 
-=item $lpm = Net::IP::LPM->new( [ $filename ] );
+   $lpm = Net::IP::LPM->new( [ $filename ] );
 
 Constructs a new Net::IP::LPM object. The $filename can be specified as the 
 database of prebuilded prefixes. If the file name is not handled the whole 
@@ -134,7 +141,7 @@ sub format_addr {
 
 =head2 add - Add Prefix
 
-=item $code = $lpm->add( $prefix, $value );
+   $code = $lpm->add( $prefix, $value );
 
 Adds prefix $prefix into database with value $value. Returns 1 if 
 the prefix was added sucesfully. Returns 0 if some error happen (typically wrong address formating).
@@ -180,7 +187,7 @@ sub get_range {
 	
 =head2 rebuild - Rebuild Prefix Database
  
-=item $code = $lpm->rebuild();
+   $code = $lpm->rebuild();
 
 Rebuilds the database. After adding new prefixes the database have to 
 be rebuilded before lookups are performed. Depend on the $filename 
@@ -226,7 +233,7 @@ sub rebuild {
 
 =head2  lookup - Lookup Address
  
-=item	$value = $lpm->$lookup( $address );
+   $value = $lpm->$lookup( $address );
 
 Lookups the prefix in the database and returns the value. If the prefix is
 not found or error ocured undef value is returned. 
@@ -261,10 +268,15 @@ or requires a lot of time for initial database building). However for some
 projects might be usefull:
 
 L<Net::IPTrie>
+
 L<Net::IP::Match>
+
 L<Net::IP::Match::Trie>
+
 L<Net::IP::Match-XS>
+
 L<Net::CIDR::Lookup>
+
 L<Net::CIDR::Compare>
 
 =head1 AUTHOR
