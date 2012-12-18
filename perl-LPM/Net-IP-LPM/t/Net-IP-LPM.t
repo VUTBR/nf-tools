@@ -88,4 +88,20 @@ while ( my ($a, $p) = each %tests ) {
 	$results{$a} = $res;
 }
 
+# test speed 
+my $cnt = 500000;
+diag "Testing performance on full Internet BGP";
+diag "tables ($cnt lookups on 500 000 prefixes)";
+diag "please wait... ";
+my $lpm2 = Net::IP::LPM->new("t/asns.db");
+my $t1 = time();
+for (my $x = 0; $x < $cnt; $x++ ) {
+	my $a = $x % 250; 	
+	my $addr = "$a.10.$a.20";
+	my $val = $lpm2->lookup($addr);
+}
+
+my $t2 = time() - $t1;
+diag sprintf "SPED: %d lookups in %d secs, %f.2 lookups/s", $cnt, $t2, $cnt/$t2;
+
 ok( eq_hash(\%tests, \%results) );

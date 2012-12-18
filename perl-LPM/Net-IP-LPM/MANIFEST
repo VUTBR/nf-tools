@@ -3,4 +3,5 @@ Makefile.PL
 MANIFEST
 README
 t/Net-IP-LPM.t
+t/asns.db
 lib/Net/IP/LPM.pm
