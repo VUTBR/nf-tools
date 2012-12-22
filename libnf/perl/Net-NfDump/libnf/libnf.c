@@ -92,6 +92,7 @@ typedef struct libnf_instance_s {
 	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
 	nffile_t				*nffile_w;				/* filehandle for writing */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
+	int 					raw_data; 				/* indicates whether in/out data will be processed in raw format*/
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
 //	stat_record_t			stat_record;
@@ -169,23 +170,38 @@ static char		Ident[IDENTLEN];
 #define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
 /* function to store IPv4 or IPv6 address into hash */
-void static inline HV_STORE_AV(HV *r, char *k, ip_addr_t *a, int is6 ) {
+void static inline HV_STORE_AV(HV *r, char *k, ip_addr_t *a, int is6, int raw_data ) {
 char s[IP_STRING_LEN];
 
 	s[0] = 0;
+	int len = 0;
+
 	if ( is6 ) { // IPv6
 		uint64_t ip[2];
 
 		ip[0] = htonll(a->v6[0]);
 		ip[1] = htonll(a->v6[1]);
-		inet_ntop(AF_INET6, ip, s, sizeof(s));
+		if (raw_data) {
+			len = sizeof(a->v6);
+			memcpy(s, ip, len);
+		} else {
+			inet_ntop(AF_INET6, ip, s, sizeof(s));
+			len = strlen(s);
+		}
 	} else {    // IPv4
 		uint32_t ip;
-		ip = htonl(a->v4);
-		inet_ntop(AF_INET, &ip, s, sizeof(s));
-    }
 
-	HV_STORE_PV(r, k, s);
+		ip = htonl(a->v4);
+		if (raw_data) {
+			len = sizeof(a->v4);
+			memcpy(s, &ip, len);
+		} else {
+			inet_ntop(AF_INET, &ip, s, sizeof(s));
+			len = strlen(s);
+		}
+	}
+
+	(void)hv_store(r, k, strlen(k), newSVpvn(s, len), 0);
 }
 
 /* function to store MAC address into hash */
@@ -206,8 +222,9 @@ uint8_t mac[6];
 }
 
 /* converts perl's SV with string representation of IP addres to  ip_addr_t */
+/* raw_data (0/1, false/true) indicates whether ip addres is handled in text or binary fowm */
 /* returns AF_INET or AF_INET6 or 0 if conversion was not succesfull */
-inline int Sv_addr(ip_addr_t *a, SV * sv) {
+inline int Sv_addr(ip_addr_t *a, SV * sv, int raw_data) {
 uint64_t ip6[2];
 uint32_t ip4;
 char *s;
@@ -337,7 +354,7 @@ HV *res;
 
 
 /* converts master_record to perl structures (hashref) */
-SV * libnf_master_record_to_SV(master_record_t *rec, extension_map_t *map) {
+SV * libnf_master_record_to_SV(master_record_t *rec, extension_map_t *map, int raw_data) {
 HV *res;
 int i=0;
 
@@ -355,8 +372,8 @@ int i=0;
 	// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
 	// however the structures are simmilar so we will pretend 
 	// that v6.srcaddr and v6.dst addr points to same structure 
-	HV_STORE_AV(res, NFL_SRCADDR, (ip_addr_t *)&rec->v6.srcaddr, rec->flags & FLAG_IPV6_ADDR);
-	HV_STORE_AV(res, NFL_DSTADDR, (ip_addr_t *)&rec->v6.dstaddr, rec->flags & FLAG_IPV6_ADDR);
+	HV_STORE_AV(res, NFL_SRCADDR, (ip_addr_t *)&rec->v6.srcaddr, rec->flags & FLAG_IPV6_ADDR, raw_data);
+	HV_STORE_AV(res, NFL_DSTADDR, (ip_addr_t *)&rec->v6.dstaddr, rec->flags & FLAG_IPV6_ADDR, raw_data);
 
 	HV_STORE_NV(res, NFL_SRCPORT, rec->srcport);
 	HV_STORE_NV(res, NFL_DSTPORT, rec->dstport);
@@ -394,11 +411,11 @@ int i=0;
 				break;
 			case EX_NEXT_HOP_v4:
 			case EX_NEXT_HOP_v6:
-				HV_STORE_AV(res, NFL_IP_NEXTHOP, (ip_addr_t *)&rec->ip_nexthop, rec->flags & FLAG_IPV6_NH);
+				HV_STORE_AV(res, NFL_IP_NEXTHOP, (ip_addr_t *)&rec->ip_nexthop, rec->flags & FLAG_IPV6_NH, raw_data);
 				break;
 			case EX_NEXT_HOP_BGP_v4:
 			case EX_NEXT_HOP_BGP_v6:
-				HV_STORE_AV(res, NFL_BGP_NEXTHOP, (ip_addr_t *)&rec->bgp_nexthop, rec->flags & FLAG_IPV6_NH);
+				HV_STORE_AV(res, NFL_BGP_NEXTHOP, (ip_addr_t *)&rec->bgp_nexthop, rec->flags & FLAG_IPV6_NH, raw_data);
 				break;
 			case EX_VLAN: 
 				HV_STORE_NV(res, NFL_SRC_VLAN, rec->src_vlan);
@@ -428,7 +445,7 @@ int i=0;
 				break;
 			case EX_ROUTER_IP_v4:
 			case EX_ROUTER_IP_v6:
-				HV_STORE_AV(res, NFL_IP_ROUTER, (ip_addr_t *)&rec->ip_router, rec->flags & FLAG_IPV6_EXP);
+				HV_STORE_AV(res, NFL_IP_ROUTER, (ip_addr_t *)&rec->ip_router, rec->flags & FLAG_IPV6_EXP, raw_data);
 				break;
 			case EX_ROUTER_ID:
 				HV_STORE_NV(res, NFL_ENGINE_TYPE, rec->engine_type);
@@ -642,7 +659,7 @@ int i;
 
 
 
-int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files) {
+int libnf_read_files(int handle, char *filter, int window_start, int window_end, int raw_data, SV *files) {
 libnf_instance_t *instance = libnf_instances[handle];
 
 libnf_file_list_t	*pfile;
@@ -667,6 +684,7 @@ int i;
 	pfile->filename = NULL;
 	instance->files = pfile;
 	instance->total_files = numfiles + 1;
+	instance->raw_data = raw_data;
 
 	for (i = 0; i <= numfiles; i++) {
 		STRLEN l;
@@ -882,12 +900,12 @@ begin:
 	instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_SV(master_record, instance->extension_map_list.slot[map_id]->map); 
+	return libnf_master_record_to_SV(master_record, instance->extension_map_list.slot[map_id]->map, instance->raw_data); 
 
 } /* end of _next fnction */
 
 
-int libnf_write_row(int handle, HV * hashref) {
+int libnf_write_row(int handle, int raw_data, HV * hashref) {
 master_record_t rec;
 libnf_instance_t *instance = libnf_instances[handle];
 extension_map_t *map;
@@ -931,7 +949,7 @@ bit_array_t ext;
 		
 		// BASIC ITEMS SRC/DST ADDR/PORTS
 		} else if ( CMP_STR(key, NFL_SRCADDR)) {
-			int res = Sv_addr((ip_addr_t *)&rec.v6.srcaddr, sv);
+			int res = Sv_addr((ip_addr_t *)&rec.v6.srcaddr, sv, raw_data);
 			switch (res) {
 				case AF_INET:
 					ClearFlag(rec.flags, FLAG_IPV6_ADDR);
@@ -944,7 +962,7 @@ bit_array_t ext;
 					return 0;
 			}
 		} else if ( CMP_STR(key, NFL_DSTADDR)) {
-			int res = Sv_addr((ip_addr_t *)&rec.v6.dstaddr, sv);
+			int res = Sv_addr((ip_addr_t *)&rec.v6.dstaddr, sv, raw_data);
 			switch (res) {
 				case AF_INET:
 					ClearFlag(rec.flags, FLAG_IPV6_ADDR);
@@ -1005,7 +1023,7 @@ bit_array_t ext;
 
 		// NEXT HOP
 		} else if ( CMP_STR(key, NFL_IP_NEXTHOP)) {
-			int res = Sv_addr(&rec.ip_nexthop, sv);
+			int res = Sv_addr(&rec.ip_nexthop, sv, raw_data);
 			switch (res) {
 				case AF_INET:
 					ClearFlag(rec.flags, FLAG_IPV6_NH);
@@ -1024,7 +1042,7 @@ bit_array_t ext;
 	
 		// BGP NETX HOP	
 		} else if ( CMP_STR(key, NFL_BGP_NEXTHOP)) {
-			int res = Sv_addr(&rec.bgp_nexthop, sv);
+			int res = Sv_addr(&rec.bgp_nexthop, sv, raw_data);
 			switch (res) {
 				case AF_INET:
 					ClearFlag(rec.flags, FLAG_IPV6_NHB);
@@ -1083,7 +1101,7 @@ bit_array_t ext;
 
 		// ROUTER/EXPORTER INFORMATION
 		} else if ( CMP_STR(key, NFL_IP_ROUTER)) {
-			int res = Sv_addr(&rec.ip_router, sv);
+			int res = Sv_addr(&rec.ip_router, sv, raw_data);
 			switch (res) {
 				case AF_INET:
 					ClearFlag(rec.flags, FLAG_IPV6_EXP);

@@ -128,7 +128,8 @@ sub new {
 		TimeWindowEnd => 0,
 		OutputFile => undef,
 		Compressed => 1,
-		Anonymized => 1,
+		Anonymized => 0,
+		RawData => 0,
 		Ident => ""
 	};
 
@@ -200,6 +201,7 @@ sub query {
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
 					$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
+					$o->{RawData}, 
 					$o->{InputFiles});	
 
 	$self->{read_prepared} = 1;
@@ -271,7 +273,7 @@ sub write {
 	}
 	
 	# handle, row reference
-	return Net::NfDump::libnf_write_row($self->{handle}, $row);
+	return Net::NfDump::libnf_write_row($self->{handle}, $self->{opts}->{RawData}, $row);
 }
 
 sub close {

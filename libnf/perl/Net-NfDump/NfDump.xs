@@ -30,11 +30,12 @@ libnf_instance_info(handle)
 
 
 int 
-libnf_read_files(handle, filter, window_start, window_end, files)
+libnf_read_files(handle, filter, window_start, window_end, raw_data, files)
 	int handle
 	char *filter
 	int window_start
 	int window_end
+	int raw_data
 	SV * files
 
 
@@ -53,8 +54,9 @@ libnf_create_file(handle, filename, compressed, anonymized, ident)
 
 
 int 
-libnf_write_row(handle, hashref)
+libnf_write_row(handle, raw_data, hashref)
 	int handle
+	int raw_data
 	HV * hashref
 
 
