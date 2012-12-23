@@ -1,6 +1,6 @@
 package Net::NfDump;
 
-use 5.010001;
+use 5.000001;
 use strict;
 use warnings;
 use Carp;

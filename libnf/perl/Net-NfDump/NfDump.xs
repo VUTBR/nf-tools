@@ -8,7 +8,7 @@
 
 #include "const-c.inc"
 
-#include <sys/vfs.h>
+/* #include <sys/vfs.h> */
 
 MODULE = Net::NfDump		PACKAGE = Net::NfDump
 
