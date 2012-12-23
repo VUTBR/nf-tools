@@ -1,4 +1,5 @@
-use 5.010001;
+#use 5.010001;
+use 5.000001;
 use ExtUtils::MakeMaker;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
@@ -45,7 +46,10 @@ else {
 
 sub MY::postamble {
 '
-NFDUMP = nfdump-1.6.8p1
+NFDUMP		= nfdump-1.6.8p1
+NFDUMP_MD5	= 853d917527d1a20837a899ffd88b736c
+NFDUMP_SRC	= $(NFDUMP).tar.gz
+NFDUMP_URL	= http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP_SRC)
 
 $(NFDUMP).tar.gz:
 		@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
@@ -58,11 +62,11 @@ $(NFDUMP).tar.gz:
 		@echo "!!  FILE:    $(NFDUMP).tar.gz                     !!"
 		@echo "!!                                                     !!"
 		@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-		wget -nv http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP).tar.gz
+		wget -nv $(NFDUMP_URL) || curl -L -o $(NFDUMP_SRC) $(NFDUMP_URL)
 
 
 nfdump/bin/nfdump.o: $(NFDUMP).tar.gz 
-		md5sum -c nfdump.md5
+		./md5sum.sh $(NFDUMP_MD5) $(NFDUMP).tar.gz 
 		tar xzf $(NFDUMP).tar.gz
 		mv -f $(NFDUMP) nfdump 
 		cd nfdump && export CFLAGS=-fPIC && ./configure  && make
