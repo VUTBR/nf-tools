@@ -25,7 +25,8 @@ my %rec_v4 = (
             'enginetype' => '0',
             'srcport' => '53008',
             'msec_first' => '747',
-            'engineid' => '0'
+            'engineid' => '0',
+			'tcp_flags' => '27'
           );
 
 my %rec_v6 = (
@@ -51,7 +52,8 @@ my %rec_v6 = (
             'enginetype' => '0',
             'srcport' => '80',
             'msec_first' => '173',
-            'engineid' => '0'
+            'engineid' => '0',
+			'tcp_flags' => '16'
           );
 
 
@@ -67,7 +69,6 @@ while ($ref = $flow_v4->read()) {
 my $flow_v6 = new Net::NfDump(InputFiles => [ "t/record_v6" ] );
 $flow_v6->query();
 while ($ref = $flow_v6->read()) {
-
 	ok( eq_hash(\%rec_v6, $ref) );
 }
 
