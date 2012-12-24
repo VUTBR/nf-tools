@@ -232,6 +232,19 @@ STRLEN len;
 
 	s = SvPV(sv, len);
 
+	if (raw_data) {
+		if ( len == sizeof(ip4) )  {
+			memcpy(&ip4, s, sizeof(ip4));
+			a->v4 = ntohl(ip4);
+			return AF_INET;
+		} else {
+			memcpy(ip6, s, sizeof(ip6));
+			a->v6[0] = ntohll(ip6[0]);
+			a->v6[1] = ntohll(ip6[1]);
+			return AF_INET6;
+		}
+	}
+
 	/* try to convert as IPv4 address */
 	if (inet_pton(AF_INET, s, &ip4)) {
 		a->v4 = ntohl(ip4);
@@ -1069,8 +1082,10 @@ bit_array_t ext;
 
 		// OUTPUT CONTERS
 		} else if ( CMP_STR(key, NFL_OUT_PKTS)) {
+			rec.out_pkts = SvUV(sv);
 			bit_array_set(&ext, EX_OUT_PKG_8, 1);
 		} else if ( CMP_STR(key, NFL_OUT_BYTES)) {
+			rec.out_bytes = SvUV(sv);
 			bit_array_set(&ext, EX_OUT_BYTES_8, 1);
 
 		// MAC ADDRESSES

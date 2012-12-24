@@ -5,7 +5,13 @@ NfDump.xs
 ppport.h
 README
 md5sum.sh
-t/Net-NfDump.t
+t/00-Net-NfDump.t
+t/01-read-basic.t
+t/02-read-raw.t
+t/03-write-basic.t
+t/04-write-raw.t
+t/record_v4
+t/record_v6
 fallback/const-c.inc
 fallback/const-xs.inc
 lib/Net/NfDump.pm
