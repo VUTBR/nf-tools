@@ -27,7 +27,8 @@ my %rec_v4 = (
             'enginetype' => '0',
             'srcport' => '53008',
             'msec_first' => '747',
-            'engineid' => '0'
+            'engineid' => '0',
+			'tcp_flags' => '27'
           );
 
 my %rec_v6 = (
@@ -53,7 +54,8 @@ my %rec_v6 = (
             'enginetype' => '0',
             'srcport' => '80',
             'msec_first' => '173',
-            'engineid' => '0'
+            'engineid' => '0',
+			'tcp_flags' => '16'
           );
 
 

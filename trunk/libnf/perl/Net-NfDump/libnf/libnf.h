@@ -14,6 +14,7 @@
 #define NFL_MSEC_FIRST 	"msec_first"
 #define NFL_LAST	 	"last"
 #define NFL_MSEC_LAST 	"msec_last"
+#define NFL_TCP_FLAGS	"tcp_flags"
 #define NFL_PROT	 	"protocol"
 #define NFL_SRCADDR 	"srcip"
 #define NFL_DSTADDR		"dstip"

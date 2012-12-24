@@ -380,6 +380,7 @@ int i=0;
 	HV_STORE_NV(res, NFL_MSEC_LAST, rec->msec_last);
 
 	HV_STORE_NV(res, NFL_PROT, rec->prot);
+	HV_STORE_NV(res, NFL_TCP_FLAGS, rec->tcp_flags);
 	
 	// Required extension 1 - IP addresses 
 	// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
@@ -956,9 +957,11 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_MSEC_LAST)) {
 			rec.msec_last = SvUV(sv);
  
-		// preotocol
+		// preotocol + tcp_flags
 		} else if ( CMP_STR(key, NFL_PROT)) {
 			rec.prot = SvUV(sv);
+		} else if ( CMP_STR(key, NFL_TCP_FLAGS) ) {
+			rec.tcp_flags = SvUV(sv);
 		
 		// BASIC ITEMS SRC/DST ADDR/PORTS
 		} else if ( CMP_STR(key, NFL_SRCADDR)) {
