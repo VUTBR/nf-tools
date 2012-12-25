@@ -188,7 +188,7 @@ sub get_range {
 	my $first = substr($addr_bin, 0, $plen) . "0"x($addrlen - $plen);
 	my $last = substr($addr_bin, 0, $plen) . "1"x($addrlen - $plen);
 
-	return (pack("Cb*", $type, $first), pack("Cb*", $type, $last));
+	return (pack("Cb*", $type, $first).ord(0x0), pack("Cb*", $type, $last).ord(0xF));
 }
 	
 =head2 rebuild - Rebuild Prefix Database
@@ -208,11 +208,11 @@ sub rebuild {
 	my ($self, $addr) = @_;
 
 	# initalize whole range as undef
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::')."0", undef);
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF')."1", undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').ord(0x0), undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').ord(0xF), undef);
 
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0')."0", undef);
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255')."1", undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').ord(0x0), undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').ord(0xF), undef);
 
 	foreach my $plen ( sort { $a <=> $b } keys %{$self->{PREFIXES}} ) {
 		while ( my ($prefix, $value) = each ( %{$self->{PREFIXES}->{$plen}} ) ) {
@@ -231,8 +231,8 @@ sub rebuild {
 			#  result           up_key |-up_val-|-----value-----|-up_val----|
 			#                                   first           last + 1 	
 			if ($st == 0) {
-				$self->{DB}->put($last."1", $up_val);
-				$self->{DB}->put($first."0", $value);
+				$self->{DB}->put($last, $up_val);
+				$self->{DB}->put($first, $value);
 			} else {	# prefix not in a database yet 
 				croak "This should never happen!!";
 			}
@@ -281,7 +281,7 @@ sub lookup_raw {
 	return undef if (! defined($addr_bin) );
 
 	my $value = undef;
-    my $st = $self->{DB}->seq($addr_bin.'0', $value, R_CURSOR) ;
+    my $st = $self->{DB}->seq($addr_bin.ord(0x0), $value, R_CURSOR) ;
 	
 	if ($st == 0) {
 		return $value;
