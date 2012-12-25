@@ -5,8 +5,11 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 3;
+use Test::More tests => 4;
 BEGIN { use_ok('Net::IP::LPM') };
+
+use Socket qw( AF_INET );
+use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 
 #########################
 
@@ -78,6 +81,7 @@ my %tests = (
 		'2001::1'	=> '::/0',
 		);
 
+# std lookup
 my %results = ();
 diag "\n";
 while ( my ($a, $p) = each %tests ) {
@@ -88,8 +92,29 @@ while ( my ($a, $p) = each %tests ) {
 	$results{$a} = $res;
 }
 
+ok( eq_hash(\%tests, \%results) );
+
+# std raw lookup
+%results = ();
+diag "\n";
+while ( my ($a, $p) = each %tests ) {
+	my $ab ;
+	if ($a =~ /:/) {
+		$ab = inet_pton(AF_INET6, $a);
+	} else {
+		$ab = inet_pton(AF_INET, $a);
+	}
+	my $res = $lpm->lookup_raw($ab);
+	if ($p ne $res) {
+		diag sprintf "FAIL RAW %s \t-> \t%s =%s %s\n", $a, $p, $p eq $res ? '=' : '!', $res;
+	}
+	$results{$a} = $res;
+}
+
+ok( eq_hash(\%tests, \%results) );
+
 # test speed 
-my $cnt = 500000;
+my $cnt = 600000;
 diag "Testing performance on full Internet BGP";
 diag "tables ($cnt lookups on 500 000 prefixes)";
 diag "please wait... ";
@@ -102,6 +127,13 @@ for (my $x = 0; $x < $cnt; $x++ ) {
 }
 
 my $t2 = time() - $t1;
-diag sprintf "SPED: %d lookups in %d secs, %f.2 lookups/s", $cnt, $t2, $cnt/$t2;
+diag sprintf "SPEED: %d lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
 
-ok( eq_hash(\%tests, \%results) );
+# test speed  - raw
+$t1 = time();
+for (my $x = 0; $x < $cnt; $x++ ) {
+	my $val = $lpm2->lookup_raw($x * $x);
+}
+
+$t2 = time() - $t1;
+diag sprintf "SPEED: %d raw lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
