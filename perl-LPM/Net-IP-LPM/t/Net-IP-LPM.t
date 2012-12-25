@@ -76,7 +76,7 @@ my %tests = (
 		'2001::1'				=> '::/0',
 		'FFFF:FFFF:FFFF:FFF:FFFF:FFFF:FFFF:FFFF'	=> '::/0',
 		'FFFF:FFFF:FFFF:FFF:FFFF:FFFF:FFFF:FFFE'	=> '::/0',
-		'::0.0.0.0'	=> '0.0.0.0/0',
+		'::0.0.0.0'	=> '::/0',
 		'0001::'	=> '::/0',
 		'2001::1'	=> '::/0',
 		);
