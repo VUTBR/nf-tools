@@ -12,7 +12,10 @@ use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 use Data::Dumper;
 use DB_File;
-use constant V4PREFIX => pack('h', 0x0) x (16 - 4);
+use constant {
+	V4P => pack('C', AF_INET),
+	V6P => pack('C', AF_INET6),
+	};
 #our @ISA = qw(DB_File);
 our @ISA = qw();
 
@@ -129,10 +132,9 @@ sub format_addr {
 		$type = AF_INET6;	
 	} else {
 		$type = AF_INET;
-		$addr = '::'.$addr;
 	}
 
-	my $addr_bin = inet_pton(AF_INET6, $addr);
+	my $addr_bin = inet_pton($type, $addr);
 
 	return ($type, $addr_bin);
 	
@@ -156,15 +158,16 @@ sub add {
 	my ($addr, $plen) = split('/', $prefix); 
 
 	my ($type, $addr_bin) = format_addr($self, $addr);
+	$addr_bin = pack('C', $type).$addr_bin;
 
 	if (!defined($plen)) {
 		$plen = 128 if ($type == AF_INET6);
 		$plen = 32 if ($type == AF_INET);
 	}
 
-	if ($type == AF_INET) {
-		$plen = 128 - 32 + $plen;
-	}
+#	if ($type == AF_INET) {
+#		$plen = 128 - 32 + $plen;
+#	}
 
 	# invalid conversion
 	return undef if ( !defined($addr_bin) || !defined($value) );
@@ -178,12 +181,14 @@ sub add {
 sub get_range {
 	my ($self, $prefix, $plen) = @_;
 
-	my $addr_bin = unpack("b*", $prefix);
-	
-	my $first = substr($addr_bin, 0, $plen) . "0"x(128 - $plen);
-	my $last = substr($addr_bin, 0, $plen) . "1"x(128 - $plen);
+	my ($type, $addr_bin) = unpack("Cb*", $prefix);
 
-	return (pack("b*", $first), pack("b*", $last));
+	my $addrlen = ($type == AF_INET6) ? 128 : 32;
+	
+	my $first = substr($addr_bin, 0, $plen) . "0"x($addrlen - $plen);
+	my $last = substr($addr_bin, 0, $plen) . "1"x($addrlen - $plen);
+
+	return (pack("Cb*", $type, $first), pack("Cb*", $type, $last));
 }
 	
 =head2 rebuild - Rebuild Prefix Database
@@ -203,8 +208,11 @@ sub rebuild {
 	my ($self, $addr) = @_;
 
 	# initalize whole range as undef
-	$self->{DB}->put(inet_pton(AF_INET6, '::')."0", undef);
-	$self->{DB}->put(inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF')."1", undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::')."0", undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF')."1", undef);
+
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0')."0", undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255')."1", undef);
 
 	foreach my $plen ( sort { $a <=> $b } keys %{$self->{PREFIXES}} ) {
 		while ( my ($prefix, $value) = each ( %{$self->{PREFIXES}->{$plen}} ) ) {
@@ -265,7 +273,9 @@ sub lookup_raw {
 	my ($self, $addr_bin) = @_;
 
 	if (length($addr_bin) == 4) {
-		$addr_bin = V4PREFIX.$addr_bin;
+		$addr_bin = V4P.$addr_bin;
+	} else {
+		$addr_bin = V6P.$addr_bin;
 	}
 
 	return undef if (! defined($addr_bin) );
