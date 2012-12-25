@@ -12,6 +12,7 @@ use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 use Data::Dumper;
 use DB_File;
+use constant V4PREFIX => pack('h', 0x0) x (16 - 4);
 #our @ISA = qw(DB_File);
 our @ISA = qw();
 
@@ -247,10 +248,30 @@ sub lookup {
 
 	my ($type, $addr_bin) = format_addr($self, $addr);
 
+	return $self->lookup_raw($addr_bin);
+}
+
+=head2  lookup_raw - Lookup Address
+ 
+   $value = $lpm->lookup_raw( $address );
+
+Same as $lpm->lookup but takes $address in raw format (result of inet_ntop function). It is 
+more effective than $lpm->lookup, because convertion from text format is not 
+nescessary. 
+
+=cut 
+
+sub lookup_raw {
+	my ($self, $addr_bin) = @_;
+
+	if (length($addr_bin) == 4) {
+		$addr_bin = V4PREFIX.$addr_bin;
+	}
+
 	return undef if (! defined($addr_bin) );
 
 	my $value = undef;
-    my $st = $self->{DB}->seq($addr_bin."0", $value, R_CURSOR) ;
+    my $st = $self->{DB}->seq($addr_bin.'0', $value, R_CURSOR) ;
 	
 	if ($st == 0) {
 		return $value;
