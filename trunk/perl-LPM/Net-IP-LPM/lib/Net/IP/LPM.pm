@@ -15,6 +15,8 @@ use DB_File;
 use constant {
 	V4P => pack('C', AF_INET),
 	V6P => pack('C', AF_INET6),
+	VF => pack('C', 0xF),
+	V0 => pack('C', 0x0),
 	};
 #our @ISA = qw(DB_File);
 our @ISA = qw();
@@ -114,7 +116,7 @@ sub new {
 	
 	#my $class = $self->SUPER::new( @opts );
 	my $b = new DB_File::BTREEINFO ;
-	$b->{'compare'} = sub { return $_[1] cmp $_[0]; };
+#	$b->{'compare'} = sub { return $_[1] cmp $_[0]; };
 
 	$self->{DB} = tie %h, 'DB_File', $dbfile, O_RDWR|O_CREAT, 0666, $b ;
 
@@ -188,7 +190,7 @@ sub get_range {
 	my $first = substr($addr_bin, 0, $plen) . "0"x($addrlen - $plen);
 	my $last = substr($addr_bin, 0, $plen) . "1"x($addrlen - $plen);
 
-	return (pack("Cb*", $type, $first).ord(0x0), pack("Cb*", $type, $last).ord(0xF));
+	return (pack("Cb*", $type, $first).V0, pack("Cb*", $type, $last).VF);
 }
 	
 =head2 rebuild - Rebuild Prefix Database
@@ -208,11 +210,11 @@ sub rebuild {
 	my ($self, $addr) = @_;
 
 	# initalize whole range as undef
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').ord(0x0), undef);
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').ord(0xF), undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').V0, undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').VF, undef);
 
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').ord(0x0), undef);
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').ord(0xF), undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').V0, undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').VF, undef);
 
 	foreach my $plen ( sort { $a <=> $b } keys %{$self->{PREFIXES}} ) {
 		while ( my ($prefix, $value) = each ( %{$self->{PREFIXES}->{$plen}} ) ) {
@@ -220,8 +222,9 @@ sub rebuild {
 			
 			# try to find longer prefix
 			my $up_val = undef;
-			my $up_key = $first."0";
-    		my $st = $self->{DB}->seq($up_key, $up_val, R_CURSOR);
+			my $up_key = $first.V0;
+    		my $st1 = $self->{DB}->seq($up_key, $up_val, R_CURSOR);
+    		my $st2 = $self->{DB}->seq($up_key, $up_val, R_PREV);
 
 #			printf "NEW: %s , %s -> %s\n", unpack("H*", $first), unpack("H*", $last), $value;
 #			printf "UP : %s -> %s\n", unpack("H*", $up_key), $up_val;
@@ -230,7 +233,8 @@ sub rebuild {
 			#  up prefix        up_key |----------up_val------------------| 
 			#  result           up_key |-up_val-|-----value-----|-up_val----|
 			#                                   first           last + 1 	
-			if ($st == 0) {
+			if ($st1 == 0 && $st2 == 0) {
+#			if ($st1 == 0) {
 				$self->{DB}->put($last, $up_val);
 				$self->{DB}->put($first, $value);
 			} else {	# prefix not in a database yet 
@@ -273,17 +277,19 @@ sub lookup_raw {
 	my ($self, $addr_bin) = @_;
 
 	if (length($addr_bin) == 4) {
-		$addr_bin = V4P.$addr_bin;
+		$addr_bin = V4P.$addr_bin.VF;
 	} else {
-		$addr_bin = V6P.$addr_bin;
+		$addr_bin = V6P.$addr_bin.VF;
 	}
 
 	return undef if (! defined($addr_bin) );
 
-	my $value = undef;
-    my $st = $self->{DB}->seq($addr_bin.ord(0x0), $value, R_CURSOR) ;
+	my ($key, $value);
 	
-	if ($st == 0) {
+    my $st1 = $self->{DB}->seq($addr_bin, $value, R_CURSOR);
+    my $st2 = $self->{DB}->seq($addr_bin, $value, R_PREV);
+
+	if ($st1 == 0 && $st2 == 0 ) {
 		return $value;
 	}
 
