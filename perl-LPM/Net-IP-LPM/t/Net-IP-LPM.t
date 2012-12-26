@@ -24,6 +24,7 @@ isa_ok($lpm, 'Net::IP::LPM', 'Constructor');
 my @prefixes = ( 
 		'0.0.0.0/0', 
 		'147.229.3.1', '147.229.3.2/32', '147.229.3.0/24', '147.229.0.0/16',
+		'10.255.3.0/24', '10.255.3.0/32',
 		'::/0',
 		'2001:67c:1220:f565::1234', '2001:67c:1220:f565::1235/128', 
 		'2001:67c:1220:f565::/64', '2001:67c:1220::/32'
@@ -59,6 +60,7 @@ my %tests = (
 		'147.229.255.255'	=> '147.229.0.0/16',
 		'147.230.0.0'	=> '0.0.0.0/0',
 		'147.230.0.1'	=> '0.0.0.0/0',
+		'10.255.3.0'	=> '10.255.3.0/32',
 		'0.0.0.0'		=> '0.0.0.0/0',
 		'0.0.0.1'		=> '0.0.0.0/0',
 		'255.255.255.254'	=> '0.0.0.0/0',
@@ -114,9 +116,9 @@ while ( my ($a, $p) = each %tests ) {
 ok( eq_hash(\%tests, \%results) );
 
 # test speed 
-my $cnt = 600000;
+my $cnt = 1500000;
 diag "Testing performance on full Internet BGP";
-diag "tables ($cnt lookups on 500 000 prefixes)";
+diag "tables ($cnt lookups on 500000 prefixes)";
 diag "please wait... ";
 my $lpm2 = Net::IP::LPM->new("t/asns.db");
 my $t1 = time();
