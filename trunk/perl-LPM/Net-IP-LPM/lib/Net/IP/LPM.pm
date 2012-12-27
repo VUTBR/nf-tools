@@ -93,9 +93,9 @@ the prepared database and perform fast lookups.
 
 =head1 PERFORMANCE
 
-The module is able to match  prox 30 000 lookups per second on 
+The module is able to match  ~ 180 000 lookups per second on 
 complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
-hardware (2.4GhZ Xeon CPU)
+hardware (2.4GHz Xeon CPU)
 
 =head1 CLASS METHODS
 
