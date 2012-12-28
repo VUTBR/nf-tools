@@ -93,8 +93,8 @@ the prepared database and perform fast lookups.
 
 =head1 PERFORMANCE
 
-The module is able to match  ~ 180 000 lookups per second on 
-complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
+The module is able to match  ~ 180 000 lookups (or 300 000 with cache enables) 
+per second on complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
 hardware (2.4GHz Xeon CPU)
 
 =head1 CLASS METHODS
@@ -117,6 +117,8 @@ sub new {
 	#my $class = $self->SUPER::new( @opts );
 	my $b = new DB_File::BTREEINFO ;
 #	$b->{'compare'} = sub { return $_[1] cmp $_[0]; };
+#	$b->{'cachesize'} = 40000000;
+#	$b->{'cachesize'} = 40000000;
 
 	$self->{DB} = tie %h, 'DB_File', $dbfile, O_RDWR|O_CREAT, 0666, $b ;
 
@@ -260,6 +262,8 @@ sub lookup {
 
 	my ($type, $addr_bin) = format_addr($self, $addr);
 
+	return undef if (! defined($addr_bin) );
+
 	return $self->lookup_raw($addr_bin);
 }
 
@@ -282,8 +286,6 @@ sub lookup_raw {
 		$addr_bin = V6P.$addr_bin.VF;
 	}
 
-	return undef if (! defined($addr_bin) );
-
 	my ($key, $value);
 	
     my $st1 = $self->{DB}->seq($addr_bin, $value, R_CURSOR);
@@ -296,6 +298,33 @@ sub lookup_raw {
 	return undef;
 }
 
+=head2  lookup_cache_raw - Lookup Address 
+ 
+   $value = $lpm->lookup_cache_raw( $address );
+
+Same as $lpm->lookup_raw but the cache is used to speed up lookups. 
+It might be usefull when there is big probability that lookup 
+for the same address will be porformed more often.  
+
+The cache becomes effective when the ration of hit cache entrie is bigger 
+than 50%. For less hit ratio the overhead discart its benefits. 
+
+NOTE: Cache entries are stored into memory, so it can lead to unexpected memory comsumption. 
+
+=cut 
+
+sub lookup_cache_raw {
+	my ($self, $addr_bin) = @_;
+
+	my $result = $self->{CACHE}->{$addr_bin};
+
+	if (!defined($result)) {
+		$result = $self->lookup_raw($addr_bin);
+		$self->{CACHE}->{$addr_bin} = $result;
+	}
+
+	return $result;
+}	
 
 =head1 SEE ALSO
 
