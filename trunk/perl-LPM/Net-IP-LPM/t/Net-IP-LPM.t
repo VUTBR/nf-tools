@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 4;
+use Test::More tests => 5;
 BEGIN { use_ok('Net::IP::LPM') };
 
 use Socket qw( AF_INET );
@@ -115,6 +115,25 @@ while ( my ($a, $p) = each %tests ) {
 
 ok( eq_hash(\%tests, \%results) );
 
+# std cache raw lookup
+%results = ();
+diag "\n";
+while ( my ($a, $p) = each %tests ) {
+	my $ab ;
+	if ($a =~ /:/) {
+		$ab = inet_pton(AF_INET6, $a);
+	} else {
+		$ab = inet_pton(AF_INET, $a);
+	}
+	my $res = $lpm->lookup_cache_raw($ab);
+	if ($p ne $res) {
+		diag sprintf "FAIL CACHE RAW %s \t-> \t%s =%s %s\n", $a, $p, $p eq $res ? '=' : '!', $res;
+	}
+	$results{$a} = $res;
+}
+
+ok( eq_hash(\%tests, \%results) );
+
 # test speed 
 my $cnt = 1500000;
 diag "Testing performance on full Internet BGP";
@@ -139,3 +158,13 @@ for (my $x = 0; $x < $cnt; $x++ ) {
 
 $t2 = time() - $t1;
 diag sprintf "SPEED: %d raw lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
+
+# test speed  - cache raw
+$t1 = time();
+for (my $x = 0; $x < $cnt; $x++ ) {
+	my $y = $x % ($cnt / 8);
+	my $val = $lpm2->lookup_cache_raw($y * $y);
+}
+
+$t2 = time() - $t1;
+diag sprintf "SPEED: %d cache raw lookups (87%% hits) in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
