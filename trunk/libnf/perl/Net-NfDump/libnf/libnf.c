@@ -367,6 +367,7 @@ HV *res;
 
 
 /* converts master_record to perl structures (hashref) */
+/* TAG for check_items_map.pl: libnf_master_record_to_SV */
 SV * libnf_master_record_to_SV(master_record_t *rec, extension_map_t *map, int raw_data) {
 HV *res;
 int i=0;
@@ -456,6 +457,8 @@ int i=0;
 				HV_STORE_MV(res, NFL_IN_DST_MAC, (u_int8_t *)&rec->in_dst_mac);
 				break;
 			case EX_MPLS:
+				(void)hv_store(res, NFL_MPLS_LABEL, strlen(NFL_MPLS_LABEL), 
+						newSVpvn((char *)rec->mpls_label, sizeof(rec->mpls_label)), 0);
 				break;
 			case EX_ROUTER_IP_v4:
 			case EX_ROUTER_IP_v6:
@@ -919,6 +922,7 @@ begin:
 } /* end of _next fnction */
 
 
+/* TAG for check_items_map.pl: libnf_write_row */
 int libnf_write_row(int handle, int raw_data, HV * hashref) {
 master_record_t rec;
 libnf_instance_t *instance = libnf_instances[handle];
@@ -991,6 +995,8 @@ bit_array_t ext;
 					return 0;
 			}
 
+		// aggregated flows 
+		// EX_AGGR_FLOWS_4 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_AGGR_FLOWS) ) {
 			rec.aggr_flows = SvUV(sv);
 			bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
@@ -1008,6 +1014,7 @@ bit_array_t ext;
 			rec.dOctets = SvUV(sv);
 
 		// INPUT + OUTPUT interface 
+		// EX_IO_SNMP_2 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_INPUT) ) {
 			rec.input = SvUV(sv);
 			bit_array_set(&ext, EX_IO_SNMP_4, 1);
@@ -1016,6 +1023,7 @@ bit_array_t ext;
 			bit_array_set(&ext, EX_IO_SNMP_4, 1);
 
 		// AS numbers
+		// EX_AS_2 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_SRCAS) ) {
 			rec.srcas = SvUV(sv);
 			bit_array_set(&ext, EX_AS_4, 1);
@@ -1084,6 +1092,7 @@ bit_array_t ext;
 			bit_array_set(&ext, EX_VLAN, 1);
 
 		// OUTPUT CONTERS
+		// EX_OUT_PKG_4, EX_OUT_BYTES_4 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_OUT_PKTS)) {
 			rec.out_pkts = SvUV(sv);
 			bit_array_set(&ext, EX_OUT_PKG_8, 1);
@@ -1116,6 +1125,20 @@ bit_array_t ext;
 				return 0;
 			}
 			bit_array_set(&ext, EX_MAC_2, 1);
+
+
+		// MPLS LABELS
+		} else if ( CMP_STR(key, NFL_MPLS_LABEL)) {
+			STRLEN len;
+			char *s;
+			s = SvPV(sv, len);
+			if ( len != sizeof(rec.mpls_label) ) {
+				warn("%s size of %s field", NFL_LOG, NFL_MPLS_LABEL);
+				return 0;
+			}
+            memcpy(&rec.mpls_label, s, sizeof(rec.mpls_label));
+			bit_array_set(&ext, EX_MPLS, 1);
+
 
 		// ROUTER/EXPORTER INFORMATION
 		} else if ( CMP_STR(key, NFL_IP_ROUTER)) {

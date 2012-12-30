@@ -41,6 +41,7 @@
 #define NFL_OUT_SRC_MAC	"outsrcmac"
 #define NFL_IN_DST_MAC	"indstmac"
 #define NFL_OUT_DST_MAC	"outdstmac"
+#define NFL_MPLS_LABEL	"mplslabel"
 #define NFL_IP_ROUTER	"iprouter"
 #define NFL_ENGINE_TYPE	"enginetype"
 #define NFL_ENGINE_ID	"engineid"
