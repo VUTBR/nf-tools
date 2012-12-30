@@ -13,6 +13,7 @@ all :: static
 pure_all :: static
 static :: libnf$(LIB_EXT)
 libnf$(LIB_EXT): $(O_FILES) 
+		./check_items_map.pl 
 		$(AR) cr libnf$(LIB_EXT) $(O_FILES) ../nfdump/bin/*$(OBJ_EXT)
 		$(RANLIB) libnf$(LIB_EXT)
 ';
