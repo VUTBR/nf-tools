@@ -20,9 +20,9 @@
 
 /* names of attribudes used in result/input hash */
 #define NFL_FIRST	 	"first"			
-#define NFL_MSEC_FIRST 	"msec_first"
+#define NFL_MSEC_FIRST 	"msecfirst"
 #define NFL_LAST	 	"last"
-#define NFL_MSEC_LAST 	"msec_last"
+#define NFL_MSEC_LAST 	"mseclast"
 #define NFL_RECEIVED	"received"	// pod: Flow received time in ms
 
 #define NFL_DOCTETS		"bytes"

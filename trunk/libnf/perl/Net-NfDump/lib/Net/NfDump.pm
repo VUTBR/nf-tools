@@ -219,7 +219,7 @@ files have been read.
 
 =cut
 
-sub read {
+sub fetchrow_hashref {
 	my ($self) = @_;
 
 	if (!$self->{read_prepared}) {
@@ -234,6 +234,18 @@ sub read {
 	}
 
 	return $ret;
+}
+
+sub fetchrow_hashref {
+	my ($self) = @_;
+
+	croak("Not implemented yet. Reserver for future use.");
+}
+
+sub fetchrow_array {
+	my ($self) = @_;
+
+	croak("Not implemented yet. Reserver for future use.");
 }
 
 =head2 create_file
@@ -260,12 +272,12 @@ sub create {
 }
 
 
-=head2 insert
+=head2 storerow_hashref
 Insert data defined in hashref to the file opened by create. 
 
 =cut
 
-sub write {
+sub storerow_hashref {
 	my ($self, $row) = @_;
 
 	if (!$self->{write_prepared}) {
@@ -275,6 +287,19 @@ sub write {
 	# handle, row reference
 	return Net::NfDump::libnf_write_row($self->{handle}, $self->{opts}->{RawData}, $row);
 }
+
+sub storerow_arryref {
+	my ($self, $row) = @_;
+
+	croak("Not implemented yet. Reserver for future use.");
+}
+
+sub storerow_arry {
+	my ($self, $row) = @_;
+
+	croak("Not implemented yet. Reserver for future use.");
+}
+
 
 sub close {
 	my ($self) = @_;
