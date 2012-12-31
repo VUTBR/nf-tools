@@ -399,6 +399,7 @@ int i=0;
 
 	HV_STORE_NV(res, NFL_AGGR_FLOWS, rec->aggr_flows);
 	HV_STORE_NV(res, NFL_FWD_STATUS, rec->fwd_status);
+	HV_STORE_NV(res, NFL_TOS, rec->tos);
 
 //	String_DstAddr(rec, s);
 //	hv_store(res, "dstaddr", strlen("dstaddr"), newSVpvn(s, strlen(s)), 0);
@@ -980,7 +981,9 @@ bit_array_t ext;
 			rec.tcp_flags = SvUV(sv);
 		} else if ( CMP_STR(key, NFL_FWD_STATUS) ) {
 			rec.fwd_status = SvUV(sv);
-		
+		} else if ( CMP_STR(key, NFL_TOS) ) {
+			rec.tos = SvUV(sv);
+
 		// BASIC ITEMS SRC/DST ADDR/PORTS
 		} else if ( CMP_STR(key, NFL_SRCADDR)) {
 			int res = Sv_addr((ip_addr_t *)&rec.v6.srcaddr, sv, raw_data);
