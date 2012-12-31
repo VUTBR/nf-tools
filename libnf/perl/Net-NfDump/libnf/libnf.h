@@ -23,6 +23,7 @@
 #define NFL_MSEC_FIRST 	"msec_first"
 #define NFL_LAST	 	"last"
 #define NFL_MSEC_LAST 	"msec_last"
+#define NFL_RECEIVED	"received"	// pod: Flow received time in ms
 
 #define NFL_DOCTETS		"bytes"
 #define NFL_DPKTS		"pkts"		
@@ -63,11 +64,16 @@
 #define NFL_INPUT		"inif"		// pod: SNMP input interface number
 #define NFL_OUTPUT		"outif"		// pod: SNMP output interface number
 #define NFL_DIR			"dir"		// pod: Flow directions ingress/egress
+#define NFL_FWD_STATUS	"fwd"		// pod: Forwarding status
 
 #define NFL_IP_ROUTER	"router"	// pod: Exporting router IP
 #define NFL_ENGINE_TYPE	"systype"	// pod: Type of exporter
 #define NFL_ENGINE_ID	"sysid"		// pod: Internal SysID of exporter
 
+
+#define NFL_CLIENT_NW_DELAY_USEC	"clientdelay"	// pod: nprobe latency client_nw_delay_usec
+#define NFL_SERVER_NW_DELAY_USEC	"serverdelay"	// pod: nprobe latency server_nw_delay_usec
+#define NFL_APPL_LATENCY_USEC		"appllatency"	// pod: nprobe latency appl_latency_usec
 
 /* the maxumim naumber of instances (objects) that can be used in code */
 #define NFL_MAX_INSTANCES 512
