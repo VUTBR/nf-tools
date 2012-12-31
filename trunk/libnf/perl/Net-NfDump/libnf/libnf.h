@@ -1,55 +1,77 @@
 
+/* 
+* This .h file is also used to create some parts of libnf documentation 
+* the text after the macro pod: will be placed into separate file libnf.h.pod 
+* and then is included into basic libnf documentation 
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 
-/* multiple use of version for both perl and nfdump */
+
+/* multiple use of version for both perl and nfdump so we redefine it */
 #define NFL_VERSION VRESION
 #undef VERSION
 
+
+/* string prefix for error and warning outputs */
 #define NFL_LOG			"Net::NfDump: "
 
+
 /* names of attribudes used in result/input hash */
-#define NFL_FIRST	 	"first"
+#define NFL_FIRST	 	"first"			
 #define NFL_MSEC_FIRST 	"msec_first"
 #define NFL_LAST	 	"last"
 #define NFL_MSEC_LAST 	"msec_last"
-#define NFL_TCP_FLAGS	"tcp_flags"
-#define NFL_PROT	 	"protocol"
-#define NFL_SRCADDR 	"srcip"
-#define NFL_DSTADDR		"dstip"
-#define NFL_SRCPORT 	"srcport"
-#define NFL_DSTPORT 	"dstport"
-#define NFL_DPKTS		"pkts"
-#define NFL_DOCTETS		"bytes"
-#define NFL_AGGR_FLOWS	"flows"
-#define NFL_INPUT		"input"
-#define NFL_OUTPUT		"output"
-#define NFL_SRCAS		"srcas"
-#define NFL_DSTAS		"dstas"
-#define NFL_DST_TOS		"dsttos"
-#define NFL_DIR			"dir"
-#define NFL_SRC_MASK	"srcmask"
-#define NFL_DST_MASK	"dstmask"
-#define NFL_IP_NEXTHOP	"nexthop"
-#define NFL_BGP_NEXTHOP	"bgpnexthop"
-#define NFL_SRC_VLAN	"srcvlan"
-#define NFL_DST_VLAN	"dstvlan"
-#define NFL_OUT_PKTS	"outpkts"
-#define NFL_OUT_BYTES	"outbytes"
-#define NFL_IN_SRC_MAC	"insrcmac"
-#define NFL_OUT_SRC_MAC	"outsrcmac"
-#define NFL_IN_DST_MAC	"indstmac"
-#define NFL_OUT_DST_MAC	"outdstmac"
-#define NFL_MPLS_LABEL	"mplslabel"
-#define NFL_IP_ROUTER	"iprouter"
-#define NFL_ENGINE_TYPE	"enginetype"
-#define NFL_ENGINE_ID	"engineid"
 
-#define NFL_RAW			"_raw_"
+#define NFL_DOCTETS		"bytes"
+#define NFL_DPKTS		"pkts"		
+#define NFL_OUT_BYTES	"outbytes"
+#define NFL_OUT_PKTS	"outpkts"
+#define NFL_AGGR_FLOWS	"flows"
+
+#define NFL_SRCPORT 	"srcport"	// pod: Source port
+#define NFL_DSTPORT 	"dstport"	// pod: Destination port
+#define NFL_TCP_FLAGS	"tcpflags"	// pod: TCP flags 
+
+#define NFL_SRCADDR 	"srcip"		// pod: Source IP address
+#define NFL_DSTADDR		"dstip"		// pod: Destination IP address
+#define NFL_IP_NEXTHOP	"nexthop"	// pod: IP next hop
+#define NFL_SRC_MASK	"srcmask"	// pod: Source mask
+#define NFL_DST_MASK	"dstmask"	// pod: Destination mask
+#define NFL_TOS			"tos"		// pod: Source type of service
+#define NFL_DST_TOS		"dsttos"	// pod: Destination type of Service
+
+#define NFL_SRCAS		"srcas"		// pod: Source AS number
+#define NFL_DSTAS		"dstas"		// pod: Destination AS number
+#define NFL_BGPNEXTADJACENTAS	"nextas"	// pod: BGP Next AS
+#define NFL_BGPPREVADJACENTAS	"prevas"	// pod: BGP Previous AS
+#define NFL_BGP_NEXTHOP	"bgpnexthop"		// pod: BGP next hop
+
+#define NFL_PROT	 	"proto"		// pod: IP protocol 
+
+
+#define NFL_SRC_VLAN	"srcvlan"	// pod: Source vlan label
+#define NFL_DST_VLAN	"dstvlan"	// pod: Destination vlan label
+#define NFL_IN_SRC_MAC	"insrcmac"	// pod: In source MAC address
+#define NFL_OUT_SRC_MAC	"outsrcmac"	// pod: Out destination MAC address
+#define NFL_IN_DST_MAC	"indstmac"	// pod: In destintation MAC address
+#define NFL_OUT_DST_MAC	"outdstmac"	// pod: Out source MAC address
+
+#define NFL_MPLS_LABEL	"mpls"		// pod: MPLS label
+
+#define NFL_INPUT		"inif"		// pod: SNMP input interface number
+#define NFL_OUTPUT		"outif"		// pod: SNMP output interface number
+#define NFL_DIR			"dir"		// pod: Flow directions ingress/egress
+
+#define NFL_IP_ROUTER	"router"	// pod: Exporting router IP
+#define NFL_ENGINE_TYPE	"systype"	// pod: Type of exporter
+#define NFL_ENGINE_ID	"sysid"		// pod: Internal SysID of exporter
+
 
 /* the maxumim naumber of instances (objects) that can be used in code */
 #define NFL_MAX_INSTANCES 512
+
 
 /* return eroror codes */
 #define NFL_NO_FREE_INSTANCES -1;
@@ -58,6 +80,7 @@
 #define NF_OK      1
 
 
+/* function prototypes */
 SV * libnf_file_info(char *file);
 SV * libnf_instance_info(int handle);
 int libnf_init(void);
