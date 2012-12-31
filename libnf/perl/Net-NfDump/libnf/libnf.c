@@ -468,7 +468,15 @@ int i=0;
 				HV_STORE_NV(res, NFL_ENGINE_TYPE, rec->engine_type);
 				HV_STORE_NV(res, NFL_ENGINE_ID, rec->engine_id);
 				break;
-
+			case EX_BGPADJ:
+				HV_STORE_NV(res, NFL_BGPNEXTADJACENTAS, rec->bgpNextAdjacentAS);
+				HV_STORE_NV(res, NFL_BGPPREVADJACENTAS, rec->bgpPrevAdjacentAS);
+				break;
+			case EX_LATENCY:
+				HV_STORE_NV(res, NFL_CLIENT_NW_DELAY_USEC, rec->client_nw_delay_usec);
+				HV_STORE_NV(res, NFL_SERVER_NW_DELAY_USEC, rec->server_nw_delay_usec);
+				HV_STORE_NV(res, NFL_APPL_LATENCY_USEC, rec->appl_latency_usec);
+				break;
 		}
 //			printf("  %d Index %3i, ext %3u = %s\n", i, extension_descriptor[id].user_index, id, extension_descriptor[id].description );
 	}
@@ -1031,6 +1039,14 @@ bit_array_t ext;
 			rec.dstas = SvUV(sv);
 			bit_array_set(&ext, EX_AS_4, 1);
 
+		// bgp AdjacentAS, EX_BGPADJ
+		} else if ( CMP_STR(key, NFL_BGPNEXTADJACENTAS) ) {
+			rec.bgpNextAdjacentAS = SvUV(sv);
+			bit_array_set(&ext, EX_BGPADJ, 1);
+		} else if ( CMP_STR(key, NFL_BGPPREVADJACENTAS) ) {
+			rec.bgpPrevAdjacentAS = SvUV(sv);
+			bit_array_set(&ext, EX_BGPADJ, 1);
+
 		// DST TOS, DIRECTION, MASKS
 		} else if ( CMP_STR(key, NFL_DST_TOS) ) {
 			rec.dst_tos = SvUV(sv);
@@ -1164,7 +1180,20 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_ENGINE_ID) ) {
 			rec.engine_id = SvUV(sv);
 			bit_array_set(&ext, EX_ROUTER_ID, 1);
+		 
+
+		// nprobe extensions
+		} else if ( CMP_STR(key, NFL_CLIENT_NW_DELAY_USEC) ) {
+			rec.client_nw_delay_usec = SvUV(sv);
+			bit_array_set(&ext, EX_LATENCY, 1);
+		} else if ( CMP_STR(key, NFL_SERVER_NW_DELAY_USEC) ) {
+			rec.server_nw_delay_usec = SvUV(sv);
+			bit_array_set(&ext, EX_LATENCY, 1);
+		} else if ( CMP_STR(key, NFL_APPL_LATENCY_USEC) ) {
+			rec.appl_latency_usec = SvUV(sv);
+			bit_array_set(&ext, EX_LATENCY, 1);
 		} 
+
 		else {	
 			warn("%s invalid item %s", NFL_LOG, key);
 			return 0;
