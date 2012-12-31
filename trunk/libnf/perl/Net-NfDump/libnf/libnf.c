@@ -398,6 +398,7 @@ int i=0;
 	HV_STORE_NV(res, NFL_DOCTETS, rec->dOctets);
 
 	HV_STORE_NV(res, NFL_AGGR_FLOWS, rec->aggr_flows);
+	HV_STORE_NV(res, NFL_FWD_STATUS, rec->fwd_status);
 
 //	String_DstAddr(rec, s);
 //	hv_store(res, "dstaddr", strlen("dstaddr"), newSVpvn(s, strlen(s)), 0);
@@ -477,6 +478,9 @@ int i=0;
 				HV_STORE_NV(res, NFL_SERVER_NW_DELAY_USEC, rec->server_nw_delay_usec);
 				HV_STORE_NV(res, NFL_APPL_LATENCY_USEC, rec->appl_latency_usec);
 				break;
+			case EX_RECEIVED:
+				HV_STORE_NV(res, NFL_RECEIVED, rec->received);
+
 		}
 //			printf("  %d Index %3i, ext %3u = %s\n", i, extension_descriptor[id].user_index, id, extension_descriptor[id].description );
 	}
@@ -969,11 +973,13 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_MSEC_LAST)) {
 			rec.msec_last = SvUV(sv);
  
-		// preotocol + tcp_flags
+		// preotocol + tcp_flags + fwd_status 
 		} else if ( CMP_STR(key, NFL_PROT)) {
 			rec.prot = SvUV(sv);
 		} else if ( CMP_STR(key, NFL_TCP_FLAGS) ) {
 			rec.tcp_flags = SvUV(sv);
+		} else if ( CMP_STR(key, NFL_FWD_STATUS) ) {
+			rec.fwd_status = SvUV(sv);
 		
 		// BASIC ITEMS SRC/DST ADDR/PORTS
 		} else if ( CMP_STR(key, NFL_SRCADDR)) {
@@ -1192,8 +1198,12 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_APPL_LATENCY_USEC) ) {
 			rec.appl_latency_usec = SvUV(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
-		} 
 
+		// EX_RECEIVED
+		} else if ( CMP_STR(key, NFL_RECEIVED) ) {
+			rec.received = SvUV(sv);
+			bit_array_set(&ext, EX_RECEIVED, 1);
+		} 
 		else {	
 			warn("%s invalid item %s", NFL_LOG, key);
 			return 0;

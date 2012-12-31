@@ -200,13 +200,14 @@ if (!$invalid) {
 
 # checking fields from master record
 printf "\nMissing definitionin libnf for following fields:\n";
-printf "EXT_NAME              | read | write | data type\n";
+printf "FIELD NAME            | read | write | data type\n";
 printf "----------------------+------+-------+------------\n";
 foreach (@MASTER_RECORD) {
 
 	# skip type and size records
 	next if ($_->{'name'} =~ /type|size/); 
 	next if ($_->{'name'} =~ /u\d{2}_\d/);
+	next if ($_->{'name'} =~ /exporter_sysid/); 
 
 	my $read = str_count($LIBNF_C_FUNC{'libnf_master_record_to_SV'}, $_->{'name'}); 
 	my $write = str_count($LIBNF_C_FUNC{'libnf_write_row'}, $_->{'name'}); 
@@ -218,7 +219,7 @@ foreach (@MASTER_RECORD) {
 }
 
 if (!$invalid) {
-	printf "All extensions are defined for both read and write function.\n";
+	printf "All fields are processed in both read and write function.\n";
 }
 
 exit $invalid;
