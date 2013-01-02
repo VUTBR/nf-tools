@@ -19,5 +19,8 @@ libnf/libnf.c
 libnf/libnf.h  
 libnf/Makefile.PL
 libnf/bit_array.h
+libnf/check_items_map.pl
+libnf/h2pod.pl
+libnf/mergechapter.pl
 examples/example3.pl
 
