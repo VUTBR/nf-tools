@@ -19,6 +19,9 @@
 
 
 /* names of attribudes used in result/input hash */
+// pod:=head1 SUPPORTED ITEMS 
+// pod:
+//
 #define NFL_FIRST	 	"first"			
 #define NFL_MSEC_FIRST 	"msecfirst"
 #define NFL_LAST	 	"last"
