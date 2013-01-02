@@ -333,6 +333,42 @@ TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04'
 ORDER BY bytes
 LIMIT 100
 
+=head1 SUPPORTED ITEMS 
+
+ Flow received time in ms
+=item srcport Source port
+ Destination port
+ TCP flags 
+ Source IP address
+ Destination IP address
+ IP next hop
+ Source mask
+ Destination mask
+ Source type of service
+ Destination type of Service
+ Source AS number
+ Destination AS number
+ BGP Next AS
+ BGP Previous AS
+ BGP next hop
+ IP protocol 
+ Source vlan label
+ Destination vlan label
+ In source MAC address
+ Out destination MAC address
+ In destintation MAC address
+ Out source MAC address
+ MPLS label
+ SNMP input interface number
+ SNMP output interface number
+ Flow directions ingress/egress
+ Forwarding status
+ Exporting router IP
+ Type of exporter
+ Internal SysID of exporter
+ nprobe latency client_nw_delay_usec
+ nprobe latency server_nw_delay_usec
+ nprobe latency appl_latency_usec
 =head1 SEE ALSO
 
 Mention other useful documentation such as the documentation of
