@@ -1,7 +1,7 @@
 
 /* 
 * This .h file is also used to create some parts of libnf documentation 
-* the text after the macro pod: will be placed into separate file libnf.h.pod 
+* the text after the macro pod<double dot> will be placed into separate file libnf.h.pod 
 * and then is included into basic libnf documentation 
 */
 
@@ -31,7 +31,7 @@
 #define NFL_OUT_PKTS	"outpkts"
 #define NFL_AGGR_FLOWS	"flows"
 
-#define NFL_SRCPORT 	"srcport"	// pod: Source port
+#define NFL_SRCPORT 	"srcport"	// pod:=item ## Source port
 #define NFL_DSTPORT 	"dstport"	// pod: Destination port
 #define NFL_TCP_FLAGS	"tcpflags"	// pod: TCP flags 
 
