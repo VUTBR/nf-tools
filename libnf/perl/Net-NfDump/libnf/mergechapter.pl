@@ -26,8 +26,10 @@ while (<STDIN>) {
 
 foreach (@CHAPTERS_ORDER) {
 
-	print $CHAPTERS_CONTENT{$_};
-	delete($CHAPTERS_CONTENT{$_});
+	if (defined($CHAPTERS_CONTENT{$_})) {
+		print $CHAPTERS_CONTENT{$_};
+		delete($CHAPTERS_CONTENT{$_});
+	}
 
 }
 
