@@ -7,6 +7,8 @@ use Carp;
 
 require Exporter;
 use AutoLoader;
+use Socket qw( AF_INET );
+use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 
 our @ISA = qw(Exporter);
 
@@ -18,7 +20,9 @@ our @ISA = qw(Exporter);
 # If you do not need this, moving things directly into @EXPORT or @EXPORT_OK
 # will save memory.
 our %EXPORT_TAGS = ( 'all' => [ qw(
-	
+	ip2txt txt2ip 
+	mac2txt txt2mac
+	mpls2txt txt2mpls
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -236,7 +240,7 @@ sub fetchrow_hashref {
 	return $ret;
 }
 
-sub fetchrow_hashref {
+sub fetchrow_arrayref {
 	my ($self) = @_;
 
 	croak("Not implemented yet. Reserver for future use.");
@@ -333,6 +337,154 @@ TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04'
 ORDER BY bytes
 LIMIT 100
 
+=head1 EXTRA CONVERTION FUNCTIONS 
+The module also provides extra convertion functions that allow convert binnary format 
+of IP address, MAC address and MPLS labels tag into text format and back. 
+
+Those functions are not exported by default 
+
+=head2 ip2txt 
+Converts both IPv4 and IPv6 address into text form. The standart inet_ntop function 
+can be used instead to provide same results. 
+
+=cut 
+
+sub ip2txt ($) {
+	my ($addr) = @_;
+
+	my $type;
+
+	if (length($addr) == 4) {
+		$type = AF_INET;
+	} elsif (length($addr) == 16) {
+		$type = AF_INET6;
+	} else {
+		warn("Invalid IP address length in binnary representation");
+		return undef;
+	}
+
+	return inet_ntop($type, $addr);
+}
+
+=pod
+
+=head2 txt2ip 
+Inversion fuction to ip2txt. Returns binnary format of IP addres or undef 
+if the conversion is impossible. 
+
+=cut 
+
+sub txt2ip ($) {
+	my ($addr) = @_;
+	my $type;
+
+	if (index($addr, ':') != -1) {
+		$type = AF_INET6;
+	} else {
+		$type = AF_INET;
+	}
+
+    return inet_pton($type, $addr);
+}
+
+=pod
+
+=head2 mac2txt 
+Converts MAC addres to xx:yy:xx:yy:xx:yy format. 
+
+=cut 
+
+sub mac2txt ($) {
+	my ($addr) = @_;
+
+	if (length($addr) != 6) {
+		warn("Invalid MAC address length in binnary representation");
+		return undef;
+	}
+
+	return sprintf("%s%s:%s%s:%s%s:%s%s:%s%s:%s%s", split('',unpack("H12", $addr)));
+}
+
+=pod
+
+=head2 txt2mac 
+Inversion fuction to mac2txt. Accept address in any of following format 
+aabbccddeeff
+aa:bb:cc:dd:ee:ff
+aa-bb-cc-dd-ee-ff
+aabb-ccdd-eeff
+
+Return the binnary format of the address or undef if confersion is impossible. 
+
+=cut 
+
+sub txt2mac ($) {
+	my ($addr) = @_;
+
+	$addr =~ s/[\-|\:]//g;
+
+	if (length($addr) != 12) {
+		return undef;
+	}
+
+	return pack('H12', $addr);
+}
+
+=pod
+
+=head2 mpls2txt 
+Converts label information to format B<Lbl-Exp-S>
+
+Whwre 
+Lbl - Value given to the MPLS label by the router. 
+Exp - Value of experimental bit. 
+S - Value of the end-of-stack bit: Set to 1 for the oldest entry in the stack and to zero for all other entries. 
+
+=cut 
+
+sub mpls2txt ($) {
+	my ($addr) = @_;
+
+	my @res;
+
+	foreach (unpack('I*', $addr)) {
+
+		my $lbl = $_ >> 12;
+		my $exp = ($_ >> 9 ) & 0x7;
+		my $eos = ($_ >> 8 ) & 0x1;
+
+		push(@res, sprintf "%d-%d-%d", $lbl, $exp, $eos);
+	}
+
+	return  join(' ', @res);
+}
+
+=pod
+
+=head2 txt2mpls
+Inversion function to mpls2txt. As the argiment expects the text representaion 
+of the MPLS labels as was described in the previous function (B<Lbl-Exp-S>)
+
+=cut 
+
+sub txt2mpls ($) {
+	my ($addr) = @_;
+	my $res =  "";
+
+	my @labels = split(/\s+/, $addr); 
+
+	foreach (@labels) {
+		my ($lbl, $exp, $eos) = split(/\-/);
+
+		my $label = ($lbl << 12) | ( $exp << 9 ) | ($eos << 8 ); 
+		
+		$res .= pack("I", $label);	
+	}
+
+	return  $res;
+}
+
+=pod 
 =head1 SUPPORTED ITEMS 
 
  Flow received time in ms
