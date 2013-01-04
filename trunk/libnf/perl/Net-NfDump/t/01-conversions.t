@@ -1,5 +1,5 @@
 
-use Test::More tests => 6;
+use Test::More;
 use Net::NfDump qw ':all';
 
 my $ip = '147.229.3.10';
@@ -35,4 +35,6 @@ my $rec = { 'srcip' => '147.229.3.10',
 
 my $rec_bin = txt2row($rec);
 ok( eq_hash($rec, row2txt($rec_bin)) );
-			
+		
+
+done_testing()	

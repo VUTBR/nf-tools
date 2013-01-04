@@ -93,10 +93,10 @@
 SV * libnf_file_info(char *file);
 SV * libnf_instance_info(int handle);
 int libnf_init(void);
-int libnf_read_files(int handle, char *filter, int window_start, int window_end, int raw_data, SV *files);
+int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
 SV * libnf_read_row(int handle);
-int libnf_write_row(int handle, int raw_data, HV * hashref);
+int libnf_write_row(int handle, HV * hashref);
 void libnf_finish(int handle);
 
 

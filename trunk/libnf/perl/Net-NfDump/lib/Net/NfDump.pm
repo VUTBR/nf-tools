@@ -134,7 +134,6 @@ sub new {
 		OutputFile => undef,
 		Compressed => 1,
 		Anonymized => 0,
-		RawData => 0,
 		Ident => ""
 	};
 
@@ -206,7 +205,6 @@ sub query {
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
 					$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
-					$o->{RawData}, 
 					$o->{InputFiles});	
 
 	$self->{read_prepared} = 1;
@@ -290,7 +288,7 @@ sub storerow_hashref {
 	}
 	
 	# handle, row reference
-	return Net::NfDump::libnf_write_row($self->{handle}, $self->{opts}->{RawData}, $row);
+	return Net::NfDump::libnf_write_row($self->{handle}, $row);
 }
 
 sub storerow_arryref {
@@ -299,14 +297,21 @@ sub storerow_arryref {
 	croak("Not implemented yet. Reserver for future use.");
 }
 
-sub storerow_arry {
+sub storerow_array {
 	my ($self, $row) = @_;
 
 	croak("Not implemented yet. Reserver for future use.");
 }
 
+=head2 finish
+Closes all openes file handles. It is nescessary to call that method specilly 
+when a new file is created. The method flushes to file records that remains in the memory 
+buffer and updates file statistics in the header. Withat calling this method the 
+output file might be corupted. 
 
-sub close {
+=cut
+
+sub finish {
 	my ($self) = @_;
 
 	# handle, row reference
@@ -473,7 +478,7 @@ sub mpls2txt ($) {
 		my $exp = ($_ >> 9 ) & 0x7;
 		my $eos = ($_ >> 8 ) & 0x1;
 
-		push(@res, sprintf "%d-%d-%d", $lbl, $exp, $eos);
+		push(@res, sprintf "%d-%d-%d", $lbl, $exp, $eos) if ($_ != 0);
 	}
 
 	return  join(' ', @res);
@@ -506,6 +511,8 @@ sub txt2mpls ($) {
 		$res .= pack("I", $label);	
 	}
 
+
+	$res .= pack("I", 0x0) x (10 - length($res) / 4);	# alogn to 10 items (4 * 10 Bytes) 
 	return  $res;
 }
 
