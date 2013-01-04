@@ -23,6 +23,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 	ip2txt txt2ip 
 	mac2txt txt2mac
 	mpls2txt txt2mpls
+	row2txt txt2row 
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -352,6 +353,10 @@ can be used instead to provide same results.
 sub ip2txt ($) {
 	my ($addr) = @_;
 
+	if (!defined($addr)) {
+		return undef;
+	}
+
 	my $type;
 
 	if (length($addr) == 4) {
@@ -359,7 +364,7 @@ sub ip2txt ($) {
 	} elsif (length($addr) == 16) {
 		$type = AF_INET6;
 	} else {
-		warn("Invalid IP address length in binnary representation");
+		carp("Invalid IP address length in binnary representation");
 		return undef;
 	}
 
@@ -377,6 +382,10 @@ if the conversion is impossible.
 sub txt2ip ($) {
 	my ($addr) = @_;
 	my $type;
+
+	if (!defined($addr)) {
+		return undef;
+	}
 
 	if (index($addr, ':') != -1) {
 		$type = AF_INET6;
@@ -397,8 +406,12 @@ Converts MAC addres to xx:yy:xx:yy:xx:yy format.
 sub mac2txt ($) {
 	my ($addr) = @_;
 
+	if (!defined($addr)) {
+		return undef;
+	}
+
 	if (length($addr) != 6) {
-		warn("Invalid MAC address length in binnary representation");
+		carp("Invalid MAC address length in binnary representation");
 		return undef;
 	}
 
@@ -420,6 +433,10 @@ Return the binnary format of the address or undef if confersion is impossible.
 
 sub txt2mac ($) {
 	my ($addr) = @_;
+
+	if (!defined($addr)) {
+		return undef;
+	}
 
 	$addr =~ s/[\-|\:]//g;
 
@@ -445,6 +462,9 @@ S - Value of the end-of-stack bit: Set to 1 for the oldest entry in the stack an
 sub mpls2txt ($) {
 	my ($addr) = @_;
 
+	if (!defined($addr)) {
+		return undef;
+	}
 	my @res;
 
 	foreach (unpack('I*', $addr)) {
@@ -469,6 +489,11 @@ of the MPLS labels as was described in the previous function (B<Lbl-Exp-S>)
 
 sub txt2mpls ($) {
 	my ($addr) = @_;
+
+	if (!defined($addr)) {
+		return undef;
+	}
+
 	my $res =  "";
 
 	my @labels = split(/\s+/, $addr); 
@@ -482,6 +507,80 @@ sub txt2mpls ($) {
 	}
 
 	return  $res;
+}
+
+=pod
+
+=head2 row2txt
+Gets hash reference to items returned by fetchrow_hashref and converts all items into
+human readable text format. Applies finction ip2txt, mac2txt, mpl2txt to the items 
+where it make sense. 
+
+=cut 
+
+# how to convert particular type to 
+my %CVTTYPE = ( 
+	'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
+	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
+	'mpls' => 'mpls' );
+	
+
+sub row2txt ($) {
+	my ($row) = @_;
+	my %res;
+	
+	while ( my ($key, $val) = each %{$row}) {
+
+		if ( defined($CVTTYPE{$key}) ) { 
+			my $cvt = $CVTTYPE{$key};
+			if ($cvt eq 'ip') {
+				$res{$key} = ip2txt($val);
+			} elsif ($cvt eq 'mac') {
+				$res{$key} = mac2txt($val);
+			} elsif ($cvt eq 'mpls') {
+				$res{$key} = mpls2txt($val);
+			} else {
+				croak("Invalid conversion type $cvt");
+			}
+		} else {
+			$res{$key} = $val;
+		}
+	}
+
+	return \%res;	
+}
+
+=pod
+
+=head2 txt2row
+Inversion function to row2txt. It is usefull before calling storerow_hashref
+
+=cut 
+
+
+sub txt2row ($) {
+	my ($row) = @_;
+	my %res;
+	
+	while ( my ($key, $val) = each %{$row}) {
+
+		if ( defined($CVTTYPE{$key}) ) { 
+			my $cvt = $CVTTYPE{$key};
+			if ($cvt eq 'ip') {
+				$res{$key} = txt2ip($val);
+			} elsif ($cvt eq 'mac') {
+				$res{$key} = txt2mac($val);
+			} elsif ($cvt eq 'mpls') {
+				$res{$key} = txt2mpls($val);
+			} else {
+				croak("Invalid conversion type $cvt");
+			}
+		} else {
+			$res{$key} = $val;
+		}
+	}
+
+	return \%res;	
 }
 
 =pod 
