@@ -102,7 +102,7 @@ diag "";
 diag "Testing performance, it will take while...";
 my $recs = 1000000;
 
-my $rec = $DS{'v4_raw'} ;
+my $rec = $DS{'v6_raw'} ;
 my $flow = new Net::NfDump(OutputFile => "t/v6_rec.tmp" );
 my $tm1 = time();
 for (my $x = 0 ; $x < $recs; $x++) {
