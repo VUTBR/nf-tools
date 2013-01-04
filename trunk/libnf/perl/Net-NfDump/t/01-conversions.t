@@ -1,6 +1,6 @@
 
-use Test::More tests => 5;
-use Net::NfDump qw 'ip2txt txt2ip mac2txt txt2mac mpls2txt txt2mpls';
+use Test::More tests => 6;
+use Net::NfDump qw ':all';
 
 my $ip = '147.229.3.10';
 my $ip6 = '2001:67c:1220:f565::93e5:f0fb';
@@ -24,5 +24,15 @@ ok ( $mpls1 eq mpls2txt($mpls1_bin) );
 my $mpls2_bin = txt2mpls($mpls2);
 ok ( $mpls2 eq mpls2txt($mpls2_bin) );
 
-# testing v4
-#	ok( eq_hash(\%rec_v4, $ref) );
+my $rec = { 'srcip' => '147.229.3.10',
+			'dstip' => '147.229.3.20',
+			'router' => '2001:67c:1220:f565::93e5:f0fb',
+			'insrcmac' => '00:50:56:ac:60:4e',
+			'outdstmac' => '00:50:56:ac:60:4f',
+			'mpls' => '126-6-0 127-6-0 128-6-0 129-6-0 130-6-0 131-6-1',
+			'inif' => '10',
+			'outif' => '11' };
+
+my $rec_bin = txt2row($rec);
+ok( eq_hash($rec, row2txt($rec_bin)) );
+			
