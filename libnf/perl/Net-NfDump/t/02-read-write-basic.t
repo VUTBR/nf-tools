@@ -1,16 +1,37 @@
 
-#use Test::More tests => 2;
-use Test::More;
+use Test::More tests => 4;
 use Net::NfDump qw ':all';
 
+open(STDOUT, ">&STDERR");
+
 my %DS;		# data sets
+
+$DS{'v4_basic_txt'} = {
+	'first' => '1355439616',
+	'msecfirst' => '747',
+	'last' => '1355439616',
+	'mseclast' => '748',
+	
+	'bytes' => '291',
+	'pkts' => '5',
+
+	'srcport' => '53008',
+	'dstport' => '10050',
+	'tcpflags' => '27',
+
+	'srcip' => '147.229.3.135',
+	'dstip' => '10.255.5.6',
+	'nexthop' => '10.255.5.1',
+
+	'proto' => '6',
+};
 
 $DS{'v4_txt'} = {
 	'first' => '1355439616',
 	'msecfirst' => '747',
 	'last' => '1355439616',
 	'mseclast' => '748',
-	'received' => '1355439617',
+	'received' => '22341355439617',
 	
 	'bytes' => '291',
 	'pkts' => '5',
@@ -56,6 +77,10 @@ $DS{'v4_txt'} = {
    	'sysid' => '0',
    	'systype' => '0',
 
+#	'clientdelay' => '100', 
+#	'serverdelay' => '200',
+#	'appllatency' => '300'
+
 };
 
 # prepare v6 structure - same as V4 but address changed to v6
@@ -67,6 +92,7 @@ $DS{'v6_txt'}->{'bgpnexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'router'} ='2001:67c:1220:f565::10';
 
 $DS{'v4_raw'} = txt2row( $DS{'v4_txt'} );
+$DS{'v4_basic_raw'} = txt2row( $DS{'v4_basic_txt'} );
 $DS{'v6_raw'} = txt2row( $DS{'v6_txt'} );
 
 
@@ -95,22 +121,38 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 	ok( eq_hash( $DS{'v6_txt'}, row2txt($row)) );
 }
 
-done_testing();
-
 # testing performance 
 diag "";
 diag "Testing performance, it will take while...";
 my $recs = 1000000;
 
-my $rec = $DS{'v6_raw'} ;
-my $flow = new Net::NfDump(OutputFile => "t/v6_rec.tmp" );
-my $tm1 = time();
-for (my $x = 0 ; $x < $recs; $x++) {
-	$flow->storerow_hashref( $rec );
+my %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
+
+while (my ($key, $val) = each %tests ) {
+	my $rec = $DS{$key} ;
+	my $flow = new Net::NfDump(OutputFile => "t/flow_$key.tmp" );
+	my $tm1 = time();
+	for (my $x = 0 ; $x < $recs; $x++) {
+		$flow->storerow_hashref( $rec );
+	}
+	$flow->finish();
+
+	my $tm2 = time() - $tm1;
+	diag sprintf("Write performance %s, written %d recs in %d secs (%.3f/sec)", $val, $recs, $tm2, $recs/$tm2);
 }
-$flow->finish();
 
-my $tm2 = time() - $tm1;
-diag sprintf("PERFORMACE v6, written %d recs in %d secs (%.3f/sec)", $recs, $tm2, $recs/$tm2);
 
+while (my ($key, $val) = each %tests ) {
+	my $flow = new Net::NfDump(InputFiles => [ "t/flow_$key.tmp" ] );
+	my $tm1 = time();
+	my $cnt = 0;
+	$flow->query();
+	while ( $row = $flow->fetchrow_hashref() )  {
+		$cnt++ if ($row);
+	}
+	$flow->finish();
+
+	my $tm2 = time() - $tm1;
+	diag sprintf("Read performance %s, written %d recs in %d secs (%.3f/sec)", $val, $cnt, $tm2, $recs/$tm2);
+}
 
