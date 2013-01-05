@@ -197,7 +197,6 @@ char s[IP_STRING_LEN];
 void static inline HV_STORE_MV(HV *r,char *k, uint8_t *a) {
 char s[MAX_STRING_LENGTH];
 int i;
-uint8_t mac[6];
 
 	s[0] = 0;
 
@@ -505,7 +504,7 @@ int i, is_set, id, map_id;
 
 	map_list->map = map;
 	map_list->next = NULL;
-	bit_array_init(&map_list->bit_array, instance->max_num_extensions);
+	bit_array_init(&map_list->bit_array, instance->max_num_extensions + 1);
 	bit_array_copy(&map_list->bit_array, ext);
 
 	map->type   = ExtensionMapType;
@@ -535,10 +534,6 @@ int i, is_set, id, map_id;
 		map->extension_size += extension_descriptor[id].size;
 		i++;
 	}
-
-
-	//VerifyExtensionMap(map);
-	//PrintExtensionMap(map);
 
 	Insert_Extension_Map(&instance->extension_map_list, map); 
 //	PackExtensionMapList(&instance->extension_map_list);
@@ -592,6 +587,8 @@ int i;
 	instance->max_num_extensions = 0;
 	while ( extension_descriptor[i++].id )
 		instance->max_num_extensions++;
+
+
 
 	//SetupInputFileSequence(NULL, "/root/src/nfdump/Net-NfDump/t/data/dump1.nfcap", NULL);
 //	SetupInputFileSequence(NULL, "/root/src/nfdump/Net-NfDump/t/data/dump2.nfcap", NULL);
@@ -903,6 +900,15 @@ begin:
 	// Advance pointer by number of bytes for netflow record
 	instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 
+/*
+	{
+		char *s;
+		PrintExtensionMap(instance->extension_map_list.slot[map_id]->map);
+		format_file_block_record(master_record, &s, 0);
+		printf("READ: %s\n", s);
+	}
+*/
+
 	/* the record seems OK. We prepare hash reference with items */
 	return libnf_master_record_to_SV(master_record, instance->extension_map_list.slot[map_id]->map); 
 
@@ -933,7 +939,7 @@ bit_array_t ext;
 
 	// detect the maximum number of extensions 
 		
-	bit_array_init(&ext, instance->max_num_extensions);
+	bit_array_init(&ext, instance->max_num_extensions + 1);
 	/* go through handled hashref and enable extensions according the key values */	
 	while ( (sv = hv_iternextsv(hashref, &key, (I32*) &len)) != NULL ) {
 //		fprintf(stderr, "%s : %s\n", key, SvPV(sv, len));
@@ -969,7 +975,7 @@ bit_array_t ext;
 					SetFlag(rec.flags, FLAG_IPV6_ADDR);
 					break;
 				default: 
-					warn("%s invalid value for %s (%s)", NFL_LOG, NFL_SRCADDR);
+					warn("%s invalid value for %s", NFL_LOG, NFL_SRCADDR);
 					return 0;
 			}
 		} else if ( CMP_STR(key, NFL_DSTADDR)) {
@@ -1132,7 +1138,7 @@ bit_array_t ext;
 			char *s;
 			s = SvPV(sv, len);
 			if ( len != sizeof(rec.mpls_label) ) {
-				warn("%s Invalid size of %s field (size: %d, expected: %d)", NFL_LOG, 
+				warn("%s Invalid size of %s field (size: %lu, expected: %lu)", NFL_LOG, 
 								NFL_MPLS_LABEL, len, sizeof(rec.mpls_label));
 				return 0;
 			}
@@ -1167,6 +1173,9 @@ bit_array_t ext;
 		 
 
 		// nprobe extensions
+		/* neot enabled yet because PackRecord function doesn't contain 
+ 		* the code for EX_LATENCY. The issue was send to P. Haah
+ 		* so the future version might solvethe problem 
 		} else if ( CMP_STR(key, NFL_CLIENT_NW_DELAY_USEC) ) {
 			rec.client_nw_delay_usec = SvUV(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
@@ -1176,6 +1185,7 @@ bit_array_t ext;
 		} else if ( CMP_STR(key, NFL_APPL_LATENCY_USEC) ) {
 			rec.appl_latency_usec = SvUV(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
+		*/
 
 		// EX_RECEIVED
 		} else if ( CMP_STR(key, NFL_RECEIVED) ) {
@@ -1193,6 +1203,16 @@ bit_array_t ext;
 	rec.map_ref = map;
 	rec.ext_map = map->map_id;
 	rec.type = CommonRecordType;
+
+/*
+	{
+		char *s;
+		PrintExtensionMap(map);
+		VerifyExtensionMap(map);
+		format_file_block_record(&rec, &s, 0);
+		printf("WRITE: %s\n", s);
+	}
+*/
 
 	UpdateStat(instance->nffile_w->stat_record, &rec);
 
