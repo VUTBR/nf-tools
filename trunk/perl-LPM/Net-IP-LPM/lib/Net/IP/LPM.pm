@@ -1,6 +1,6 @@
 package Net::IP::LPM;
 
-use 5.010001;
+#use 5.010001;
 use strict;
 use warnings;
 use Carp;
@@ -38,7 +38,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.01';
+our $VERSION = '0.01_01';
 
 
 # Preloaded methods go here.
@@ -49,7 +49,7 @@ our $VERSION = '0.01';
 
 =head1 NAME
 
-Net::IP::LPM - Perl implementation of Longest Prefix Match 
+Net::IP::LPM - Perl implementation of Longest Prefix Match algorithm
 
 =head1 SYNOPSIS
 
@@ -80,14 +80,15 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match
 =head1 DESCRIPTION
 
 The module Net::IP::LPM implements the Longest Prefix Matxh algo 
-for bosth IPv4 and IPv6 protocols. Module divides prefixes into 
+for both IPv4 and IPv6 protocols. Module divides prefixes into 
 intervals of numbers and them uses range search to match proper 
 prefix. 
 
 
 Module also allows to store builded database into file. It is usefull 
 when the module is used on large database (for example full BGP tables 
-containing over half of milion records). The separate script can  
+containing over half of milion records) when initial building can take 
+long time (a few seconds). The separate script can  
 download and prepare prebuilded database and another one can just use
 the prepared database and perform fast lookups. 
 
@@ -95,18 +96,20 @@ the prepared database and perform fast lookups.
 
 The module is able to match  ~ 180 000 lookups (or 300 000 with cache enables) 
 per second on complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
-hardware (2.4GHz Xeon CPU)
+hardware (2.4GHz Xeon CPU). For more detail you can try make test on module source
+to check performance on your system.
 
 =head1 CLASS METHODS
 
 
 =head2  new - Class Constructor
 
-   $lpm = Net::IP::LPM->new( [ $filename ] );
 
-Constructs a new Net::IP::LPM object. The $filename can be specified as the 
+  $lpm = Net::IP::LPM->new( [ $filename ] );
+
+Constructs a new Net::IP::LPM object. The F<$filename> can be specified as the 
 database of prebuilded prefixes. If the file name is not handled the whole 
-structure will be stored into memory 
+structure will be stored into the memory. 
 
 =cut 
 sub new {
@@ -148,10 +151,11 @@ sub format_addr {
 
 =head2 add - Add Prefix
 
+
    $code = $lpm->add( $prefix, $value );
 
-Adds prefix $prefix into database with value $value. Returns 1 if 
-the prefix was added sucesfully. Returns 0 if some error happen (typically wrong address formating).
+Adds prefix B<$prefix> into database with value B<$value>. Returns 1 if 
+the prefix was added sucesfully. Returns 0 when some error happens (typically wrong address formating).
 
 After adding prefixes rebuild of database have to be performed. 
 =cut 
@@ -196,12 +200,13 @@ sub get_range {
 }
 	
 =head2 rebuild - Rebuild Prefix Database
+
  
-   $code = $lpm->rebuild();
+  $code = $lpm->rebuild();
 
 Rebuilds the database. After adding new prefixes the database have to 
-be rebuilded before lookups are performed. Depend on the $filename 
-handled in the constructor the database is stored into $filename of 
+be rebuilded before lookups are performed. Depends on the F<$filename>
+handled in the constructor the database will be stored into F<$filename> or
 keept in the memory if the file name was nos specified. 
 
 Returns 1 if the the rebuild was succesfull or 0 if something wrong happend. 
@@ -247,13 +252,14 @@ sub rebuild {
 }
 
 =head2  lookup - Lookup Address
+
  
-   $value = $lpm->$lookup( $address );
+  $value = $lpm->$lookup( $address );
 
 Lookups the prefix in the database and returns the value. If the prefix is
-not found or error ocured undef value is returned. 
+not found or error ocured the undef value is returned. 
 
-Before lookups are performed the database have to be rebuilded by $lpm->rebuild() operation. 
+Before lookups are performed the database have to be rebuilded by C<$lpm-E<gt>rebuild()> operation. 
 
 =cut 
 
@@ -268,11 +274,12 @@ sub lookup {
 }
 
 =head2  lookup_raw - Lookup Address
- 
-   $value = $lpm->lookup_raw( $address );
 
-Same as $lpm->lookup but takes $address in raw format (result of inet_ntop function). It is 
-more effective than $lpm->lookup, because convertion from text format is not 
+ 
+  $value = $lpm->lookup_raw( $address );
+
+Same as C<$lpm->lookup> but takes $address in raw format (result of inet_ntop function). It is 
+more effective than C<$lpm->lookup>, because convertion from text format is not 
 nescessary. 
 
 =cut 
@@ -299,15 +306,16 @@ sub lookup_raw {
 }
 
 =head2  lookup_cache_raw - Lookup Address 
- 
-   $value = $lpm->lookup_cache_raw( $address );
 
-Same as $lpm->lookup_raw but the cache is used to speed up lookups. 
+ 
+  $value = $lpm->lookup_cache_raw( $address );
+
+Same as C<$lpm->lookup_raw> but the cache is used to speed up lookups. 
 It might be usefull when there is big probability that lookup 
 for the same address will be porformed more often.  
 
-The cache becomes effective when the ration of hit cache entrie is bigger 
-than 50%. For less hit ratio the overhead discart its benefits. 
+The cache becomes effective when the ratio of hit cache entries is bigger 
+than 50%. For less hit ratio the overhead discard the cache benefits. 
 
 NOTE: Cache entries are stored into memory, so it can lead to unexpected memory comsumption. 
 
@@ -330,8 +338,8 @@ sub lookup_cache_raw {
 
 There are also other implementation of Longest Prefix Matxh in perl. However 
 most of them have some disadvantage (poor performance, lack of support for IPv6
-or requires a lot of time for initial database building). However for some 
-projects might be usefull:
+or requires a lot of time for initial database building). However in some cases 
+it might be usefull:
 
 L<Net::IPTrie>
 

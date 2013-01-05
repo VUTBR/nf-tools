@@ -1,7 +1,7 @@
-Net-IP-LPM version 0.01
+Net-IP-LPM version 0.01_01
 =======================
 
-Perl implementation of Longest Prefix Matxh algo. 
+Perl implementation of Longest Prefix Match algorithm. 
 
 INSTALLATION
 
