@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::IP::LPM.
 
-0.01_01  Sun Dec 16 23:42:55 2012
+0.01_02  Mon Jan 7 2013
+	- tests updated to be platform independend 
+
+0.01_01  Sun Dec 16 2012
 	- initial version  - pre release
 
