@@ -1,6 +1,7 @@
 
-use Test::More tests => 4;
+use Test::More tests => 8;
 use Net::NfDump qw ':all';
+use Data::Dumper;
 
 open(STDOUT, ">&STDERR");
 
@@ -100,17 +101,20 @@ $DS{'v6_raw'} = txt2row( $DS{'v6_txt'} );
 my ($floww, $flowr);
 $floww = new Net::NfDump(OutputFile => "t/v4_rec.tmp" );
 $floww->storerow_hashref( $DS{'v4_raw'} );
+$floww->storerow_hashref( $DS{'v4_raw'} );
 $floww->finish();
-
 
 $flowr = new Net::NfDump(InputFiles => [ "t/v4_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
+#	diag Dumper(row2txt($row));
+#	diag Dumper($DS{'v4_txt'});
 	ok( eq_hash( $DS{'v4_raw'}, $row) );
 	ok( eq_hash( $DS{'v4_txt'}, row2txt($row)) );
 }
 
 # testing v6
 $floww = new Net::NfDump(OutputFile => "t/v6_rec.tmp" );
+$floww->storerow_hashref( $DS{'v6_raw'} );
 $floww->storerow_hashref( $DS{'v6_raw'} );
 $floww->finish();
 
@@ -121,10 +125,12 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 	ok( eq_hash( $DS{'v6_txt'}, row2txt($row)) );
 }
 
+
 # testing performance 
 diag "";
 diag "Testing performance, it will take while...";
-my $recs = 1000000;
+#my $recs = 1000000;
+my $recs = 200000;
 
 my %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
 
@@ -140,7 +146,6 @@ while (my ($key, $val) = each %tests ) {
 	my $tm2 = time() - $tm1;
 	diag sprintf("Write performance %s, written %d recs in %d secs (%.3f/sec)", $val, $recs, $tm2, $recs/$tm2);
 }
-
 
 while (my ($key, $val) = each %tests ) {
 	my $flow = new Net::NfDump(InputFiles => [ "t/flow_$key.tmp" ] );
