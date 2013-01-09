@@ -629,26 +629,18 @@ sub txt2row ($) {
  nprobe latency appl_latency_usec
 =head1 SEE ALSO
 
-Mention other useful documentation such as the documentation of
-related modules or operating system documentation (such as man pages
-in UNIX), or any relevant external documentation such as RFCs or
-standards.
-
-If you have a mailing list set up for your module, mention it here.
-
-If you have a web site set up for your module, mention it here.
+http://nfdump.sourceforge.net/
 
 =head1 AUTHOR
 
-root, E<lt>root@localdomainE<gt>
+Tomas Podermanski, E<lt>tpoder@cis.vutbr.czE<gt>, Brno University of Technology
 
 =head1 COPYRIGHT AND LICENSE
 
-Copyright (C) 2012 by root
+Copyright (C) 2012 by Brno University of Technology
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.10.1 or,
-at your option, any later version of Perl 5 you may have available.
+it under the same terms as Perl itself.
 
 
 =cut
