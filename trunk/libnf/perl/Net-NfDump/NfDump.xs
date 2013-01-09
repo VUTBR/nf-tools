@@ -10,7 +10,13 @@
 
 /* #include <sys/vfs.h> */
 
+#define MATH_INT64_NATIVE_IF_AVAILABLE 1
+#include "perl_math_int64.h"
+
 MODULE = Net::NfDump		PACKAGE = Net::NfDump
+
+BOOT:
+	PERL_MATH_INT64_LOAD_OR_CROAK;
 
 INCLUDE: const-xs.inc
 

@@ -4,7 +4,7 @@
 typedef struct bit_array_s {
 	int size;
 	char *data;
-#define BA_DATA_LEN 8
+#define BA_DATA_LEN 8	/* size in bits of one item - sizeof(char) */
 } bit_array_t;
 
 
@@ -13,7 +13,7 @@ inline bit_array_t * bit_array_init(bit_array_t *a, int size) {
 	int bytes = size / BA_DATA_LEN + 1;
 
 	a->size = size;
-	a->data = malloc(bytes);
+	a->data = malloc(bytes * 1000);
 
 	if (a->data != NULL) {
 		memzero(a->data, bytes);
@@ -60,7 +60,7 @@ inline int bit_array_copy(bit_array_t *d, bit_array_t *s) {
 	if (s->size != d->size) 
 		return -1;
 
-	return (memcpy(&d->data, &s->data, bytes) != NULL);
+	return (memcpy(d->data, s->data, bytes) != NULL);
 
 }
 

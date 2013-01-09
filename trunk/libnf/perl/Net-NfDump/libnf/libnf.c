@@ -6,6 +6,7 @@
 
 #include "libnf.h"
 #include "bit_array.h"
+#include "../perl_math_int64.h"
 
 #include "config.h"
 
@@ -164,15 +165,16 @@ static char		Ident[IDENTLEN];
 /* compare key in hashref */
 #define CMP_STR(k, v) strnEQ(k, v, strlen(v))
 
-/* defining macros for storing numbers and strings into hash */
+/* defining macros for storing numbers, 64 bit numbers and strings into hash */
 #define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
+#define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64v(v), 0)
 #define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
 /* function to store IPv4 or IPv6 address into hash */
 void static inline HV_STORE_AV(HV *r, char *k, ip_addr_t *a, int is6) {
 char s[IP_STRING_LEN];
 
-	s[0] = 0;
+	//s[0] = 0;
 	int len = 0;
 
 	if ( is6 ) { // IPv6
@@ -180,12 +182,15 @@ char s[IP_STRING_LEN];
 
 		ip[0] = htonll(a->v6[0]);
 		ip[1] = htonll(a->v6[1]);
+		//ip[0] = a->v6[0];
+		//ip[1] = a->v6[1];
 		len = sizeof(a->v6);
 		memcpy(s, ip, len);
 	} else {    // IPv4
 		uint32_t ip;
 
 		ip = htonl(a->v4);
+//		ip = a->v4;
 		len = sizeof(a->v4);
 		memcpy(s, &ip, len);
 	}
@@ -221,11 +226,14 @@ STRLEN len;
 	if ( len == sizeof(ip4) )  {
 		memcpy(&ip4, s, sizeof(ip4));
 		a->v4 = ntohl(ip4);
+//		a->v4 = ip4;
 		return AF_INET;
 	} else {
 		memcpy(ip6, s, sizeof(ip6));
 		a->v6[0] = ntohll(ip6[0]);
 		a->v6[1] = ntohll(ip6[1]);
+		//a->v6[0] = ip6[0];
+		//a->v6[1] = ip6[1];
 		return AF_INET6;
 	}
 
@@ -471,8 +479,10 @@ int i=0;
 extension_map_t * libnf_lookup_map( libnf_instance_t *instance, bit_array_t *ext ) {
 extension_map_t *map; 
 libnf_map_list_t *map_list;
-
-int i, is_set, id, map_id;
+int i = 0;
+int is_set = 0;
+int id = 0;
+int map_id = 0;
 
 	// find whether the template already exist 
 	map_id = 0;
@@ -503,6 +513,7 @@ int i, is_set, id, map_id;
 
 	map_list->map = map;
 	map_list->next = NULL;
+
 	bit_array_init(&map_list->bit_array, instance->max_num_extensions + 1);
 	bit_array_copy(&map_list->bit_array, ext);
 
@@ -747,6 +758,8 @@ SV * libnf_read_row(int handle) {
 master_record_t	*master_record;
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
+int match;
+uint32_t map_id;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG);
@@ -780,6 +793,8 @@ begin:
 				exit(1);
 				// fall through - get next file in chain
 			case NF_EOF: {
+				libnf_file_list_t *next;
+
 				//nffile_t *next = GetNextFile(nffile_r, twin_start, twin_end);
 				CloseFile(instance->nffile_r);
 				if (instance->files->filename == NULL) {	// the end of the list 
@@ -791,7 +806,7 @@ begin:
 				instance->processed_files++;
 				instance->current_processed_blocks = 0;
 
-				libnf_file_list_t *next = instance->files->next;
+				next = instance->files->next;
 
 				/* prepare instance->files to nex unread file */
 				if (instance->current_filename != NULL) {
@@ -856,8 +871,8 @@ begin:
 
 	/* we are sure that record is CommonRecordType */
 
-	int match;
-	uint32_t map_id = instance->flow_record->ext_map;
+//	int match;
+	map_id = instance->flow_record->ext_map;
 	if ( map_id >= MAX_EXTENSION_MAPS ) {
 		croak("%s Corrupt data file. Extension map id %u too big.\n", NFL_LOG, instance->flow_record->ext_map);
 		return 0;
@@ -994,7 +1009,7 @@ bit_array_t ext;
 		// aggregated flows 
 		// EX_AGGR_FLOWS_4 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_AGGR_FLOWS) ) {
-			rec.aggr_flows = SvUV(sv);
+			rec.aggr_flows = SvU64(sv);
 			bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
 
 		// src/dst port
@@ -1005,9 +1020,9 @@ bit_array_t ext;
 
 		// bytes, packets
 		} else if ( CMP_STR(key, NFL_DPKTS)) {
-			rec.dPkts = SvUV(sv);
+			rec.dPkts = SvU64(sv);
 		} else if ( CMP_STR(key, NFL_DOCTETS)) {
-			rec.dOctets = SvUV(sv);
+			rec.dOctets = SvU64(sv);
 
 		// INPUT + OUTPUT interface 
 		// EX_IO_SNMP_2 is nod used, we always use 32b. version
@@ -1098,10 +1113,10 @@ bit_array_t ext;
 		// OUTPUT CONTERS
 		// EX_OUT_PKG_4, EX_OUT_BYTES_4 is nod used, we always use 32b. version
 		} else if ( CMP_STR(key, NFL_OUT_PKTS)) {
-			rec.out_pkts = SvUV(sv);
+			rec.out_pkts = SvU64(sv);
 			bit_array_set(&ext, EX_OUT_PKG_8, 1);
 		} else if ( CMP_STR(key, NFL_OUT_BYTES)) {
-			rec.out_bytes = SvUV(sv);
+			rec.out_bytes = SvU64(sv);
 			bit_array_set(&ext, EX_OUT_BYTES_8, 1);
 
 		// MAC ADDRESSES
@@ -1176,19 +1191,19 @@ bit_array_t ext;
  		* the code for EX_LATENCY. The issue was send to P. Haah
  		* so the future version might solvethe problem 
 		} else if ( CMP_STR(key, NFL_CLIENT_NW_DELAY_USEC) ) {
-			rec.client_nw_delay_usec = SvUV(sv);
+			rec.client_nw_delay_usec = SvU64(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
 		} else if ( CMP_STR(key, NFL_SERVER_NW_DELAY_USEC) ) {
-			rec.server_nw_delay_usec = SvUV(sv);
+			rec.server_nw_delay_usec = SvU64(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
 		} else if ( CMP_STR(key, NFL_APPL_LATENCY_USEC) ) {
-			rec.appl_latency_usec = SvUV(sv);
+			rec.appl_latency_usec = SvU64(sv);
 			bit_array_set(&ext, EX_LATENCY, 1);
 		*/
 
 		// EX_RECEIVED
 		} else if ( CMP_STR(key, NFL_RECEIVED) ) {
-			rec.received = SvUV(sv);
+			rec.received = SvU64(sv);
 			bit_array_set(&ext, EX_RECEIVED, 1);
 		} 
 		else {	
@@ -1209,10 +1224,9 @@ bit_array_t ext;
 		PrintExtensionMap(map);
 		VerifyExtensionMap(map);
 		format_file_block_record(&rec, &s, 0);
-		printf("WRITE: %s\n", s);
+		printf("WRITE: (%p) \n%s\n", map, s);
 	}
 */
-
 	UpdateStat(instance->nffile_w->stat_record, &rec);
 
 	PackRecord(&rec, instance->nffile_w);
