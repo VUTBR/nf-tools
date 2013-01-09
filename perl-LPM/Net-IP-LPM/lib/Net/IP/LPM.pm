@@ -273,13 +273,13 @@ sub lookup {
 	return $self->lookup_raw($addr_bin);
 }
 
-=head2  lookup_raw - Lookup Address
+=head2  lookup_raw - Lookup Address in raw format
 
  
   $value = $lpm->lookup_raw( $address );
 
-Same as C<$lpm->lookup> but takes $address in raw format (result of inet_ntop function). It is 
-more effective than C<$lpm->lookup>, because convertion from text format is not 
+Same as C<$lpm-E<gt>lookup> but takes $address in raw format (result of inet_ntop function). It is 
+more effective than C<$lpm-E<gt>lookup>, because convertion from text format is not 
 nescessary. 
 
 =cut 
@@ -305,12 +305,12 @@ sub lookup_raw {
 	return undef;
 }
 
-=head2  lookup_cache_raw - Lookup Address 
+=head2  lookup_cache_raw - Lookup Address in raw format with cache
 
  
   $value = $lpm->lookup_cache_raw( $address );
 
-Same as C<$lpm->lookup_raw> but the cache is used to speed up lookups. 
+Same as C<$lpm-E<gt>lookup_raw> but the cache is used to speed up lookups. 
 It might be usefull when there is big probability that lookup 
 for the same address will be porformed more often.  
 
@@ -363,8 +363,7 @@ Brno University of Technology
 Copyright (C) 2012, Brno University of Technology
 
 This library is free software; you can redistribute it and/or modify
-it under the same terms as Perl itself, either Perl version 5.10.1 or,
-at your option, any later version of Perl 5 you may have available.
+it under the same terms as Perl itself.
 
 
 =cut
