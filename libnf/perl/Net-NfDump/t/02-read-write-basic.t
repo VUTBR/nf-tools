@@ -153,6 +153,6 @@ while (my ($key, $val) = each %tests ) {
 	$flow->finish();
 
 	my $tm2 = time() - $tm1;
-	diag sprintf("Read performance %s, written %d recs in %d secs (%.3f/sec)", $val, $cnt, $tm2, $recs/$tm2);
+	diag sprintf("Read performance %s, read %d recs in %d secs (%.3f/sec)", $val, $cnt, $tm2, $recs/$tm2);
 }
 

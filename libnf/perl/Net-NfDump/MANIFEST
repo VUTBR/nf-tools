@@ -6,12 +6,12 @@ ppport.h
 README
 md5sum.sh
 t/00-Net-NfDump.t
-t/01-read-basic.t
-t/02-read-raw.t
-t/03-write-basic.t
-t/04-write-raw.t
+t/01-conversions.t
+t/02-read-write-basic.t
+t/02-read-write-back.t
 t/record_v4
 t/record_v6
+t/data1
 fallback/const-c.inc
 fallback/const-xs.inc
 lib/Net/NfDump.pm
@@ -22,5 +22,4 @@ libnf/bit_array.h
 libnf/check_items_map.pl
 libnf/h2pod.pl
 libnf/mergechapter.pl
-examples/example3.pl
 

@@ -371,7 +371,6 @@ int i=0;
 	HV_STORE_NV(res, NFL_DPKTS, rec->dPkts);
 	HV_STORE_NV(res, NFL_DOCTETS, rec->dOctets);
 
-	HV_STORE_NV(res, NFL_AGGR_FLOWS, rec->aggr_flows);
 	HV_STORE_NV(res, NFL_FWD_STATUS, rec->fwd_status);
 	HV_STORE_NV(res, NFL_TOS, rec->tos);
 

@@ -6,7 +6,8 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'Net::NfDump',
     VERSION_FROM      => 'lib/Net/NfDump.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
+    PREREQ_PM         => { Socket6 => 0.15 }, # e.g., Module::Name => 1.1
+    LICENSE           => 'perl',
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Net/NfDump.pm', # retrieve abstract from module
        AUTHOR         => 'Tomas Podermanski <tpoder@cis.vutbr.cz>') : ()),
@@ -17,7 +18,7 @@ WriteMakefile(
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf/libnf$(LIB_EXT)',
     NORECURS          => 0,
-    clean             => {FILES => "nfdump/ nfdump"},
+    clean             => {FILES => "nfdump/ nfdump t/*.tmp" },
     realclean         => {FILES => "nfdump-*.tar.gz"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
