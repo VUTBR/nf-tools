@@ -6,6 +6,8 @@
 
 #include "libnf.h"
 #include "bit_array.h"
+
+#define MATH_INT64_NATIVE_IF_AVAILABLE 1
 #include "../perl_math_int64.h"
 
 #include "config.h"
@@ -61,6 +63,18 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
+
+
+/* Ignore Math-Int64 on 64 bit platform */
+/* #define MATH_INT64_NATIVE 1 */
+
+#if MATH_INT64_NATIVE
+#undef newSVu64
+#define newSVu64 newSVuv
+#undef SvU64 
+#define SvU64 SvUV
+#endif
+
 
 /* hash parameters */
 #define NumPrealloc 128000
@@ -189,7 +203,8 @@ char s[IP_STRING_LEN];
 	} else {    // IPv4
 		uint32_t ip;
 
-		ip = htonl(a->v4);
+		//ip = htonl(a->v4);
+		ip = a->v4;
 //		ip = a->v4;
 		len = sizeof(a->v4);
 		memcpy(s, &ip, len);
@@ -225,7 +240,8 @@ STRLEN len;
 
 	if ( len == sizeof(ip4) )  {
 		memcpy(&ip4, s, sizeof(ip4));
-		a->v4 = ntohl(ip4);
+		//a->v4 = ntohl(ip4);
+		a->v4 = ip4;
 //		a->v4 = ip4;
 		return AF_INET;
 	} else {
