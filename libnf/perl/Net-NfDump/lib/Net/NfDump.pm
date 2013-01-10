@@ -332,7 +332,7 @@ sub DESTROY {
 }
 
 
-=head1 FLOW QUERY
+=head1 FLOW QUERY - NOT IMPLEMENTED YET
 The flow query is language vyry simmilar to SQL to query data on 
 nfdump files. However flow query have nothing to do with SQL. It uses
 only simmilar command syntax. Example of flow query 
@@ -342,6 +342,14 @@ WHERE src host 147.229.3.10
 TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04' 
 ORDER BY bytes
 LIMIT 100
+
+=head1 NOTE ABOUT 32BIT PLATFORMS
+Nfdump primary uses 64 bit counters and other items to store single integer value. However 
+the native 64 bit support is not compiled in every perl. For thoose cases where 
+only 32 integer values are supported the Net::NfDump uses Math::Int64 module. 
+
+The build scripts automatically detect the platform and Math::Int64 module is required
+only on platforms where perl do not supports 64bit integer values. 
 
 =head1 EXTRA CONVERTION FUNCTIONS 
 The module also provides extra convertion functions that allow convert binnary format 
