@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.01_01';
+our $VERSION = '0.01_02';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -68,22 +68,15 @@ XSLoader::load('Net::NfDump', $VERSION);
 
 =head1 NAME
 
-Net::NfDump - Perl extension for blah blah blah
+Net::NfDump - Perl API for manipulating with nfdump files
 
 =head1 SYNOPSIS
 
   use Net::NfDump;
-  blah blah blah
+  TODO
 
 =head1 DESCRIPTION
 
-Stub documentation for Net::NfDump, created by h2xs. It looks like the
-author of the extension was negligent enough to leave the stub
-unedited.
-
-Blah blah blah.
-
-=head2 EXPORT
 
 =head1 METHODS
 
@@ -109,6 +102,7 @@ sub merge_opts {
 
 
 =head2 new
+
 The constructor. As the parameter options can be specified. This options will be used
 as a default option set in the particular methods. 
 
@@ -149,13 +143,13 @@ sub new {
 }
 
 =head2 file_info
+
 Reads information from nfdump file header. It provides various atributes 
 like number of blocks, version, flags, statistics, etc.  related to the file. 
 Return has hreference with items
 
-=cut
-
 =head2 info
+
 Returns the information the current state of processing input files. It 
 returns information about already processed files, blocks, records. Those
 information can be usefull for guessing time of processing whole 
@@ -187,6 +181,7 @@ sub info {
 
 
 =head2 query
+
 Query method can be used in two ways. If the string argument is the 
 flow query is handled. See section FLOW QUERY how to create flow 
 queries.
@@ -212,7 +207,8 @@ sub query {
 
 }
 
-=head2 read
+=head2 fetchrow_hashref
+
 Have to be used after query method. If the query wasn't called before the 
 method is called as $obj->query() before the first record is returned. 
 
@@ -251,7 +247,8 @@ sub fetchrow_array {
 	croak("Not implemented yet. Reserver for future use.");
 }
 
-=head2 create_file
+=head2 create
+
 Creates a new nfdump file. 
 
 =cut 
@@ -276,6 +273,7 @@ sub create {
 
 
 =head2 storerow_hashref
+
 Insert data defined in hashref to the file opened by create. 
 
 =cut
@@ -304,6 +302,7 @@ sub storerow_array {
 }
 
 =head2 finish
+
 Closes all openes file handles. It is nescessary to call that method specilly 
 when a new file is created. The method flushes to file records that remains in the memory 
 buffer and updates file statistics in the header. Withat calling this method the 
@@ -333,6 +332,7 @@ sub DESTROY {
 
 
 =head1 FLOW QUERY - NOT IMPLEMENTED YET
+
 The flow query is language vyry simmilar to SQL to query data on 
 nfdump files. However flow query have nothing to do with SQL. It uses
 only simmilar command syntax. Example of flow query 
@@ -352,12 +352,14 @@ The build scripts automatically detect the platform and Math::Int64 module is re
 only on platforms where perl do not supports 64bit integer values. 
 
 =head1 EXTRA CONVERTION FUNCTIONS 
+
 The module also provides extra convertion functions that allow convert binnary format 
 of IP address, MAC address and MPLS labels tag into text format and back. 
 
 Those functions are not exported by default 
 
 =head2 ip2txt 
+
 Converts both IPv4 and IPv6 address into text form. The standart inet_ntop function 
 can be used instead to provide same results. 
 
@@ -387,6 +389,7 @@ sub ip2txt ($) {
 =pod
 
 =head2 txt2ip 
+
 Inversion fuction to ip2txt. Returns binnary format of IP addres or undef 
 if the conversion is impossible. 
 
@@ -412,6 +415,7 @@ sub txt2ip ($) {
 =pod
 
 =head2 mac2txt 
+
 Converts MAC addres to xx:yy:xx:yy:xx:yy format. 
 
 =cut 
@@ -434,6 +438,7 @@ sub mac2txt ($) {
 =pod
 
 =head2 txt2mac 
+
 Inversion fuction to mac2txt. Accept address in any of following format 
 aabbccddeeff
 aa:bb:cc:dd:ee:ff
@@ -463,6 +468,7 @@ sub txt2mac ($) {
 =pod
 
 =head2 mpls2txt 
+
 Converts label information to format B<Lbl-Exp-S>
 
 Whwre 
@@ -495,6 +501,7 @@ sub mpls2txt ($) {
 =pod
 
 =head2 txt2mpls
+
 Inversion function to mpls2txt. As the argiment expects the text representaion 
 of the MPLS labels as was described in the previous function (B<Lbl-Exp-S>)
 
@@ -527,6 +534,7 @@ sub txt2mpls ($) {
 =pod
 
 =head2 row2txt
+
 Gets hash reference to items returned by fetchrow_hashref and converts all items into
 human readable text format. Applies finction ip2txt, mac2txt, mpl2txt to the items 
 where it make sense. 
@@ -568,6 +576,7 @@ sub row2txt ($) {
 =pod
 
 =head2 txt2row
+
 Inversion function to row2txt. It is usefull before calling storerow_hashref
 
 =cut 
@@ -599,42 +608,79 @@ sub txt2row ($) {
 }
 
 =pod 
+
 =head1 SUPPORTED ITEMS 
 
- Flow received time in ms
-=item srcport Source port
- Destination port
- TCP flags 
- Source IP address
- Destination IP address
- IP next hop
- Source mask
- Destination mask
- Source type of service
- Destination type of Service
- Source AS number
- Destination AS number
- BGP Next AS
- BGP Previous AS
- BGP next hop
- IP protocol 
- Source vlan label
- Destination vlan label
- In source MAC address
- Out destination MAC address
- In destintation MAC address
- Out source MAC address
- MPLS label
- SNMP input interface number
- SNMP output interface number
- Flow directions ingress/egress
- Forwarding status
- Exporting router IP
- Type of exporter
- Internal SysID of exporter
- nprobe latency client_nw_delay_usec
- nprobe latency server_nw_delay_usec
- nprobe latency appl_latency_usec
+=head2 Time items
+
+first - Timestamp of first seen packet E<10>
+msecfirst - Number of miliseconds of first seen packet since B<first>  E<10>
+last - Timestamp of last seen packet E<10>
+mseclast - Number of miliseconds of last seen packet since B<last>  E<10>
+received - Timestamp when the packet was received by collector E<10>
+
+=head2 Statistical items
+
+bytes - The number of bytes E<10>
+pkts - The number of packets E<10>
+outbytes - The number of output bytes  E<10>
+outpkts - The number of output packets  E<10>
+flows - The number of flows (aggregated) E<10>
+
+=head2 Layer 4 information
+
+srcport - Source port E<10>
+dstport - Destination port E<10>
+tcpflags - TCP flags  E<10>
+
+=head2 Layer 3 information
+
+srcip - Source IP address E<10>
+dstip - Destination IP address E<10>
+nexthop - IP next hop E<10>
+srcmask - Source mask E<10>
+dstmask - Destination mask E<10>
+tos - Source type of service E<10>
+dsttos - Destination type of Service E<10>
+srcas - Source AS number E<10>
+dstas - Destination AS number E<10>
+nextas - BGP Next AS E<10>
+prevas - BGP Previous AS E<10>
+bgpnexthop - BGP next hop E<10>
+proto - IP protocol  E<10>
+
+=head2 Layer 2 information
+
+srcvlan - Source vlan label E<10>
+dstvlan - Destination vlan label E<10>
+insrcmac - In source MAC address E<10>
+outsrcmac - Out destination MAC address E<10>
+indstmac - In destintation MAC address E<10>
+outdstmac - Out source MAC address E<10>
+
+=head2 MPLS information
+
+mpls - MPLS labels E<10>
+
+=head2 Layer 1 information
+
+inif - SNMP input interface number E<10>
+outif - SNMP output interface number E<10>
+dir - Flow directions ingress/egress E<10>
+fwd - Forwarding status E<10>
+
+=head2 Exporter information
+
+router - Exporting router IP E<10>
+systype - Type of exporter E<10>
+sysid - Internal SysID of exporter E<10>
+
+=head2 Extra/special fields
+
+clientdelay - nprobe latency client_nw_delay_usec E<10>
+serverdelay - nprobe latency server_nw_delay_usec E<10>
+appllatency - nprobe latency appl_latency_usec E<10>
+
 =head1 SEE ALSO
 
 http://nfdump.sourceforge.net/
