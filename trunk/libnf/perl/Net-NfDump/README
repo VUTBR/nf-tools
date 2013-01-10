@@ -1,16 +1,8 @@
-Net-NfDump version 0.01_01
+Net-NfDump version 0.01_02
 ==========================
 
-The README is used to introduce the module and provide instructions on
-how to install the module, any machine dependencies it may have (for
-example C compilers and installed libraries) and any other information
-that should be provided before the module is installed.
+Perl API form manipulating with nfdump files (http://nfdump.sourceforge.net/). 
 
-A README file is required for CPAN modules since CPAN extracts the
-README file from a module distribution so that people browsing the
-archive can use it get an idea of the modules uses. It is usually a
-good idea to provide version information here so that people can
-decide whether fixes for the module are worth downloading.
 
 INSTALLATION
 
@@ -21,17 +13,18 @@ To install this module type the following:
    make test
    make install
 
+
 DEPENDENCIES
 
 This module requires these other modules and libraries:
+ 
+ Socket6
+ Math::Int64 - required only on 32 bit version on Perl
 
-  blah blah blah
 
 COPYRIGHT AND LICENCE
 
-Put the correct copyright and licence information here.
-
-Copyright (C) 2012 by root
+Copyright (C) 2012 by Brno University of Technology
 
 This library is free software; you can redistribute it and/or modify
 it under the same terms as Perl itself. 
