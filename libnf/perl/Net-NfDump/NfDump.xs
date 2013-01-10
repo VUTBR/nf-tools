@@ -16,7 +16,9 @@
 MODULE = Net::NfDump		PACKAGE = Net::NfDump
 
 BOOT:
+#ifndef MATH_INT64_NATIVE 
 	PERL_MATH_INT64_LOAD_OR_CROAK;
+#endif 
 
 INCLUDE: const-xs.inc
 

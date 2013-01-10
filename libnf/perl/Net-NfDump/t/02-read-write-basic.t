@@ -129,8 +129,7 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 # testing performance 
 diag "";
 diag "Testing performance, it will take while...";
-#my $recs = 1000000;
-my $recs = 200000;
+my $recs = 1000000;
 
 my %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
 
