@@ -20,7 +20,7 @@ lib/Net/NfDump.pm
 t/00-Net-NfDump.t
 t/01-conversions.t
 t/02-read-write-basic.t
-t/02-read-write-back.t
+t/03-read-write-back.t
 t/record_v4
 t/record_v6
 t/data1
