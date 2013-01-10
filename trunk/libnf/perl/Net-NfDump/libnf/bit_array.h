@@ -65,3 +65,10 @@ inline int bit_array_copy(bit_array_t *d, bit_array_t *s) {
 }
 
 
+inline void bit_array_release(bit_array_t *a) {
+
+	a->size = 0;
+	free(a->data); 
+
+}
+

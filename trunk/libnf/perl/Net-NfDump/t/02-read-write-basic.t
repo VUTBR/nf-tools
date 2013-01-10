@@ -147,6 +147,7 @@ while (my ($key, $val) = each %tests ) {
 	diag sprintf("Write performance %s, written %d recs in %d secs (%.3f/sec)", $val, $recs, $tm2, $recs/$tm2);
 }
 
+
 while (my ($key, $val) = each %tests ) {
 	my $flow = new Net::NfDump(InputFiles => [ "t/flow_$key.tmp" ] );
 	my $tm1 = time();
