@@ -948,12 +948,14 @@ bit_array_t ext;
 
 	memzero(&rec, sizeof(rec));
 
+
 	/* check the hashref */
 	hv_iterinit(hashref);
 
 	// detect the maximum number of extensions 
 		
 	bit_array_init(&ext, instance->max_num_extensions + 1);
+
 	/* go through handled hashref and enable extensions according the key values */	
 	while ( (sv = hv_iternextsv(hashref, &key, (I32*) &len)) != NULL ) {
 //		fprintf(stderr, "%s : %s\n", key, SvPV(sv, len));
@@ -1210,9 +1212,15 @@ bit_array_t ext;
 			warn("%s invalid item %s", NFL_LOG, key);
 			return 0;
 		}
-	}
+
+//		SvREFCNT_dec(sv); 	/* free memory */
+	}  // while 
+
+//	printf("REFCNT: %d\n", SvREFCNT(hashref));
+//	SvREFCNT_dec(hashref); 	/* free memory */
 
 	map = libnf_lookup_map(instance, &ext);
+	bit_array_release(&ext);
 
 	rec.map_ref = map;
 	rec.ext_map = map->map_id;
@@ -1259,6 +1267,10 @@ libnf_instance_t *instance = libnf_instances[handle];
 		CloseFile(instance->nffile_r);
 		DisposeFile(instance->nffile_r);
 	}
+
+	//release list of extensions map
+	// TODO 
+	
 
 	PackExtensionMapList(&instance->extension_map_list);
 	FreeExtensionMaps(&instance->extension_map_list);
