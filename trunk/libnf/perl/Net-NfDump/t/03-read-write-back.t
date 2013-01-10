@@ -2,7 +2,7 @@
 use Test::More tests => 1;
 use Net::NfDump qw ':all';
 
-open(STDOUT, ">&STDERR");
+#open(STDOUT, ">&STDERR");
 
 
 # 
