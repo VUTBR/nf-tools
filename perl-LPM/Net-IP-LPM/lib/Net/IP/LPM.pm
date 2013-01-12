@@ -12,12 +12,11 @@ use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 use Data::Dumper;
 use DB_File;
-use constant {
-	V4P => pack('C', AF_INET),
-	V6P => pack('C', AF_INET6),
-	VF => pack('C', 0xF),
-	V0 => pack('C', 0x0),
-	};
+use constant V4P => pack('C', AF_INET);
+use constant V6P => pack('C', AF_INET6);
+use constant VF => pack('C', 0xF);
+use constant V0 => pack('C', 0x0);
+
 #our @ISA = qw(DB_File);
 our @ISA = qw();
 
@@ -38,7 +37,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.01_03';
+our $VERSION = '0.02';
 
 
 # Preloaded methods go here.
