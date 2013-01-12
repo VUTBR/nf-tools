@@ -1,4 +1,4 @@
-Net-IP-LPM version 0.01_03
+Net-IP-LPM version 0.02
 ==========================
 
 Perl implementation of Longest Prefix Match algorithm. 

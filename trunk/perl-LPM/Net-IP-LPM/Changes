@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::IP::LPM.
 
+0.02  Sat Jan 12 2013
+	- code updated to be compatible with perl 6.2.2
+	- first stable version 
+
 0.01_02  Mon Jan 7 2013
 	- tests updated to be platform independend 
 
