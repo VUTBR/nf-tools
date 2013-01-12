@@ -18,12 +18,13 @@ else
 	exit 1
 fi 
 
-if [ "$(echo $RES | grep  $SUM)" == "" ] ; then 
+if [ "$(echo $RES | grep  $SUM)" != "" ] ; then 
+	echo "Checksum for $FILE is OK"
+	exit 0
+else 
 	echo "Invalid checksum for $FILE"
 	echo "Excpected: $SUM"
 	echo "Result: $RES"
 	exit 1;
-else 
-	echo "Checksum for $FILE is OK"
-	exit 0
 fi 
+
