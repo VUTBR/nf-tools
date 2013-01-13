@@ -7,8 +7,6 @@ README
 md5sum.sh
 perl_math_int64.c
 perl_math_int64.h
-fallback/const-c.inc
-fallback/const-xs.inc
 libnf/libnf.c  
 libnf/libnf.h  
 libnf/bit_array.h
