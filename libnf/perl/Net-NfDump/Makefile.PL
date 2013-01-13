@@ -72,14 +72,18 @@ $(NFDUMP).tar.gz:
 		wget -nv $(NFDUMP_URL) || curl -L -o $(NFDUMP_SRC) $(NFDUMP_URL)
 
 
-nfdump/bin/nfdump.o: $(NFDUMP).tar.gz 
+nfdump/bin/nfdump: $(NFDUMP).tar.gz 
 		./md5sum.sh $(NFDUMP_MD5) $(NFDUMP).tar.gz 
 		tar xzf $(NFDUMP).tar.gz
 		mv -f $(NFDUMP) nfdump 
-		cd nfdump && export CFLAGS=-fPIC && ./configure  && make
+#		cd nfdump && export CFLAGS=-fPIC && ./configure 
+		cd nfdump/bin && make nfdump 
+		# nfdump gzip contains object files, so we rid them off
+		$(RM) nfdump/bin/*.o 
 
-$(MYEXTLIB): libnf/Makefile nfdump/bin/nfdump.o
-		cd libnf && $(MAKE) $(PASSTHRU)
+$(MYEXTLIB): nfdump/bin/nfdump libnf/Makefile
+		#cd libnf && $(MAKE) $(PASSTHRU)
+		cd libnf && $(MAKE) 
 ';
 }
 
