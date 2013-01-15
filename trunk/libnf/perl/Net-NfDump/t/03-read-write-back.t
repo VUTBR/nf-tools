@@ -1,9 +1,21 @@
 
-use Test::More tests => 1;
-use Net::NfDump qw ':all';
+use Test::More;
 
 #open(STDOUT, ">&STDERR");
 
+# try to compile nfdump binnaty 
+if ( ! -x "nfdump/bin/nfdump" ) {
+	system("cd nfdump && ./configure && make >/dev/null 2>&1");
+}
+
+if ( ! -x "nfdump/bin/nfdump" ) {
+	plan skip_all => 'nfdump executable not available';
+	exit 0;
+} else {
+	plan tests => 1;
+}
+
+use Net::NfDump qw ':all';
 
 # 
 my ($floww, $flowr);
@@ -22,10 +34,13 @@ while ( my $raw = $flowr->fetchrow_hashref() ) {
 $flowr->finish();
 $floww->finish();
 
-system("nfdump/bin/nfdump -q -r t/data1 -o raw | grep -v size > t/data2.txt.tmp");
-system("nfdump/bin/nfdump -q -r t/data2.tmp -o raw | grep -v size > t/data1.txt.tmp");
+SKIP: { 
 
-system("diff t/data2.txt.tmp t/data1.txt.tmp");
+	system("nfdump/bin/nfdump -q -r t/data1 -o raw | grep -v size > t/data2.txt.tmp");
+	system("nfdump/bin/nfdump -q -r t/data2.tmp -o raw | grep -v size > t/data1.txt.tmp");
 
-ok( $? == 0 );
+	system("diff t/data2.txt.tmp t/data1.txt.tmp");
+
+	ok( $? == 0 );
+}
 
