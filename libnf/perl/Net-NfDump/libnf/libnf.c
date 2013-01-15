@@ -141,7 +141,7 @@ libnf_instance_t *libnf_instances[NFL_MAX_INSTANCES] = { NULL };
 extern extension_descriptor_t extension_descriptor[];
 
 /* Local Variables */
-const char *nfdump_version = VERSION;
+//const char *nfdump_version = VERSION;
 /*
 static uint64_t total_bytes;
 static uint32_t total_flows;

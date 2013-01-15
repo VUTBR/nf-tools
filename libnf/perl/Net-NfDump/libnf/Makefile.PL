@@ -5,6 +5,7 @@ WriteMakefile(
 	NAME => 'Net::NfDump::libnf',
 #	SKIP => [qw(all static static_lib dynamic dynamic_lib)],
 	INC  => '-I ../nfdump -I ../nfdump/bin',
+#	INC  => ' -I ../libnf -I ../nfdump/bin',
 	C => [ 
 		'libnf.c',
 		'../nfdump/bin/nffile.c', 

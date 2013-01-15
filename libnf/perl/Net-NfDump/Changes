@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::NfDump.
 
+0.01_04 2013-01-15
+	- extra compilation of nfdump utility 
+
 0.01_04 2013-01-14
 	- removed dependency on lex/flex during compilation 
 
