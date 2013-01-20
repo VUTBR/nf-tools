@@ -92,9 +92,9 @@ $DS{'v6_txt'}->{'nexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'bgpnexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'router'} ='2001:67c:1220:f565::10';
 
-$DS{'v4_raw'} = txt2row( $DS{'v4_txt'} );
-$DS{'v4_basic_raw'} = txt2row( $DS{'v4_basic_txt'} );
-$DS{'v6_raw'} = txt2row( $DS{'v6_txt'} );
+$DS{'v4_raw'} = txt2flow( $DS{'v4_txt'} );
+$DS{'v4_basic_raw'} = txt2flow( $DS{'v4_basic_txt'} );
+$DS{'v6_raw'} = txt2flow( $DS{'v6_txt'} );
 
 
 # testing v4
@@ -109,7 +109,7 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 #	diag Dumper(row2txt($row));
 #	diag Dumper($DS{'v4_txt'});
 	ok( eq_hash( $DS{'v4_raw'}, $row) );
-	ok( eq_hash( $DS{'v4_txt'}, row2txt($row)) );
+	ok( eq_hash( $DS{'v4_txt'}, flow2txt($row)) );
 }
 
 # testing v6
@@ -122,7 +122,7 @@ $floww->finish();
 $flowr = new Net::NfDump(InputFiles => [ "t/v6_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	ok( eq_hash( $DS{'v6_raw'}, $row) );
-	ok( eq_hash( $DS{'v6_txt'}, row2txt($row)) );
+	ok( eq_hash( $DS{'v6_txt'}, flow2txt($row)) );
 }
 
 

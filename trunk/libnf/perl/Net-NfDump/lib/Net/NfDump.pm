@@ -23,7 +23,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 	ip2txt txt2ip 
 	mac2txt txt2mac
 	mpls2txt txt2mpls
-	row2txt txt2row 
+	flow2txt txt2flow 
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.01_05';
+our $VERSION = '0.01_06';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -533,7 +533,7 @@ sub txt2mpls ($) {
 
 =pod
 
-=head2 row2txt
+=head2 flow2txt
 
 Gets hash reference to items returned by fetchrow_hashref and converts all items into
 human readable text format. Applies finction ip2txt, mac2txt, mpl2txt to the items 
@@ -548,7 +548,7 @@ my %CVTTYPE = (
 	'mpls' => 'mpls' );
 	
 
-sub row2txt ($) {
+sub flow2txt ($) {
 	my ($row) = @_;
 	my %res;
 	
@@ -575,14 +575,14 @@ sub row2txt ($) {
 
 =pod
 
-=head2 txt2row
+=head2 txt2flow
 
-Inversion function to row2txt. It is usefull before calling storerow_hashref
+Inversion function to flow2txt. It is usefull before calling storerow_hashref
 
 =cut 
 
 
-sub txt2row ($) {
+sub txt2flow ($) {
 	my ($row) = @_;
 	my %res;
 	

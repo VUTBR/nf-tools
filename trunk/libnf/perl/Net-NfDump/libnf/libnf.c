@@ -607,7 +607,7 @@ int i;
 */
 
 	/* initialize ExtensionMaps */
-	SetupExtensionDescriptors("");
+//	SetupExtensionDescriptors("");
 	InitExtensionMaps(&(instance->extension_map_list));
 	i = 1;
 	instance->max_num_extensions = 0;

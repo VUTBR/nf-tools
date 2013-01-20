@@ -33,7 +33,7 @@ my $rec = { 'srcip' => '147.229.3.10',
 			'inif' => '10',
 			'outif' => '11' };
 
-my $rec_bin = txt2row($rec);
-ok( eq_hash($rec, row2txt($rec_bin)) );
+my $rec_bin = txt2flow($rec);
+ok( eq_hash($rec, flow2txt($rec_bin)) );
 		
 

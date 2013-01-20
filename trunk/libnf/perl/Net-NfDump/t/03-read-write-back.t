@@ -26,8 +26,8 @@ use Data::Dumper;
 
 while ( my $raw = $flowr->fetchrow_hashref() ) {
 	
-	my $plain = row2txt($raw);
-	my $raw2 = txt2row($plain);
+	my $plain = flow2txt($raw);
+	my $raw2 = txt2flow($plain);
 	$floww->storerow_hashref($raw2);
 }
 

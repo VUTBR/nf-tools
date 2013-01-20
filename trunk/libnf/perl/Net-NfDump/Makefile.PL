@@ -9,8 +9,8 @@ WriteMakefile(
     VERSION_FROM      => 'lib/Net/NfDump.pm', # finds $VERSION
 	# test whether the platform supports 32bit interger or not 
 	(ULONG_MAX == 0xFFFFFFFF ?
-	    (PREREQ_PM         => { Socket6 => 0.15, Math::Int64 => 0.09 }) :
-	    (PREREQ_PM         => { Socket6 => 0.15 }) 
+	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0, Math::Int64 => 0.09 }) :
+	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0 }) 
 	), 
     LICENSE           => 'perl',
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
@@ -77,10 +77,10 @@ nfdump: $(NFDUMP).tar.gz
 		tar xzf $(NFDUMP).tar.gz
 		$(MV) -f $(NFDUMP) nfdump 
 		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
-		cd nfdump && export CFLAGS=-fPIC && ./configure || echo 0 
+		(cd nfdump && export CFLAGS=-fPIC && ./configure && make) || echo 0 
 		# nfdump gzip contains object files, so we rid them off
 		$(RM_F) nfdump/bin/*.o
-		$(RM_F) nfdump/bin/nfdump 
+#		$(RM_F) nfdump/bin/nfdump 
 
 $(MYEXTLIB): nfdump libnf/Makefile
 		cd libnf && $(MAKE) $(PASSTHRU)
