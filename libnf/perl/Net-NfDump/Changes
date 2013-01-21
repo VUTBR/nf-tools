@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::NfDump.
 
+0.01_06 2013-01-20
+	- nfdump source codes added into distribution 
+	- fixes for libnf on OpenBSD apllied
+
 0.01_04 2013-01-15
 	- extra compilation of nfdump utility 
 
