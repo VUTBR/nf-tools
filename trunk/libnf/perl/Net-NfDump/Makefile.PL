@@ -76,11 +76,11 @@ nfdump: $(NFDUMP).tar.gz
 		./md5sum.sh $(NFDUMP_MD5) $(NFDUMP).tar.gz 
 		tar xzf $(NFDUMP).tar.gz
 		$(MV) -f $(NFDUMP) nfdump 
-		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
-		(cd nfdump && export CFLAGS=-fPIC && ./configure && make) || echo 0 
 		# nfdump gzip contains object files, so we rid them off
 		$(RM_F) nfdump/bin/*.o
-#		$(RM_F) nfdump/bin/nfdump 
+		$(RM_F) nfdump/bin/nfdump
+		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
+		(cd nfdump && export CFLAGS=-fPIC && ./configure && make) || echo 0 
 
 $(MYEXTLIB): nfdump libnf/Makefile
 		cd libnf && $(MAKE) $(PASSTHRU)
