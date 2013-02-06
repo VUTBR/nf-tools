@@ -18,7 +18,7 @@ WriteMakefile(
 		'../nfdump/bin/ipconv.c', 
 		'../nfdump/bin/flist.c', 
 		],	
-	CCFLAGS => '-DDEFINE_LIBNF=1',
+	CCFLAGS => '-DDEFINE_LIBNF=1 -DNSEL=1',
 	clean => { 'FILES' => '*$(LIB_EXT) *$(OBJ_EXT) $(O_FILES)' },
 );
 #libnf$(LIB_EXT): nfdump $(O_FILES) libnf.h libnf.c bit_array.h 
