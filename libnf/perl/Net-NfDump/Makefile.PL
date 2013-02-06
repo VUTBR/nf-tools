@@ -54,7 +54,9 @@ else {
 sub MY::postamble {
 '
 NFDUMP		= nfdump-1.6.8p1
+#NFDUMP		= nfdump-1.6.9b2
 NFDUMP_MD5	= 853d917527d1a20837a899ffd88b736c
+#NFDUMP_MD5	= 22a8c79e8219e474649ee37f027e015c
 NFDUMP_SRC	= $(NFDUMP).tar.gz
 NFDUMP_URL	= http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP_SRC)
 
@@ -80,7 +82,7 @@ nfdump: $(NFDUMP).tar.gz
 		$(RM_F) nfdump/bin/*.o
 		$(RM_F) nfdump/bin/nfdump
 		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
-		(cd nfdump && export CFLAGS=-fPIC && ./configure && make) || echo 0 
+		(cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && make) || echo 0 
 
 $(MYEXTLIB): nfdump libnf/Makefile
 		cd libnf && $(MAKE) $(PASSTHRU)

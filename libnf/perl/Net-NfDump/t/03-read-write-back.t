@@ -3,11 +3,6 @@ use Test::More;
 
 #open(STDOUT, ">&STDERR");
 
-# try to compile nfdump binnaty 
-if ( ! -x "nfdump/bin/nfdump" ) {
-	system("cd nfdump && ./configure && make >/dev/null 2>&1");
-}
-
 if ( ! -x "nfdump/bin/nfdump" ) {
 	plan skip_all => 'nfdump executable not available';
 	exit 0;

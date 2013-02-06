@@ -127,44 +127,8 @@ typedef struct libnf_instance_s {
 /* array of initalized instances */
 libnf_instance_t *libnf_instances[NFL_MAX_INSTANCES] = { NULL };
 
-
-/* last used handle identifier, starts with 0 */
-//int libnf_last_instance = 1;		
-
-
-
 /* Global Variables */
-//FilterEngine_data_t	*Engine;
-
-//extern char	*FilterFilename;
-//extern uint32_t loopcnt;
 extern extension_descriptor_t extension_descriptor[];
-
-/* Local Variables */
-//const char *nfdump_version = VERSION;
-/*
-static uint64_t total_bytes;
-static uint32_t total_flows;
-static uint32_t skipped_blocks;
-static uint32_t	is_anonymized;
-static time_t 	t_first_flow, t_last_flow;
-static time_t	twin_start, twin_end;
-static char		Ident[IDENTLEN];
-*/
-
-//common_record_t 	*flow_record;
-//nffile_t			*nffile_r;
-//int					map_initalized = 0;	/* defines whether the map was already initialized (for writing file) */
-
-
-//int hash_hit = 0; 
-//int hash_miss = 0;
-//int hash_skip = 0;
-
-//extension_map_list_t extension_map_list;
-//static extension_info_t extension_info;
-
-
 
 // compare at most 16 chars
 #define MAXMODELEN	16	
@@ -223,8 +187,6 @@ int i;
 	for ( i=0; i<6; i++ ) {
 		s[5 - i] = a[i] & 0xFF;
     }
-//	snprintf(s, MAX_STRING_LENGTH-1 ,"%.2x:%.2x:%.2x:%.2x:%.2x:%.2x", mac[5], mac[4], mac[3], mac[2], mac[1], mac[0]);
-//	s[MAX_STRING_LENGTH-1] = '\0';
 
 	(void)hv_store(r, k, strlen(k), newSVpvn(s, 6), 0);
 }
@@ -240,16 +202,12 @@ STRLEN len;
 
 	if ( len == sizeof(ip4) )  {
 		memcpy(&ip4, s, sizeof(ip4));
-		//a->v4 = ntohl(ip4);
 		a->v4 = ip4;
-//		a->v4 = ip4;
 		return AF_INET;
 	} else {
 		memcpy(ip6, s, sizeof(ip6));
 		a->v6[0] = ntohll(ip6[0]);
 		a->v6[1] = ntohll(ip6[1]);
-		//a->v6[0] = ip6[0];
-		//a->v6[1] = ip6[1];
 		return AF_INET6;
 	}
 
@@ -270,7 +228,6 @@ STRLEN len;
 		return -1;
 		
 	for (i = 0; i < 6; i++) {
-//		long b = strtol(s+(3*i), (char **) NULL, 16);
 		mac[5 - i] = s[i];
 	}
 	
@@ -361,8 +318,6 @@ HV *res;
 
 	return newRV((SV *)res);
 }
-
-
 
 /* converts master_record to perl structures (hashref) */
 /* TAG for check_items_map.pl: libnf_master_record_to_SV */
@@ -480,7 +435,6 @@ int i=0;
 				HV_STORE_NV(res, NFL_RECEIVED, rec->received);
 
 		}
-//			printf("  %d Index %3i, ext %3u = %s\n", i, extension_descriptor[id].user_index, id, extension_descriptor[id].description );
 	}
 
 /*
@@ -562,8 +516,6 @@ int map_id = 0;
 	}
 
 	Insert_Extension_Map(&instance->extension_map_list, map); 
-//	PackExtensionMapList(&instance->extension_map_list);
-//	PrintExtensionMap(map);
 	AppendToBuffer(instance->nffile_w, (void *)map, map->size);
 
 	return map;
@@ -599,88 +551,13 @@ int i;
 
 	libnf_instances[handle] = instance;
 
-//	Ident[0] = '\0';
-
-//	SetStat_DefaultOrder("flows");
-/*
-	for ( i=0; i<AGGR_SIZE; AggregateMasks[i++] = 0 ) ;
-*/
-
-	/* initialize ExtensionMaps */
-//	SetupExtensionDescriptors("");
 	InitExtensionMaps(&(instance->extension_map_list));
 	i = 1;
 	instance->max_num_extensions = 0;
 	while ( extension_descriptor[i++].id )
 		instance->max_num_extensions++;
 
-
-
-	//SetupInputFileSequence(NULL, "/root/src/nfdump/Net-NfDump/t/data/dump1.nfcap", NULL);
-//	SetupInputFileSequence(NULL, "/root/src/nfdump/Net-NfDump/t/data/dump2.nfcap", NULL);
-
-//	print_header = format_file_block_header;
-	//print_record = flow_record_to_csv;
-//	print_record =libnf_row_callback; 
-
-/*	
-	filter = "any";
-
-	instance->engine = CompileFilter(filter);
-	if ( !instance->engine ) 
-		exit(254);
-
-*/
-//	SetLimits(element_stat || aggregate || flow_stat, packet_limit_string, byte_limit_string);
-
-	//nfprof_start(&profile_data);
-
-	//ffile_r = NULL;
-
-	// Get the first file handle
-	/*
-	nffile_r = GetNextFile(NULL, twin_start, twin_end);
-	if ( !nffile_r ) {
-		LogError("GetNextFile() error in %s line %d: %s\n", __FILE__, __LINE__, strerror(errno) );
-		return 0;
-	}
-	if ( nffile_r == EMPTY_LIST ) {
-		LogError("Empty file list. No files to process\n");
-		return 0;
-	}
-	*/
-
-	// preset time window of all processed flows to the stat record in first flow file
-	/*
-	t_first_flow = nffile_r->stat_record->first_seen;
-	t_last_flow  = nffile_r->stat_record->last_seen;
-	*/
-
-	// store infos away for later use
-	// although multiple files may be processed, it is assumed that all 
-	// have the same settings
-	/*
-	is_anonymized = IP_ANONYMIZED(nffile_r);
-	strncpy(Ident, nffile_r->file_header->ident, IDENTLEN);
-	Ident[IDENTLEN-1] = '\0';
-	*/
-
-//	blk_record_remains = 0;
-
 	instance->nffile_w = NULL;
-
-/*
-	while ( libnf_fetchrow_hashref() == NF_OK ) { 
-		printf(""); 
-	};
-*/
-
-//	libnf_finish();
-
-	//nfprof_end(&profile_data, total_flows);
-
-//	Dispose_FlowTable();
-//	Dispose_StatTable();
 
 	return handle;
 }
@@ -868,8 +745,6 @@ begin:
 	} 
 
 	/* there are some records to process - we are going continue reading next record */
-
-//	printf("BLK: %d\n", blk_record_remains);
 	instance->blk_record_remains--;
 
 	if ( instance->flow_record->type == ExtensionMapType ) {
@@ -887,7 +762,6 @@ begin:
 
 	/* we are sure that record is CommonRecordType */
 
-//	int match;
 	map_id = instance->flow_record->ext_map;
 	if ( map_id >= MAX_EXTENSION_MAPS ) {
 		croak("%s Corrupt data file. Extension map id %u too big.\n", NFL_LOG, instance->flow_record->ext_map);
@@ -896,7 +770,6 @@ begin:
 	if ( instance->extension_map_list.slot[map_id] == NULL ) {
 		warn("%s Corrupt data file. Missing extension map %u. Skip record.\n", NFL_LOG, instance->flow_record->ext_map);
 		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
-		//continue;
 		goto begin;
 	} 
 
@@ -912,7 +785,6 @@ begin:
 	// if no time filter is given, the result is always true
 	match  = instance->twin_start && (master_record->first < instance->twin_start || 
 						master_record->last > instance->twin_end) ? 0 : 1;
-//	match &= limitflows ? stat_record.numflows < limitflows : 1;
 
 	// filter netflow record with user supplied filter
 	if ( match ) 
