@@ -330,6 +330,22 @@ sub create {
 }
 
 
+sub storerow_arrayref {
+	my ($self, $row) = @_;
+
+	if (!$self->{write_prepared}) {
+		$self->create();
+	}
+
+	return Net::NfDump::libnf_write_row($self->{handle}, $row);
+}
+
+sub storerow_array {
+	my ($self, @row) = @_;
+
+	return $self->storerow_arryref(\@row);
+}
+
 =head2 storerow_hashref
 
 Insert data defined in hashref to the file opened by create. 
@@ -339,24 +355,12 @@ Insert data defined in hashref to the file opened by create.
 sub storerow_hashref {
 	my ($self, $row) = @_;
 
-	if (!$self->{write_prepared}) {
-		$self->create();
-	}
+	return undef if (!defined($row));
+
+	$self->set_fields( keys %{$row});
+
+	return $self->storerow_arrayref([ values %{$row}]);
 	
-	# handle, row reference
-	return Net::NfDump::libnf_write_row($self->{handle}, $row);
-}
-
-sub storerow_arryref {
-	my ($self, $row) = @_;
-
-	croak("Not implemented yet. Reserver for future use.");
-}
-
-sub storerow_array {
-	my ($self, $row) = @_;
-
-	croak("Not implemented yet. Reserver for future use.");
 }
 
 =head2 finish

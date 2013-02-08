@@ -65,9 +65,9 @@ libnf_set_fields(handle, fields)
 	SV * fields
 
 int 
-libnf_write_row(handle, hashref)
+libnf_write_row(handle, arrayref)
 	int handle
-	HV * hashref
+	SV * arrayref
 
 
 void 
