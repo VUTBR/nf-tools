@@ -75,6 +75,11 @@
 #define SvU64 SvUV
 #endif
 
+/* defining macros for storing numbers, 64 bit numbers and strings into hash */
+#define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
+#define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64v(v), 0)
+#define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
+
 
 /* hash parameters */
 #define NumPrealloc 128000
@@ -110,6 +115,7 @@ typedef struct libnf_instance_s {
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
 	int						*field_list;
+	int						field_count;
 //	stat_record_t			stat_record;
 	uint64_t				processed_bytes;		/* read statistics */
 	uint64_t				total_files;
@@ -141,63 +147,6 @@ extern extension_descriptor_t extension_descriptor[];
 #include "nffile_inline.c"
 #include "nf_common.c"
 
-/* compare key in hashref */
-#define CMP_STR(k, v) strnEQ(k, v, strlen(v))
-
-/* defining macros for storing numbers, 64 bit numbers and strings into hash */
-#define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
-#define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64v(v), 0)
-#define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
-
-/* code to DELETE */
-
-
-inline int Sv_addr(ip_addr_t *a, SV * sv) {
-uint64_t ip6[2];
-uint32_t ip4;
-char *s;
-STRLEN len;
-
-    s = SvPV(sv, len);
-
-    if ( len == sizeof(ip4) )  {
-        memcpy(&ip4, s, sizeof(ip4));
-        a->v4 = ip4;
-        return AF_INET;
-    } else {
-        memcpy(ip6, s, sizeof(ip6));
-        a->v6[0] = ntohll(ip6[0]);
-        a->v6[1] = ntohll(ip6[1]);
-        return AF_INET6;
-    }
-
-    return -1;
-}
-
-
-inline int Sv_mac(uint64_t *a, SV * sv) {
-uint8_t *mac = (uint8_t *)a;
-char *s;
-int i;
-STRLEN len;
-
-    s = SvPV(sv, len);
-
-    if ( len != 6 )
-        return -1;
-
-    for (i = 0; i < 6; i++) {
-        mac[5 - i] = s[i];
-    }
-
-    mac[6] = 0x0;
-    mac[7] = 0x0;
-
-    return 0;
-}
-
-
-/* end code to DELETE */
 
 /***********************************************************************
 *                                                                      *
@@ -214,13 +163,6 @@ static inline SV * uint_to_SV(uint32_t n, int is_defined) {
 	return newSVuv(n);
 }
 
-/* converts SV to unsigend integer 32b.   */
-/* returns 0 if conversion was not succesfull */
-inline void SV_to_uint(uint32_t *a, SV * sv) {
-
-	*a = SvUV(sv);
-}
-
 /* converts unsigned integer 64b. to SV */
 static inline SV * uint64_to_SV(uint64_t *n, int is_defined) {
 
@@ -230,12 +172,6 @@ static inline SV * uint64_to_SV(uint64_t *n, int is_defined) {
 	return newSVu64(*n);
 }
 
-/* converts SV to unsigend integer 64b.   */
-inline void SV_to_uint64(uint64_t *a, SV * sv) {
-
-	*a = SvU64(sv);
-}
-
 /* converts mpls array to SV */
 static inline SV * mpls_to_SV(char *mpls, int is_defined) {
 
@@ -243,6 +179,22 @@ static inline SV * mpls_to_SV(char *mpls, int is_defined) {
 		return newSV(0);
 
 	return newSVpvn(mpls, sizeof(((struct master_record_s *)0)->mpls_label));
+}
+
+/* converts SV to MPLS string   */
+/* returns 0 if conversion was not succesfull */
+static inline int SV_to_mpls(char *a, SV * sv) {
+STRLEN len;
+char *s;
+
+	s = SvPV(sv, len);
+
+	if ( len != sizeof(((struct master_record_s *)0)->mpls_label) ) 
+		return -1;
+
+	memcpy(a, s, sizeof(((struct master_record_s *)0)->mpls_label) );
+	
+	return 0;
 }
 
 
@@ -455,7 +407,7 @@ int i=0;
 	while ( instance->field_list[i] ) {
 		SV * sv;
 
-		switch ( instance->field_list[i++] ) { 
+		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
 					sv = uint_to_SV(rec->first, 1);
 					break;
@@ -580,31 +532,26 @@ int i=0;
 					break;
 
 			case NFL_I_IN_SRC_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->in_src_mac, 
+					sv = mac_to_SV((u_int8_t *)&rec->in_src_mac,
 						bit_array_get(&ext, EX_MAC_1) );
 					break;
 			case NFL_I_OUT_DST_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->out_dst_mac, 
+					sv = mac_to_SV((u_int8_t *)&rec->out_dst_mac,
 						bit_array_get(&ext, EX_MAC_1) );
 					break;
 			case NFL_I_OUT_SRC_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->out_src_mac, 
+					sv = mac_to_SV((u_int8_t *)&rec->out_src_mac,
 						bit_array_get(&ext, EX_MAC_2) );
 					break;
 			case NFL_I_IN_DST_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->in_dst_mac, 
+					sv = mac_to_SV((u_int8_t *)&rec->in_dst_mac,
 						bit_array_get(&ext, EX_MAC_2) );
 					break;
-
+ 
 			case NFL_I_MPLS_LABEL:
 					sv = mpls_to_SV((char *)&rec->mpls_label, 
 						bit_array_get(&ext, EX_MPLS) );
 					break;
-			/*
-			case EX_MPLS:
-				(void)hv_store(res, NFL_T_MPLS_LABEL, strlen(NFL_T_MPLS_LABEL), 
-						newSVpvn((char *)rec->mpls_label, sizeof(rec->mpls_label)), 0);
-			*/
 
 			case NFL_I_INPUT:
 					sv = uint_to_SV(rec->input, 
@@ -660,6 +607,7 @@ int i=0;
 					break;
 		}
 
+		i++;
 		av_push(res_array, sv);	
 	}
 
@@ -824,6 +772,7 @@ int i;
 		}
 	}
 	instance->field_list[i++] = NFL_ZERO_FIELD;
+	instance->field_count = numfields;
 	return 1;
 }
 
@@ -1082,15 +1031,13 @@ begin:
 
 
 /* TAG for check_items_map.pl: libnf_write_row */
-int libnf_write_row(int handle, HV * hashref) {
+int libnf_write_row(int handle, SV * arrayref) {
 master_record_t rec;
 libnf_instance_t *instance = libnf_instances[handle];
 extension_map_t *map;
-char *key;
-int len;
-STRLEN svlen;
-SV * sv;
 bit_array_t ext;
+int numfields;
+int i, res;
 
 
 	if (instance == NULL ) {
@@ -1098,278 +1045,294 @@ bit_array_t ext;
 		return 0;
 	}
 
+	if ((!SvROK(arrayref))
+		|| (SvTYPE(SvRV(arrayref)) != SVt_PVAV) 
+		|| ((numfields = av_len((AV *)SvRV(arrayref))) < 0)) {
+			croak("%s can not determine fields to store", NFL_LOG);
+			return 0;
+	}
+
+	if (numfields != instance->field_count) {
+		croak("%s number of fields do not match", NFL_LOG);
+		return 0;
+	}
+
 	memzero(&rec, sizeof(rec));
 
-
-	/* check the hashref */
-	hv_iterinit(hashref);
-
-	// detect the maximum number of extensions 
-		
 	bit_array_init(&ext, instance->max_num_extensions + 1);
 
-	/* go through handled hashref and enable extensions according the key values */	
-	while ( (sv = hv_iternextsv(hashref, &key, (I32*) &len)) != NULL ) {
-//		fprintf(stderr, "%s : %s\n", key, SvPV(sv, len));
+	i = 0;
+	while ( instance->field_list[i] ) {
 
-		// time items
-		if ( CMP_STR(key, NFL_T_FIRST)) {
-			rec.first = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_MSEC_FIRST)) {
-			rec.msec_first = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_LAST)) {
-			rec.last = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_MSEC_LAST)) {
-			rec.msec_last = SvUV(sv);
- 
-		// preotocol + tcp_flags + fwd_status 
-		} else if ( CMP_STR(key, NFL_T_PROT)) {
-			rec.prot = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_TCP_FLAGS) ) {
-			rec.tcp_flags = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_FWD_STATUS) ) {
-			rec.fwd_status = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_TOS) ) {
-			rec.tos = SvUV(sv);
+		SV * sv = (SV *)av_fetch((AV *)SvRV(arrayref), i, 0);
 
-		// BASIC ITEMS SRC/DST ADDR/PORTS
-		} else if ( CMP_STR(key, NFL_T_SRCADDR)) {
-			int res = Sv_addr((ip_addr_t *)&rec.v6.srcaddr, sv);
-			switch (res) {
-				case AF_INET:
-					ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+		switch ( instance->field_list[i] ) { 
+			case NFL_I_FIRST: 	
+					rec.first = SvUV(sv);
 					break;
-				case AF_INET6:
-					SetFlag(rec.flags, FLAG_IPV6_ADDR);
+			case NFL_I_MSEC_FIRST: 	
+					rec.msec_first = SvUV(sv);
 					break;
-				default: 
-					warn("%s invalid value for %s", NFL_LOG, NFL_T_SRCADDR);
-					return 0;
-			}
-		} else if ( CMP_STR(key, NFL_T_DSTADDR)) {
-			int res = Sv_addr((ip_addr_t *)&rec.v6.dstaddr, sv);
-			switch (res) {
-				case AF_INET:
-					ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+			case NFL_I_LAST: 	
+					rec.last = SvUV(sv);
 					break;
-				case AF_INET6:
-					SetFlag(rec.flags, FLAG_IPV6_ADDR);
+			case NFL_I_MSEC_LAST: 	
+					rec.msec_last = SvUV(sv);
 					break;
-				default: 
-					warn("%s invalid value for %s", NFL_LOG, NFL_T_DSTADDR);
-					return 0;
-			}
 
-		// aggregated flows 
-		// EX_AGGR_FLOWS_4 is nod used, we always use 32b. version
-		} else if ( CMP_STR(key, NFL_T_AGGR_FLOWS) ) {
-			rec.aggr_flows = SvU64(sv);
-			bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
-
-		// src/dst port
-		} else if ( CMP_STR(key, NFL_T_SRCPORT)) {
-			rec.srcport = SvUV(sv);
-		} else if ( CMP_STR(key, NFL_T_DSTPORT)) {
-			rec.dstport = SvUV(sv);
-
-		// bytes, packets
-		} else if ( CMP_STR(key, NFL_T_DPKTS)) {
-			rec.dPkts = SvU64(sv);
-		} else if ( CMP_STR(key, NFL_T_DOCTETS)) {
-			rec.dOctets = SvU64(sv);
-
-		// INPUT + OUTPUT interface 
-		// EX_IO_SNMP_2 is nod used, we always use 32b. version
-		} else if ( CMP_STR(key, NFL_T_INPUT) ) {
-			rec.input = SvUV(sv);
-			bit_array_set(&ext, EX_IO_SNMP_4, 1);
-		} else if ( CMP_STR(key, NFL_T_OUTPUT) ) {
-			rec.output = SvUV(sv);
-			bit_array_set(&ext, EX_IO_SNMP_4, 1);
-
-		// AS numbers
-		// EX_AS_2 is nod used, we always use 32b. version
-		} else if ( CMP_STR(key, NFL_T_SRCAS) ) {
-			rec.srcas = SvUV(sv);
-			bit_array_set(&ext, EX_AS_4, 1);
-		} else if ( CMP_STR(key, NFL_T_DSTAS) ) {
-			rec.dstas = SvUV(sv);
-			bit_array_set(&ext, EX_AS_4, 1);
-
-		// bgp AdjacentAS, EX_BGPADJ
-		} else if ( CMP_STR(key, NFL_T_BGPNEXTADJACENTAS) ) {
-			rec.bgpNextAdjacentAS = SvUV(sv);
-			bit_array_set(&ext, EX_BGPADJ, 1);
-		} else if ( CMP_STR(key, NFL_T_BGPPREVADJACENTAS) ) {
-			rec.bgpPrevAdjacentAS = SvUV(sv);
-			bit_array_set(&ext, EX_BGPADJ, 1);
-
-		// DST TOS, DIRECTION, MASKS
-		} else if ( CMP_STR(key, NFL_T_DST_TOS) ) {
-			rec.dst_tos = SvUV(sv);
-			bit_array_set(&ext, EX_MULIPLE, 1);
-		} else if ( CMP_STR(key, NFL_T_DIR) ) {
-			rec.dir = SvUV(sv);
-			bit_array_set(&ext, EX_MULIPLE, 1);
-		} else if ( CMP_STR(key, NFL_T_SRC_MASK) ) {
-			rec.src_mask = SvUV(sv);
-			bit_array_set(&ext, EX_MULIPLE, 1);
-		} else if ( CMP_STR(key, NFL_T_DST_MASK) ) {
-			rec.dst_mask = SvUV(sv);
-			bit_array_set(&ext, EX_MULIPLE, 1);
-
-		// NEXT HOP
-		} else if ( CMP_STR(key, NFL_T_IP_NEXTHOP)) {
-			int res = Sv_addr(&rec.ip_nexthop, sv);
-			switch (res) {
-				case AF_INET:
-					ClearFlag(rec.flags, FLAG_IPV6_NH);
-					bit_array_set(&ext, EX_NEXT_HOP_v4, 1);
-					bit_array_set(&ext, EX_NEXT_HOP_v6, 0);
+			case NFL_I_RECEIVED:
+					rec.received = SvU64(sv);
+					bit_array_set(&ext, EX_RECEIVED, 1);
 					break;
-				case AF_INET6:
-					SetFlag(rec.flags, FLAG_IPV6_NH);
-					bit_array_set(&ext, EX_NEXT_HOP_v4, 0);
-					bit_array_set(&ext, EX_NEXT_HOP_v6, 1);
+
+			case NFL_I_DPKTS:
+					rec.dPkts = SvU64(sv);
 					break;
-				default: 
-					warn("%s invalid value for %s", NFL_LOG, NFL_T_IP_NEXTHOP);
-					return 0;
-			}
-	
-		// BGP NETX HOP	
-		} else if ( CMP_STR(key, NFL_T_BGP_NEXTHOP)) {
-			int res = Sv_addr(&rec.bgp_nexthop, sv);
-			switch (res) {
-				case AF_INET:
-					ClearFlag(rec.flags, FLAG_IPV6_NHB);
-					bit_array_set(&ext, EX_NEXT_HOP_BGP_v4, 1);
-					bit_array_set(&ext, EX_NEXT_HOP_BGP_v6, 0);
+			case NFL_I_DOCTETS:
+					rec.dOctets = SvU64(sv);
 					break;
-				case AF_INET6:
-					SetFlag(rec.flags, FLAG_IPV6_NHB);
-					bit_array_set(&ext, EX_NEXT_HOP_BGP_v4, 0);
-					bit_array_set(&ext, EX_NEXT_HOP_BGP_v6, 1);
+
+			// EX_OUT_PKG_4 not used 
+			case NFL_I_OUT_PKTS:
+					rec.out_pkts = SvU64(sv);
+					bit_array_set(&ext, EX_OUT_PKG_8, 1);
 					break;
-				default: 
-					warn("%s invalid value for %s", NFL_LOG, NFL_T_BGP_NEXTHOP);
-					return 0;
-			}
-
-		// VLANS
-		} else if ( CMP_STR(key, NFL_T_SRC_VLAN)) {
-			rec.src_vlan = SvUV(sv);
-			bit_array_set(&ext, EX_VLAN, 1);
-		} else if ( CMP_STR(key, NFL_T_DST_VLAN)) {
-			rec.dst_vlan = SvUV(sv);
-			bit_array_set(&ext, EX_VLAN, 1);
-
-		// OUTPUT CONTERS
-		// EX_OUT_PKG_4, EX_OUT_BYTES_4 is nod used, we always use 32b. version
-		} else if ( CMP_STR(key, NFL_T_OUT_PKTS)) {
-			rec.out_pkts = SvU64(sv);
-			bit_array_set(&ext, EX_OUT_PKG_8, 1);
-		} else if ( CMP_STR(key, NFL_T_OUT_BYTES)) {
-			rec.out_bytes = SvU64(sv);
-			bit_array_set(&ext, EX_OUT_BYTES_8, 1);
-
-		// MAC ADDRESSES
-		} else if ( CMP_STR(key, NFL_T_IN_SRC_MAC) ) {
-			if (Sv_mac(&rec.in_src_mac, sv) != 0) {
-				warn("%s invalid MAC address %s (%s)", NFL_LOG, NFL_T_IN_SRC_MAC, SvPV(sv, svlen));
-				return 0;
-			}
-			bit_array_set(&ext, EX_MAC_1, 1);
-		} else if ( CMP_STR(key, NFL_T_OUT_DST_MAC) ) {
-			if (Sv_mac(&rec.out_dst_mac, sv) != 0) {
-				warn("%s invalid MAC address %s (%s)", NFL_LOG, NFL_T_OUT_DST_MAC, SvPV(sv, svlen));
-				return 0;
-			}
-			bit_array_set(&ext, EX_MAC_1, 1);
-		} else if ( CMP_STR(key, NFL_T_IN_DST_MAC) ) { 
-			if (Sv_mac(&rec.in_dst_mac, sv) != 0) {
-				warn("%s invalid MAC address %s (%s)", NFL_LOG, NFL_T_IN_DST_MAC, SvPV(sv, svlen));
-				return 0;
-			}
-			bit_array_set(&ext, EX_MAC_2, 1);
-		} else if ( CMP_STR(key, NFL_T_OUT_SRC_MAC) ) {
-			if (Sv_mac(&rec.out_src_mac, sv) != 0) {
-				warn("%s invalid MAC address %s (%s)", NFL_LOG, NFL_T_OUT_SRC_MAC, SvPV(sv, svlen));
-				return 0;
-			}
-			bit_array_set(&ext, EX_MAC_2, 1);
-
-
-		// MPLS LABELS
-		} else if ( CMP_STR(key, NFL_T_MPLS_LABEL)) {
-			STRLEN len;
-			char *s;
-			s = SvPV(sv, len);
-			if ( len != sizeof(rec.mpls_label) ) {
-				warn("%s Invalid size of %s field (size: %lu, expected: %lu)", NFL_LOG, 
-								NFL_T_MPLS_LABEL, len, sizeof(rec.mpls_label));
-				return 0;
-			}
-            memcpy(&rec.mpls_label, s, sizeof(rec.mpls_label));
-			bit_array_set(&ext, EX_MPLS, 1);
-
-
-		// ROUTER/EXPORTER INFORMATION
-		} else if ( CMP_STR(key, NFL_T_IP_ROUTER)) {
-			int res = Sv_addr(&rec.ip_router, sv);
-			switch (res) {
-				case AF_INET:
-					ClearFlag(rec.flags, FLAG_IPV6_EXP);
-					bit_array_set(&ext, EX_ROUTER_IP_v4, 1);
-					bit_array_set(&ext, EX_ROUTER_IP_v6, 0);
+			// EX_OUT_BYTES_4 not used 
+			case NFL_I_OUT_BYTES:
+					rec.out_bytes = SvU64(sv);
+					bit_array_set(&ext, EX_OUT_BYTES_8, 1);
 					break;
-				case AF_INET6:
-					SetFlag(rec.flags, FLAG_IPV6_EXP);
-					bit_array_set(&ext, EX_ROUTER_IP_v4, 0);
-					bit_array_set(&ext, EX_ROUTER_IP_v6, 1);
+			// EX_AGGR_FLOWS_4 not used 
+			case NFL_I_AGGR_FLOWS:
+					rec.aggr_flows = SvU64(sv);
+					bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
 					break;
-				default: 
-					warn("%s invalid notation for %s (%s)", NFL_LOG, NFL_T_IP_ROUTER, SvPV(sv, svlen));
-					return 0;
-			}
-		} else if ( CMP_STR(key, NFL_T_ENGINE_TYPE) ) {
-			rec.engine_type = SvUV(sv);
-			bit_array_set(&ext, EX_ROUTER_ID, 1);
-		} else if ( CMP_STR(key, NFL_T_ENGINE_ID) ) {
-			rec.engine_id = SvUV(sv);
-			bit_array_set(&ext, EX_ROUTER_ID, 1);
-		 
 
-		// nprobe extensions
-		/* neot enabled yet because PackRecord function doesn't contain 
- 		* the code for EX_LATENCY. The issue was send to P. Haag
- 		* so the future version might solvethe problem 
-		} else if ( CMP_STR(key, NFL_T_CLIENT_NW_DELAY_USEC) ) {
-			rec.client_nw_delay_usec = SvU64(sv);
-			bit_array_set(&ext, EX_LATENCY, 1);
-		} else if ( CMP_STR(key, NFL_T_SERVER_NW_DELAY_USEC) ) {
-			rec.server_nw_delay_usec = SvU64(sv);
-			bit_array_set(&ext, EX_LATENCY, 1);
-		} else if ( CMP_STR(key, NFL_T_APPL_LATENCY_USEC) ) {
-			rec.appl_latency_usec = SvU64(sv);
-			bit_array_set(&ext, EX_LATENCY, 1);
-		*/
+			case NFL_I_SRCPORT:
+					rec.srcport = SvUV(sv);
+					break;
+			case NFL_I_DSTPORT:
+					rec.dstport = SvUV(sv);
+					break;
+			case NFL_I_TCP_FLAGS: 	
+					rec.tcp_flags = SvUV(sv);
+					break;
 
-		// EX_RECEIVED
-		} else if ( CMP_STR(key, NFL_T_RECEIVED) ) {
-			rec.received = SvU64(sv);
-			bit_array_set(&ext, EX_RECEIVED, 1);
-		} 
-		else {	
-			warn("%s invalid item %s", NFL_LOG, key);
-			return 0;
+			// Required extension 1 - IP addresses 
+			// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
+			// however the structures are compatible so we will pretend 
+			// that v6.srcaddr and v6.dst addr points to same structure 
+			case NFL_I_SRCADDR: 
+					res = SV_to_ip_addr((ip_addr_t *)&rec.v6.srcaddr, sv);
+					switch (res) {
+						case AF_INET:
+							ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+							break;
+					case AF_INET6:
+							SetFlag(rec.flags, FLAG_IPV6_ADDR);
+							break;
+					default: 
+						warn("%s invalid value for %s", NFL_LOG, NFL_T_SRCADDR);
+						return 0;
+					}
+					break;
+			case NFL_I_DSTADDR:
+					res = SV_to_ip_addr((ip_addr_t *)&rec.v6.dstaddr, sv);
+					switch (res) {
+						case AF_INET:
+							ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+							break;
+					case AF_INET6:
+							SetFlag(rec.flags, FLAG_IPV6_ADDR);
+							break;
+					default: 
+						warn("%s invalid value for %s", NFL_LOG, NFL_T_DSTADDR);
+						return 0;
+					}
+					break;
+			case NFL_I_IP_NEXTHOP:
+					res = SV_to_ip_addr((ip_addr_t *)&rec.ip_nexthop, sv);
+					switch (res) {
+						case AF_INET:
+							ClearFlag(rec.flags, FLAG_IPV6_NH);
+							bit_array_set(&ext, EX_NEXT_HOP_v4, 1);
+							break;
+					case AF_INET6:
+							SetFlag(rec.flags, FLAG_IPV6_NH);
+							bit_array_set(&ext, EX_NEXT_HOP_v6, 1);
+							break;
+					default: 
+						warn("%s invalid value for %s", NFL_LOG, NFL_T_IP_NEXTHOP);
+						return 0;
+					}
+					break;
+			case NFL_I_SRC_MASK:
+					rec.src_mask = SvUV(sv);
+					bit_array_set(&ext, EX_MULIPLE, 1);
+					break;
+			case NFL_I_DST_MASK:
+					rec.dst_mask = SvUV(sv);
+					bit_array_set(&ext, EX_MULIPLE, 1);
+					break;
+
+			case NFL_I_TOS:
+					rec.tos = SvUV(sv);
+					break;
+			case NFL_I_DST_TOS:
+					rec.dst_tos = SvUV(sv);
+					bit_array_set(&ext, EX_MULIPLE, 1);
+					break;
+
+			// EX_AS_2 not used 
+			case NFL_I_SRCAS:
+					rec.srcas = SvUV(sv);
+					bit_array_set(&ext, EX_AS_4, 1);
+					break;
+			case NFL_I_DSTAS:
+					rec.dstas = SvUV(sv);
+					bit_array_set(&ext, EX_AS_4, 1);
+					break;
+
+			case NFL_I_BGPNEXTADJACENTAS:
+					rec.bgpNextAdjacentAS = SvUV(sv);
+					bit_array_set(&ext, EX_BGPADJ, 1);
+					break;
+			case NFL_I_BGPPREVADJACENTAS:
+					rec.bgpPrevAdjacentAS = SvUV(sv);
+					bit_array_set(&ext, EX_BGPADJ, 1);
+					break;
+			case NFL_I_BGP_NEXTHOP:
+					res = SV_to_ip_addr((ip_addr_t *)&rec.bgp_nexthop, sv);
+					switch (res) {
+						case AF_INET:
+							ClearFlag(rec.flags, FLAG_IPV6_NHB);
+							bit_array_set(&ext, EX_NEXT_HOP_BGP_v4, 1);
+							break;
+					case AF_INET6:
+							SetFlag(rec.flags, FLAG_IPV6_NHB);
+							bit_array_set(&ext, EX_NEXT_HOP_BGP_v6, 1);
+							break;
+					default: 
+						warn("%s invalid value for %s", NFL_LOG, NFL_T_BGP_NEXTHOP);
+						return 0;
+					}
+					break;
+
+			case NFL_I_PROT: 	
+					rec.prot = SvUV(sv);
+					break;
+
+			case NFL_I_SRC_VLAN:
+					rec.src_vlan = SvUV(sv);
+					bit_array_set(&ext, EX_VLAN, 1);
+					break;
+			case NFL_I_DST_VLAN:
+					rec.dst_vlan = SvUV(sv);
+					bit_array_set(&ext, EX_VLAN, 1);
+					break;
+
+			case NFL_I_IN_SRC_MAC:
+					if (SV_to_mac(&rec.in_src_mac, sv) != 0) {
+						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_SRC_MAC);
+						return 0;
+					}
+					bit_array_set(&ext, EX_MAC_1, 1);
+					break;
+			case NFL_I_OUT_DST_MAC:
+					if (SV_to_mac(&rec.out_dst_mac, sv) != 0) {
+						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_DST_MAC);
+						return 0;
+					}
+					bit_array_set(&ext, EX_MAC_1, 1);
+					break;
+			case NFL_I_OUT_SRC_MAC:
+					if (SV_to_mac(&rec.out_src_mac, sv) != 0) {
+						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_SRC_MAC);
+						return 0;
+					}
+					bit_array_set(&ext, EX_MAC_2, 1);
+					break;
+			case NFL_I_IN_DST_MAC:
+					if (SV_to_mac(&rec.in_dst_mac, sv) != 0) {
+						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_DST_MAC);
+						return 0;
+					}
+					bit_array_set(&ext, EX_MAC_2, 1);
+					break;
+
+			case NFL_I_MPLS_LABEL:
+					if (SV_to_mpls((char *)&rec.mpls_label, sv) != 0) {
+						warn("%s invalid item %s", NFL_LOG, NFL_T_MPLS_LABEL);
+						return 0;
+					}
+					bit_array_set(&ext, EX_MPLS, 1);
+					break;
+
+			// EX_IO_SNMP_2 not used 
+			case NFL_I_INPUT:
+					rec.input = SvUV(sv);
+					bit_array_set(&ext, EX_IO_SNMP_4, 1);
+					break;
+			case NFL_I_OUTPUT:
+					rec.output = SvUV(sv);
+					bit_array_set(&ext, EX_IO_SNMP_4, 1);
+					break;
+
+			case NFL_I_DIR:
+					rec.dir = SvUV(sv);
+					bit_array_set(&ext, EX_MULIPLE, 1);
+					break;
+
+			case NFL_I_FWD_STATUS:
+					rec.fwd_status = SvUV(sv);
+					break;
+
+			case NFL_I_IP_ROUTER:
+					res = SV_to_ip_addr((ip_addr_t *)&rec.ip_router, sv);
+					switch (res) {
+						case AF_INET:
+							ClearFlag(rec.flags, FLAG_IPV6_EXP);
+							bit_array_set(&ext, EX_ROUTER_IP_v4, 1);
+							break;
+					case AF_INET6:
+							SetFlag(rec.flags, FLAG_IPV6_EXP);
+							bit_array_set(&ext, EX_ROUTER_IP_v6, 1);
+							break;
+					default: 
+						warn("%s invalid value for %s", NFL_LOG, NFL_T_IP_ROUTER);
+						return 0;
+					}
+					break;
+			case NFL_I_ENGINE_TYPE:
+					rec.engine_type = SvUV(sv);
+					bit_array_set(&ext, EX_ROUTER_ID, 1);
+					break;
+			case NFL_I_ENGINE_ID:
+					rec.engine_id = SvUV(sv);
+					bit_array_set(&ext, EX_ROUTER_ID, 1);
+					break;
+
+
+			case NFL_I_CLIENT_NW_DELAY_USEC:
+					rec.client_nw_delay_usec = SvU64(sv);
+					bit_array_set(&ext, EX_LATENCY, 1);
+					break;
+			case NFL_I_SERVER_NW_DELAY_USEC:
+					rec.server_nw_delay_usec = SvU64(sv);
+					bit_array_set(&ext, EX_LATENCY, 1);
+					break;
+			case NFL_I_APPL_LATENCY_USEC:
+					rec.appl_latency_usec = SvU64(sv);
+					bit_array_set(&ext, EX_LATENCY, 1);
+					break;
+
+			default:
+					croak("%s Unknown ID in %s !!", NFL_LOG, __FUNCTION__);
+					break;
 		}
 
-//		SvREFCNT_dec(sv); 	/* free memory */
-	}  // while 
-
-//	printf("REFCNT: %d\n", SvREFCNT(hashref));
-//	SvREFCNT_dec(hashref); 	/* free memory */
+		i++;
+	}
 
 	map = libnf_lookup_map(instance, &ext);
 	bit_array_release(&ext);
