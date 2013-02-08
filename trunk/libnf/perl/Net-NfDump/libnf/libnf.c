@@ -109,6 +109,7 @@ typedef struct libnf_instance_s {
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
+	int						*field_list;
 //	stat_record_t			stat_record;
 	uint64_t				processed_bytes;		/* read statistics */
 	uint64_t				total_files;
@@ -148,51 +149,132 @@ extern extension_descriptor_t extension_descriptor[];
 #define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64v(v), 0)
 #define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
-/* function to store IPv4 or IPv6 address into hash */
-void static inline HV_STORE_AV(HV *r, char *k, ip_addr_t *a, int is6) {
-char s[IP_STRING_LEN];
+/* code to DELETE */
 
-	//s[0] = 0;
-	int len = 0;
+
+inline int Sv_addr(ip_addr_t *a, SV * sv) {
+uint64_t ip6[2];
+uint32_t ip4;
+char *s;
+STRLEN len;
+
+    s = SvPV(sv, len);
+
+    if ( len == sizeof(ip4) )  {
+        memcpy(&ip4, s, sizeof(ip4));
+        a->v4 = ip4;
+        return AF_INET;
+    } else {
+        memcpy(ip6, s, sizeof(ip6));
+        a->v6[0] = ntohll(ip6[0]);
+        a->v6[1] = ntohll(ip6[1]);
+        return AF_INET6;
+    }
+
+    return -1;
+}
+
+
+inline int Sv_mac(uint64_t *a, SV * sv) {
+uint8_t *mac = (uint8_t *)a;
+char *s;
+int i;
+STRLEN len;
+
+    s = SvPV(sv, len);
+
+    if ( len != 6 )
+        return -1;
+
+    for (i = 0; i < 6; i++) {
+        mac[5 - i] = s[i];
+    }
+
+    mac[6] = 0x0;
+    mac[7] = 0x0;
+
+    return 0;
+}
+
+
+/* end code to DELETE */
+
+/***********************************************************************
+*                                                                      *
+* functions and macros for converting data types to perl's SV and back *
+*                                                                      *
+************************************************************************/
+
+/* cinverts unsigned integer 32b. to SV */
+static inline SV * uint_to_SV(uint32_t n, int is_defined) {
+
+	if (!is_defined) 
+		return newSV(0);
+
+	return newSVuv(n);
+}
+
+/* converts SV to unsigend integer 32b.   */
+/* returns 0 if conversion was not succesfull */
+inline void SV_to_uint(uint32_t *a, SV * sv) {
+
+	*a = SvUV(sv);
+}
+
+/* converts unsigned integer 64b. to SV */
+static inline SV * uint64_to_SV(uint64_t *n, int is_defined) {
+
+	if (!is_defined) 
+		return newSV(0);
+
+	return newSVu64(*n);
+}
+
+/* converts SV to unsigend integer 64b.   */
+inline void SV_to_uint64(uint64_t *a, SV * sv) {
+
+	*a = SvU64(sv);
+}
+
+/* converts mpls array to SV */
+static inline SV * mpls_to_SV(char *mpls, int is_defined) {
+
+	if (!is_defined) 
+		return newSV(0);
+
+	return newSVpvn(mpls, sizeof(((struct master_record_s *)0)->mpls_label));
+}
+
+
+/* IPv4 or IPv6 address to SV */
+static inline SV * ip_addr_to_SV(ip_addr_t *a, int is6, int is_defined) {
+char s[IP_STRING_LEN];
+int len = 0;
+
+	if (!is_defined) 
+		return newSV(0);
 
 	if ( is6 ) { // IPv6
 		uint64_t ip[2];
 
 		ip[0] = htonll(a->v6[0]);
 		ip[1] = htonll(a->v6[1]);
-		//ip[0] = a->v6[0];
-		//ip[1] = a->v6[1];
 		len = sizeof(a->v6);
 		memcpy(s, ip, len);
 	} else {    // IPv4
 		uint32_t ip;
 
-		//ip = htonl(a->v4);
 		ip = a->v4;
-//		ip = a->v4;
 		len = sizeof(a->v4);
 		memcpy(s, &ip, len);
 	}
 
-	(void)hv_store(r, k, strlen(k), newSVpvn(s, len), 0);
+	return  newSVpvn(s, len);
 }
 
-/* function to store MAC address into hash */
-void static inline HV_STORE_MV(HV *r,char *k, uint8_t *a) {
-char s[MAX_STRING_LENGTH];
-int i;
-
-	s[0] = 0;
-
-	for ( i=0; i<6; i++ ) {
-		s[5 - i] = a[i] & 0xFF;
-    }
-
-	(void)hv_store(r, k, strlen(k), newSVpvn(s, 6), 0);
-}
-
-/* converts perl's SV with string representation of IP addres to  ip_addr_t */
-inline int Sv_addr(ip_addr_t *a, SV * sv) {
+/* converts SV to  IP addres (ip_addr_t) */
+/* returns AF_INET or AF_INET6 based of the address type */
+static inline int SV_to_ip_addr(ip_addr_t *a, SV * sv) {
 uint64_t ip6[2];
 uint32_t ip4;
 char *s;
@@ -214,9 +296,26 @@ STRLEN len;
 	return -1;
 }
 
-/* converts perl's SV with string representation of MAC addres and store to uint64_t   */
+/* converts MAC address to SV */
+static inline SV * mac_to_SV(uint8_t *a, int is_defined) {
+char s[MAX_STRING_LENGTH];
+int i;
+
+	if (!is_defined) 
+		return newSV(0);
+
+	s[0] = 0;
+
+	for ( i=0; i<6; i++ ) {
+		s[5 - i] = a[i] & 0xFF;
+    }
+
+	return newSVpvn(s, 6);
+}
+
+/* converts SV to MAC addres and store to uint64_t   */
 /* returns 0 if conversion was not succesfull */
-inline int Sv_mac(uint64_t *a, SV * sv) {
+static inline int SV_to_mac(uint64_t *a, SV * sv) {
 uint8_t *mac = (uint8_t *)a;
 char *s;
 int i; 
@@ -236,6 +335,15 @@ STRLEN len;
 
 	return 0;
 }
+
+/*
+************************************************************************
+*                                                                      *
+* end of convertion functions                                          *
+*                                                                      *
+************************************************************************
+*/
+
 
 /* returns the information about file get from file header */
 SV * libnf_file_info(char *file) {
@@ -321,129 +429,243 @@ HV *res;
 
 /* converts master_record to perl structures (hashref) */
 /* TAG for check_items_map.pl: libnf_master_record_to_SV */
-SV * libnf_master_record_to_SV(master_record_t *rec, extension_map_t *map) {
-HV *res;
+SV * libnf_master_record_to_AV(int handle, master_record_t *rec, extension_map_t *map) {
+libnf_instance_t *instance = libnf_instances[handle];
+AV *res_array;
+bit_array_t ext;
 int i=0;
 
-	res = (HV *)sv_2mortal((SV *)newHV());
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG);
+		return 0;
+	}
 
-	// time fields
-	HV_STORE_NV(res, NFL_T_FIRST, rec->first);
-	HV_STORE_NV(res, NFL_T_MSEC_FIRST, rec->msec_first);
-	HV_STORE_NV(res, NFL_T_LAST, rec->last);
-	HV_STORE_NV(res, NFL_T_MSEC_LAST, rec->msec_last);
+	// processing map 
+	bit_array_init(&ext, instance->max_num_extensions + 1);
 
-	HV_STORE_NV(res, NFL_T_PROT, rec->prot);
-	HV_STORE_NV(res, NFL_T_TCP_FLAGS, rec->tcp_flags);
-	
-	// Required extension 1 - IP addresses 
-	// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
-	// however the structures are simmilar so we will pretend 
-	// that v6.srcaddr and v6.dst addr points to same structure 
-	HV_STORE_AV(res, NFL_T_SRCADDR, (ip_addr_t *)&rec->v6.srcaddr, rec->flags & FLAG_IPV6_ADDR);
-	HV_STORE_AV(res, NFL_T_DSTADDR, (ip_addr_t *)&rec->v6.dstaddr, rec->flags & FLAG_IPV6_ADDR);
-
-	HV_STORE_NV(res, NFL_T_SRCPORT, rec->srcport);
-	HV_STORE_NV(res, NFL_T_DSTPORT, rec->dstport);
-
-	// Required extension 2,3 - counters
-	HV_STORE_NV(res, NFL_T_DPKTS, rec->dPkts);
-	HV_STORE_NV(res, NFL_T_DOCTETS, rec->dOctets);
-
-	HV_STORE_NV(res, NFL_T_FWD_STATUS, rec->fwd_status);
-	HV_STORE_NV(res, NFL_T_TOS, rec->tos);
-
-//	String_DstAddr(rec, s);
-//	hv_store(res, "dstaddr", strlen("dstaddr"), newSVpvn(s, strlen(s)), 0);
-		
+	i = 0;
     while (map->ex_id[i]) {
-   	    switch(map->ex_id[i++]) {
-			case 1:
-			case 2:
-			case 3:
-				break;
-			case EX_IO_SNMP_2: 
-			case EX_IO_SNMP_4: 
-				HV_STORE_NV(res, NFL_T_INPUT, rec->input);
-				HV_STORE_NV(res, NFL_T_OUTPUT, rec->output);
-				break;
-			case EX_AS_2: 
-			case EX_AS_4: 
-				HV_STORE_NV(res, NFL_T_SRCAS, rec->srcas);
-				HV_STORE_NV(res, NFL_T_DSTAS, rec->dstas);
-				break;
-			case EX_MULIPLE: 
-				HV_STORE_NV(res, NFL_T_DST_TOS, rec->dst_tos);
-				HV_STORE_NV(res, NFL_T_DIR, rec->dir);
-				HV_STORE_NV(res, NFL_T_SRC_MASK, rec->src_mask);
-				HV_STORE_NV(res, NFL_T_DST_MASK, rec->dst_mask);
-				break;
-			case EX_NEXT_HOP_v4:
-			case EX_NEXT_HOP_v6:
-				HV_STORE_AV(res, NFL_T_IP_NEXTHOP, (ip_addr_t *)&rec->ip_nexthop, rec->flags & FLAG_IPV6_NH);
-				break;
-			case EX_NEXT_HOP_BGP_v4:
-			case EX_NEXT_HOP_BGP_v6:
-				HV_STORE_AV(res, NFL_T_BGP_NEXTHOP, (ip_addr_t *)&rec->bgp_nexthop, rec->flags & FLAG_IPV6_NH);
-				break;
-			case EX_VLAN: 
-				HV_STORE_NV(res, NFL_T_SRC_VLAN, rec->src_vlan);
-				HV_STORE_NV(res, NFL_T_DST_VLAN, rec->dst_vlan);
-				break;
-			case EX_OUT_PKG_4:
-			case EX_OUT_PKG_8:
-				HV_STORE_NV(res, NFL_T_OUT_PKTS, rec->out_pkts);
-				break;
-			case EX_OUT_BYTES_4:
-			case EX_OUT_BYTES_8:
-				HV_STORE_NV(res, NFL_T_OUT_BYTES, rec->out_bytes);
-				break;
-			case EX_AGGR_FLOWS_4:
-			case EX_AGGR_FLOWS_8:
-				HV_STORE_NV(res, NFL_T_AGGR_FLOWS, rec->aggr_flows);
-				break;
-			case EX_MAC_1:
-				HV_STORE_MV(res, NFL_T_IN_SRC_MAC, (u_int8_t *)&rec->in_src_mac);
-				HV_STORE_MV(res, NFL_T_OUT_DST_MAC, (u_int8_t *)&rec->out_dst_mac);
-				break;
-			case EX_MAC_2:
-				HV_STORE_MV(res, NFL_T_OUT_SRC_MAC, (u_int8_t *)&rec->out_src_mac);
-				HV_STORE_MV(res, NFL_T_IN_DST_MAC, (u_int8_t *)&rec->in_dst_mac);
-				break;
+		bit_array_set(&ext, map->ex_id[i], 1);
+		i++;
+	}
+
+	res_array = (AV *)sv_2mortal((SV *)newAV());
+
+	i = 0;
+	while ( instance->field_list[i] ) {
+		SV * sv;
+
+		switch ( instance->field_list[i++] ) { 
+			case NFL_I_FIRST: 	
+					sv = uint_to_SV(rec->first, 1);
+					break;
+			case NFL_I_MSEC_FIRST: 	
+					sv = uint_to_SV(rec->msec_first, 1);
+					break;
+			case NFL_I_LAST: 	
+					sv = uint_to_SV(rec->last, 1);
+					break;
+			case NFL_I_MSEC_LAST: 	
+					sv = uint_to_SV(rec->msec_last, 1);
+					break;
+
+			case NFL_I_RECEIVED:
+					sv = uint64_to_SV(&rec->received, 
+						bit_array_get(&ext, EX_RECEIVED) );
+					break;
+
+			case NFL_I_DPKTS:
+					sv = uint64_to_SV(&rec->dPkts, 1);
+					break;
+			case NFL_I_DOCTETS:
+					sv = uint64_to_SV(&rec->dOctets, 1);
+					break;
+
+			case NFL_I_OUT_PKTS:
+					sv = uint64_to_SV(&rec->out_pkts, 
+						bit_array_get(&ext, EX_OUT_PKG_4) ||
+						bit_array_get(&ext, EX_OUT_PKG_8) );
+					break;
+			case NFL_I_OUT_BYTES:
+					sv = uint64_to_SV(&rec->out_bytes, 
+						bit_array_get(&ext, EX_OUT_BYTES_4) ||
+						bit_array_get(&ext, EX_OUT_BYTES_8) );
+					break;
+			case NFL_I_AGGR_FLOWS:
+					sv = uint64_to_SV(&rec->aggr_flows, 
+						bit_array_get(&ext, EX_AGGR_FLOWS_4) ||
+						bit_array_get(&ext, EX_AGGR_FLOWS_8) );
+					break;
+
+			case NFL_I_SRCPORT:
+					sv = uint_to_SV(rec->srcport, 1);
+					break;
+			case NFL_I_DSTPORT:
+					sv = uint_to_SV(rec->dstport, 1);
+					break;
+			case NFL_I_TCP_FLAGS: 	
+					sv = uint_to_SV(rec->tcp_flags, 1);
+					break;
+
+			// Required extension 1 - IP addresses 
+			// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
+			// however the structures are compatible so we will pretend 
+			// that v6.srcaddr and v6.dst addr points to same structure 
+			case NFL_I_SRCADDR:
+					sv = ip_addr_to_SV((ip_addr_t *)&rec->v6.srcaddr, 
+						rec->flags & FLAG_IPV6_ADDR, 1);
+					break;
+			case NFL_I_DSTADDR:
+					sv = ip_addr_to_SV((ip_addr_t *)&rec->v6.dstaddr, 
+						rec->flags & FLAG_IPV6_ADDR, 1);
+					break;
+			case NFL_I_IP_NEXTHOP:
+					sv = ip_addr_to_SV(&rec->ip_nexthop, rec->flags & FLAG_IPV6_NH,
+						bit_array_get(&ext, EX_NEXT_HOP_v4) ||
+						bit_array_get(&ext, EX_NEXT_HOP_v6) );
+					break;
+			case NFL_I_SRC_MASK:
+					sv = uint_to_SV(rec->src_mask, 
+						bit_array_get(&ext, EX_MULIPLE) );
+					break;
+			case NFL_I_DST_MASK:
+					sv = uint_to_SV(rec->dst_mask, 
+						bit_array_get(&ext, EX_MULIPLE) );
+					break;
+
+			case NFL_I_TOS:
+					sv = uint_to_SV(rec->tos, 1);
+					break;
+			case NFL_I_DST_TOS:
+					sv = uint_to_SV(rec->dst_tos, 
+						bit_array_get(&ext, EX_MULIPLE) );
+					break;
+
+			case NFL_I_SRCAS:
+					sv = uint_to_SV(rec->srcas, 
+						bit_array_get(&ext, EX_AS_2) ||
+						bit_array_get(&ext, EX_AS_4) );
+					break;
+			case NFL_I_DSTAS:
+					sv = uint_to_SV(rec->dstas, 
+						bit_array_get(&ext, EX_AS_2) ||
+						bit_array_get(&ext, EX_AS_4) );
+					break;
+
+			case NFL_I_BGPNEXTADJACENTAS:
+					sv = uint_to_SV(rec->bgpNextAdjacentAS, 
+						bit_array_get(&ext, EX_BGPADJ) );
+					break;
+			case NFL_I_BGPPREVADJACENTAS:
+					sv = uint_to_SV(rec->bgpPrevAdjacentAS, 
+						bit_array_get(&ext, EX_BGPADJ) );
+					break;
+			case NFL_I_BGP_NEXTHOP:
+					sv = ip_addr_to_SV(&rec->bgp_nexthop, rec->flags & FLAG_IPV6_NHB,
+						bit_array_get(&ext, EX_NEXT_HOP_BGP_v4) ||
+						bit_array_get(&ext, EX_NEXT_HOP_BGP_v6) );
+					break;
+
+			case NFL_I_PROT: 	
+					sv = uint_to_SV(rec->prot, 1);
+					break;
+
+			case NFL_I_SRC_VLAN:
+					sv = uint_to_SV(rec->src_vlan, 
+						bit_array_get(&ext, EX_VLAN) );
+					break;
+			case NFL_I_DST_VLAN:
+					sv = uint_to_SV(rec->dst_vlan, 
+						bit_array_get(&ext, EX_VLAN) );
+					break;
+
+			case NFL_I_IN_SRC_MAC:
+					sv = mac_to_SV((u_int8_t *)&rec->in_src_mac, 
+						bit_array_get(&ext, EX_MAC_1) );
+					break;
+			case NFL_I_OUT_DST_MAC:
+					sv = mac_to_SV((u_int8_t *)&rec->out_dst_mac, 
+						bit_array_get(&ext, EX_MAC_1) );
+					break;
+			case NFL_I_OUT_SRC_MAC:
+					sv = mac_to_SV((u_int8_t *)&rec->out_src_mac, 
+						bit_array_get(&ext, EX_MAC_2) );
+					break;
+			case NFL_I_IN_DST_MAC:
+					sv = mac_to_SV((u_int8_t *)&rec->in_dst_mac, 
+						bit_array_get(&ext, EX_MAC_2) );
+					break;
+
+			case NFL_I_MPLS_LABEL:
+					sv = mpls_to_SV((char *)&rec->mpls_label, 
+						bit_array_get(&ext, EX_MPLS) );
+					break;
+			/*
 			case EX_MPLS:
 				(void)hv_store(res, NFL_T_MPLS_LABEL, strlen(NFL_T_MPLS_LABEL), 
 						newSVpvn((char *)rec->mpls_label, sizeof(rec->mpls_label)), 0);
-				break;
-			case EX_ROUTER_IP_v4:
-			case EX_ROUTER_IP_v6:
-				HV_STORE_AV(res, NFL_T_IP_ROUTER, (ip_addr_t *)&rec->ip_router, rec->flags & FLAG_IPV6_EXP);
-				break;
-			case EX_ROUTER_ID:
-				HV_STORE_NV(res, NFL_T_ENGINE_TYPE, rec->engine_type);
-				HV_STORE_NV(res, NFL_T_ENGINE_ID, rec->engine_id);
-				break;
-			case EX_BGPADJ:
-				HV_STORE_NV(res, NFL_T_BGPNEXTADJACENTAS, rec->bgpNextAdjacentAS);
-				HV_STORE_NV(res, NFL_T_BGPPREVADJACENTAS, rec->bgpPrevAdjacentAS);
-				break;
-			case EX_LATENCY:
-				HV_STORE_NV(res, NFL_T_CLIENT_NW_DELAY_USEC, rec->client_nw_delay_usec);
-				HV_STORE_NV(res, NFL_T_SERVER_NW_DELAY_USEC, rec->server_nw_delay_usec);
-				HV_STORE_NV(res, NFL_T_APPL_LATENCY_USEC, rec->appl_latency_usec);
-				break;
-			case EX_RECEIVED:
-				HV_STORE_NV(res, NFL_T_RECEIVED, rec->received);
+			*/
 
+			case NFL_I_INPUT:
+					sv = uint_to_SV(rec->input, 
+						bit_array_get(&ext, EX_IO_SNMP_2) ||
+						bit_array_get(&ext, EX_IO_SNMP_4) );
+					break;
+			case NFL_I_OUTPUT:
+					sv = uint_to_SV(rec->output, 
+						bit_array_get(&ext, EX_IO_SNMP_2) ||
+						bit_array_get(&ext, EX_IO_SNMP_4) );
+
+					break;
+			case NFL_I_DIR:
+					sv = uint_to_SV(rec->dir, 
+						bit_array_get(&ext, EX_MULIPLE) );
+					break;
+
+			case NFL_I_FWD_STATUS:
+					sv = uint_to_SV(rec->fwd_status, 1);
+					break;
+
+
+			case NFL_I_IP_ROUTER:
+					sv = ip_addr_to_SV(&rec->ip_router, rec->flags & FLAG_IPV6_EXP,
+						bit_array_get(&ext, EX_ROUTER_IP_v4) ||
+						bit_array_get(&ext, EX_ROUTER_IP_v6) );
+					break;
+			case NFL_I_ENGINE_TYPE:
+					sv = uint_to_SV(rec->engine_type, 
+						bit_array_get(&ext, EX_ROUTER_ID) );
+					break;
+			case NFL_I_ENGINE_ID:
+					sv = uint_to_SV(rec->engine_id, 
+						bit_array_get(&ext, EX_ROUTER_ID) );
+					break;
+
+
+			case NFL_I_CLIENT_NW_DELAY_USEC:
+					sv = uint64_to_SV(&rec->client_nw_delay_usec, 
+						bit_array_get(&ext, EX_LATENCY) );
+					break;
+			case NFL_I_SERVER_NW_DELAY_USEC:
+					sv = uint64_to_SV(&rec->server_nw_delay_usec, 
+						bit_array_get(&ext, EX_LATENCY) );
+					break;
+			case NFL_I_APPL_LATENCY_USEC:
+					sv = uint64_to_SV(&rec->appl_latency_usec, 
+						bit_array_get(&ext, EX_LATENCY) );
+					break;
+
+			default:
+					croak("%s Unknown ID in %s !!", NFL_LOG, __FUNCTION__);
+					break;
 		}
+
+		av_push(res_array, sv);	
 	}
 
-/*
-		flow_record_to_csv(master_record, &string, 0);
-		if ( string ) {
-				printf("%s\n", string);
-		}
-*/
-	return newRV((SV *)res);
+	bit_array_release(&ext);
+ 
+	return newRV((SV *)res_array);
 }
 
 extension_map_t * libnf_lookup_map( libnf_instance_t *instance, bit_array_t *ext ) {
@@ -562,6 +784,48 @@ int i;
 	return handle;
 }
 
+
+int libnf_set_fields(int handle, SV *fields) {
+libnf_instance_t *instance = libnf_instances[handle];
+I32 numfields = 0;
+int i;
+
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG);
+		return 0;
+	}
+
+	if ((!SvROK(fields))
+		|| (SvTYPE(SvRV(fields)) != SVt_PVAV) 
+		|| ((numfields = av_len((AV *)SvRV(fields))) < 0)) {
+			croak("%s can not determine the list of fields", NFL_LOG);
+			return 0;
+	}
+
+	// release memory allocated before	
+	if (instance->field_list != NULL) {
+		free(instance->field_list);
+	}
+
+	instance->field_list = malloc(sizeof(instance->field_list) * numfields + 1);
+
+	if (instance->field_list == NULL) {
+		croak("%s can not allocate memory in %s", NFL_LOG, __FUNCTION__);
+		return 0;
+	}
+
+	for (i = 0; i <= numfields; i++) {
+		int field = SvIV(*av_fetch((AV *)SvRV(fields), i, 0));
+
+		if (field != 0 || field > NFL_MAX_FIELDS) {	
+			instance->field_list[i] = field;
+		} else {
+			warn("%s ivalid itemd ID", NFL_LOG);
+		}
+	}
+	instance->field_list[i++] = NFL_ZERO_FIELD;
+	return 1;
+}
 
 
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files) {
@@ -812,7 +1076,7 @@ begin:
 */
 
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_SV(master_record, instance->extension_map_list.slot[map_id]->map); 
+	return libnf_master_record_to_AV(handle, master_record, instance->extension_map_list.slot[map_id]->map); 
 
 } /* end of _next fnction */
 
