@@ -9,6 +9,7 @@ require Exporter;
 use AutoLoader;
 use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+use Net::NfDump::Fields;
 
 our @ISA = qw(Exporter);
 
@@ -101,6 +102,38 @@ sub merge_opts {
 }
 
 
+# Internal function to set output items/fields. At the input takes array that 
+# represents string names of the files 
+sub set_fields {
+	my ($self, @fields) = @_;
+
+	$self->{fields_num} = [];
+	$self->{fields_txt} = [];
+
+	foreach (@fields) {
+
+		my $fld = lc($_);
+
+		# add all fields
+		if ($fld eq '*') {
+			push(@{$self->{fields_num}}, values %Net::NfDump::Fields::NFL_FIELDS_TXT );
+			push(@{$self->{fields_txt}}, keys %Net::NfDump::Fields::NFL_FIELDS_TXT );
+		# regular item 
+		} else {
+
+			if ( !defined($Net::NfDump::Fields::NFL_FIELDS_TXT{$fld}) ) {
+				croak("Unknown field \"%s\".", $_); 
+			}
+
+			push(@{$self->{fields_num}}, $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld});
+			push(@{$self->{fields_txt}}, $fld);;
+		}
+	}
+
+	return Net::NfDump::libnf_set_fields($self->{handle}, $self->{fields_num});
+}
+
+
 =head2 new
 
 The constructor. As the parameter options can be specified. This options will be used
@@ -138,6 +171,8 @@ sub new {
 	$class->{read_prepared} = 0;
 	$class->{write_prepared} = 0;
 	$class->{closed} = 0;
+
+	$class->set_fields('*');
 
 	return $class;
 }
@@ -179,7 +214,6 @@ sub info {
 	
 }
 
-
 =head2 query
 
 Query method can be used in two ways. If the string argument is the 
@@ -207,7 +241,7 @@ sub query {
 
 }
 
-=head2 fetchrow_hashref
+=head2 fetchrow_arrayref
 
 Have to be used after query method. If the query wasn't called before the 
 method is called as $obj->query() before the first record is returned. 
@@ -218,7 +252,7 @@ files have been read.
 
 =cut
 
-sub fetchrow_hashref {
+sub fetchrow_arrayref {
 	my ($self) = @_;
 
 	if (!$self->{read_prepared}) {
@@ -235,16 +269,40 @@ sub fetchrow_hashref {
 	return $ret;
 }
 
-sub fetchrow_arrayref {
-	my ($self) = @_;
-
-	croak("Not implemented yet. Reserver for future use.");
-}
+=head2 fetchrow_array
+=cut 
 
 sub fetchrow_array {
 	my ($self) = @_;
 
-	croak("Not implemented yet. Reserver for future use.");
+	return @{$self->fetchrow_arrayref()};
+}
+
+=head2 fetchrow_hashref
+
+Have to be used after query method. If the query wasn't called before the 
+method is called as $obj->query() before the first record is returned. 
+
+Method returns hash reference with the record and skips to the next record. Returns 
+true if there are more records to read or false if all record from all 
+files have been read. 
+
+=cut
+
+sub fetchrow_hashref {
+	my ($self) = @_;
+
+	my %res;
+	my $ref = $self->fetchrow_arrayref();
+
+	return $ref if (!defined($ref));
+ 
+	my $numfields = scalar @{$self->{fields_txt}};	
+	for (my $x = 0; $x <  $numfields; $x++) {
+		$res{$self->{fields_txt}->[$x]} = $ref->[$x] if defined($ref->[$x]);
+	}
+
+	return \%res;
 }
 
 =head2 create
