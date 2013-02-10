@@ -1,6 +1,5 @@
 
 use Test::More;
-
 #open(STDOUT, ">&STDERR");
 
 if ( ! -x "nfdump/bin/nfdump" ) {

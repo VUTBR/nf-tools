@@ -343,7 +343,7 @@ sub storerow_arrayref {
 sub storerow_array {
 	my ($self, @row) = @_;
 
-	return $self->storerow_arryref(\@row);
+	return $self->storerow_arrayref(\@row);
 }
 
 =head2 storerow_hashref
@@ -357,9 +357,9 @@ sub storerow_hashref {
 
 	return undef if (!defined($row));
 
-	$self->set_fields( keys %{$row});
+	$self->set_fields( keys %{$row} );
 
-	return $self->storerow_arrayref([ values %{$row}]);
+	return $self->storerow_array( values %{$row} );
 	
 }
 

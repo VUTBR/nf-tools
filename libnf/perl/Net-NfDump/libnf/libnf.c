@@ -1039,7 +1039,6 @@ bit_array_t ext;
 int numfields;
 int i, res;
 
-
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG);
 		return 0;
@@ -1051,6 +1050,7 @@ int i, res;
 			croak("%s can not determine fields to store", NFL_LOG);
 			return 0;
 	}
+
 
 	if (numfields != instance->field_count) {
 		croak("%s number of fields do not match", NFL_LOG);
@@ -1064,7 +1064,12 @@ int i, res;
 	i = 0;
 	while ( instance->field_list[i] ) {
 
-		SV * sv = (SV *)av_fetch((AV *)SvRV(arrayref), i, 0);
+		SV * sv = (SV *)(*av_fetch((AV *)SvRV(arrayref), i, 0));
+
+		if (!SvOK(sv)) {	// undef value 
+			i++;
+			continue;
+		}
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
@@ -1133,6 +1138,7 @@ int i, res;
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_SRCADDR);
+						bit_array_release(&ext);
 						return 0;
 					}
 					break;
@@ -1147,6 +1153,7 @@ int i, res;
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_DSTADDR);
+						bit_array_release(&ext);
 						return 0;
 					}
 					break;
@@ -1163,6 +1170,7 @@ int i, res;
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_IP_NEXTHOP);
+						bit_array_release(&ext);
 						return 0;
 					}
 					break;
@@ -1214,6 +1222,7 @@ int i, res;
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_BGP_NEXTHOP);
+						bit_array_release(&ext);
 						return 0;
 					}
 					break;
@@ -1234,6 +1243,7 @@ int i, res;
 			case NFL_I_IN_SRC_MAC:
 					if (SV_to_mac(&rec.in_src_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_SRC_MAC);
+						bit_array_release(&ext);
 						return 0;
 					}
 					bit_array_set(&ext, EX_MAC_1, 1);
@@ -1241,6 +1251,7 @@ int i, res;
 			case NFL_I_OUT_DST_MAC:
 					if (SV_to_mac(&rec.out_dst_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_DST_MAC);
+						bit_array_release(&ext);
 						return 0;
 					}
 					bit_array_set(&ext, EX_MAC_1, 1);
@@ -1248,6 +1259,7 @@ int i, res;
 			case NFL_I_OUT_SRC_MAC:
 					if (SV_to_mac(&rec.out_src_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_SRC_MAC);
+						bit_array_release(&ext);
 						return 0;
 					}
 					bit_array_set(&ext, EX_MAC_2, 1);
@@ -1255,6 +1267,7 @@ int i, res;
 			case NFL_I_IN_DST_MAC:
 					if (SV_to_mac(&rec.in_dst_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_DST_MAC);
+						bit_array_release(&ext);
 						return 0;
 					}
 					bit_array_set(&ext, EX_MAC_2, 1);
@@ -1263,6 +1276,7 @@ int i, res;
 			case NFL_I_MPLS_LABEL:
 					if (SV_to_mpls((char *)&rec.mpls_label, sv) != 0) {
 						warn("%s invalid item %s", NFL_LOG, NFL_T_MPLS_LABEL);
+						bit_array_release(&ext);
 						return 0;
 					}
 					bit_array_set(&ext, EX_MPLS, 1);
@@ -1300,6 +1314,7 @@ int i, res;
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_IP_ROUTER);
+						bit_array_release(&ext);
 						return 0;
 					}
 					break;
@@ -1327,7 +1342,7 @@ int i, res;
 					break;
 
 			default:
-					croak("%s Unknown ID in %s !!", NFL_LOG, __FUNCTION__);
+					croak("%s Unknown ID (%d) in %s !!", NFL_LOG, instance->field_list[i], __FUNCTION__);
 					break;
 		}
 
