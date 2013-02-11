@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::NfDump.
 
+0.02_01 2013-02-11
+	- hasharray functions added
+	- performance optimalisation (4x faster) 
+
 0.01_06 2013-01-20
 	- nfdump source codes added into distribution 
 	- fixes for libnf on OpenBSD apllied

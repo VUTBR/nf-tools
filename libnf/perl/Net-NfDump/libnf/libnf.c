@@ -115,7 +115,7 @@ typedef struct libnf_instance_s {
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
 	int						*field_list;
-	int						field_count;
+	int						field_last;
 //	stat_record_t			stat_record;
 	uint64_t				processed_bytes;		/* read statistics */
 	uint64_t				total_files;
@@ -735,7 +735,7 @@ int i;
 
 int libnf_set_fields(int handle, SV *fields) {
 libnf_instance_t *instance = libnf_instances[handle];
-I32 numfields = 0;
+I32 last_field = 0;
 int i;
 
 	if (instance == NULL ) {
@@ -745,7 +745,7 @@ int i;
 
 	if ((!SvROK(fields))
 		|| (SvTYPE(SvRV(fields)) != SVt_PVAV) 
-		|| ((numfields = av_len((AV *)SvRV(fields))) < 0)) {
+		|| ((last_field = av_len((AV *)SvRV(fields))) < 0)) {
 			croak("%s can not determine the list of fields", NFL_LOG);
 			return 0;
 	}
@@ -755,14 +755,15 @@ int i;
 		free(instance->field_list);
 	}
 
-	instance->field_list = malloc(sizeof(instance->field_list) * numfields + 1);
+	// last_field contains the highet index of array ! - not number of items 
+	instance->field_list = malloc(sizeof(int) * (last_field + 2));
 
 	if (instance->field_list == NULL) {
 		croak("%s can not allocate memory in %s", NFL_LOG, __FUNCTION__);
 		return 0;
 	}
 
-	for (i = 0; i <= numfields; i++) {
+	for (i = 0; i <= last_field; i++) {
 		int field = SvIV(*av_fetch((AV *)SvRV(fields), i, 0));
 
 		if (field != 0 || field > NFL_MAX_FIELDS) {	
@@ -772,7 +773,7 @@ int i;
 		}
 	}
 	instance->field_list[i++] = NFL_ZERO_FIELD;
-	instance->field_count = numfields;
+	instance->field_last = last_field;
 	return 1;
 }
 
@@ -1036,7 +1037,7 @@ master_record_t rec;
 libnf_instance_t *instance = libnf_instances[handle];
 extension_map_t *map;
 bit_array_t ext;
-int numfields;
+int last_field;
 int i, res;
 
 	if (instance == NULL ) {
@@ -1046,13 +1047,13 @@ int i, res;
 
 	if ((!SvROK(arrayref))
 		|| (SvTYPE(SvRV(arrayref)) != SVt_PVAV) 
-		|| ((numfields = av_len((AV *)SvRV(arrayref))) < 0)) {
+		|| ((last_field = av_len((AV *)SvRV(arrayref))) < 0)) {
 			croak("%s can not determine fields to store", NFL_LOG);
 			return 0;
 	}
 
 
-	if (numfields != instance->field_count) {
+	if (last_field != instance->field_last) {
 		croak("%s number of fields do not match", NFL_LOG);
 		return 0;
 	}

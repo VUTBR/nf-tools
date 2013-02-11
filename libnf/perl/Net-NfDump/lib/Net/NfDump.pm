@@ -130,6 +130,8 @@ sub set_fields {
 		}
 	}
 
+	$self->{opts}->{Fields} = $self->{fields_txt};
+
 	return Net::NfDump::libnf_set_fields($self->{handle}, $self->{fields_num});
 }
 
@@ -138,6 +140,8 @@ sub set_fields {
 
 The constructor. As the parameter options can be specified. This options will be used
 as a default option set in the particular methods. 
+
+Note about Fields;
 
 =cut
 
@@ -155,7 +159,8 @@ sub new {
 
 	$class->{opts} = { 
 		InputFiles => [],
-		Filter => "any",
+		Filter => 'any',
+		Fields => [ '*' ],
 		TimeWindowStart => 0,
 		TimeWindowEnd => 0,
 		OutputFile => undef,
@@ -171,8 +176,6 @@ sub new {
 	$class->{read_prepared} = 0;
 	$class->{write_prepared} = 0;
 	$class->{closed} = 0;
-
-	$class->set_fields('*');
 
 	return $class;
 }
@@ -230,6 +233,8 @@ sub query {
 	if (@{$o->{InputFiles}} == 0) {
 		croak("No imput files defined");
 	} 
+
+	$self->set_fields(@{$o->{Fields}});
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
@@ -318,6 +323,8 @@ sub create {
 	if (!defined($o->{OutputFile}) || $o->{OutputFile} eq "") {
 		croak("No output file defined");
 	} 
+
+	$self->set_fields(@{$o->{Fields}});
 
 	# handle, filename, compressed, anonyized, identifier 
 	Net::NfDump::libnf_create_file($self->{handle}, 
