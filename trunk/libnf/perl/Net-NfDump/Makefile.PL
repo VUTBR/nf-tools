@@ -82,7 +82,7 @@ nfdump: $(NFDUMP).tar.gz
 		$(RM_F) nfdump/bin/*.o
 		$(RM_F) nfdump/bin/nfdump
 		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
-		(cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && make) || echo 0 
+		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
 
 $(MYEXTLIB): nfdump libnf/Makefile
 		cd libnf && $(MAKE) $(PASSTHRU)
