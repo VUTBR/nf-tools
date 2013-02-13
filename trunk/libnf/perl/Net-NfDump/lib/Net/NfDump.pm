@@ -74,7 +74,27 @@ Net::NfDump - Perl API for manipulating with nfdump files
 =head1 SYNOPSIS
 
   use Net::NfDump;
-  TODO
+ 
+  my $src = new Net::NfDump(
+        InputFiles => [ 'nfdump_file' ], 
+        Filter => 'icmp and src net 10.0.0.0/8',
+        Fields => [ '*' ] ); 
+
+  my $dst = new Net::NfDump(
+        OutputFile => 'nfdump_icmp_private',
+        Fields => [ '*' ] );
+
+  $src->query();
+
+  while (my $row = $src->fetchrow_arrayref() )  {
+
+     $dst->storerow_arrayref($row);
+
+  }
+
+  $src->finish();
+  $dst->finish();
+
 
 =head1 DESCRIPTION
 
@@ -141,7 +161,33 @@ sub set_fields {
 The constructor. As the parameter options can be specified. This options will be used
 as a default option set in the particular methods. 
 
-Note about Fields;
+Module supports followinng options 
+
+  Options for reading data
+  =================================================================
+  InputFiles => []   - List of files to  read (arrayref)
+  Filter => 'any'    - Filter taht will be applied on input 
+                       records. Uses nfdump/tcpdump syntax
+  Fields => [ '*' ]  - List of fields to read or update 
+                       any field from supported fields can 
+                       be used here. See the chapter 
+                       "Supported Fields" for the full list 
+                       of supported fields. Special field * can 
+                       be used for defining all fields. 
+  TimeWindowStart => 0
+  TimeWindowEnd => 0 - Filter flows that starts or ends in the 
+                       specified fied time window. The options uses 
+                       unix timestamp values or 0 if the filter shoul
+                       not be apllied. 
+
+  Options for writing data
+  =================================================================
+  OutputFile => undef - Output file for storerow_* methods.
+  Compressed => 1    - Flag whether the otput files should be 
+                       compressed or not. 
+  Anonymized => 0    - Flag indicating that output file contains 
+                       anonymized data.
+  Ident => ""        - String identificator of files 
 
 =cut
 
@@ -180,11 +226,12 @@ sub new {
 	return $class;
 }
 
-=head2 file_info
-
-Reads information from nfdump file header. It provides various atributes 
-like number of blocks, version, flags, statistics, etc.  related to the file. 
-Return has hreference with items
+# =head2 file_info
+#
+# Reads information from nfdump file header. It provides various atributes 
+# like number of blocks, version, flags, statistics, etc.  related to the file. 
+# Return has hreference with items
+#
 
 =head2 info
 
@@ -217,13 +264,17 @@ sub info {
 	
 }
 
-=head2 query
+=head2 query()
 
-Query method can be used in two ways. If the string argument is the 
-flow query is handled. See section FLOW QUERY how to create flow 
-queries.
+Method that have to be executed before the fetchrow_* method are used. 
 
-=cut
+=cut 
+
+# Query method can be used in two ways. If the string argument is the 
+# flow query is handled. See section FLOW QUERY how to create flow 
+# queries.
+
+# =cut
 
 sub query {
 	my ($self, %opts) = @_;
@@ -251,7 +302,7 @@ sub query {
 Have to be used after query method. If the query wasn't called before the 
 method is called as $obj->query() before the first record is returned. 
 
-Method returns hash reference with the record and skips to the next record. Returns 
+Method returns array reference with the record and skips to the next record. Returns 
 true if there are more records to read or false if all record from all 
 files have been read. 
 
@@ -275,6 +326,9 @@ sub fetchrow_arrayref {
 }
 
 =head2 fetchrow_array
+
+Same functionality as fetchrow_arrayref however returns items in array.
+
 =cut 
 
 sub fetchrow_array {
@@ -285,12 +339,9 @@ sub fetchrow_array {
 
 =head2 fetchrow_hashref
 
-Have to be used after query method. If the query wasn't called before the 
-method is called as $obj->query() before the first record is returned. 
+Same as fetchrow_arrayref, however the items are returned in the hash reference. 
 
-Method returns hash reference with the record and skips to the next record. Returns 
-true if there are more records to read or false if all record from all 
-files have been read. 
+NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
 
 =cut
 
@@ -336,6 +387,13 @@ sub create {
 	$self->{write_prepared} = 1;
 }
 
+=head2 storerow_arrayref
+
+Insert data defined in arrayref to the file opened by create.  The number of 
+fields and their order have to respect order defined in the Fileds option 
+handled during $obj->new() or $obj->create() method. 
+
+=cut
 
 sub storerow_arrayref {
 	my ($self, $row) = @_;
@@ -347,6 +405,12 @@ sub storerow_arrayref {
 	return Net::NfDump::libnf_write_row($self->{handle}, $row);
 }
 
+=head2 storerow_array 
+
+Same as storerow_arrayref, however items are handled as the single array 
+
+=cut
+
 sub storerow_array {
 	my ($self, @row) = @_;
 
@@ -355,7 +419,9 @@ sub storerow_array {
 
 =head2 storerow_hashref
 
-Insert data defined in hashref to the file opened by create. 
+Inserts structure defined as hash reference into output file. 
+
+NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
 
 =cut
 
@@ -406,13 +472,17 @@ The flow query is language vyry simmilar to SQL to query data on
 nfdump files. However flow query have nothing to do with SQL. It uses
 only simmilar command syntax. Example of flow query 
 
-SELECT * FROM data/nfdump1.nfcap, data2/nfdump2.nfcap
-WHERE src host 147.229.3.10 
-TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04' 
-ORDER BY bytes
-LIMIT 100
+  SELECT * FROM data/nfdump1.nfcap, data2/nfdump2.nfcap
+  WHERE src host 147.229.3.10 
+  TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04' 
+  ORDER BY bytes
+  LIMIT 100
+
+
+  INSERT INTO data/nout_nfdump.nfcap (srcip, dstip, srcport, dstport) 
 
 =head1 NOTE ABOUT 32BIT PLATFORMS
+
 Nfdump primary uses 64 bit counters and other items to store single integer value. However 
 the native 64 bit support is not compiled in every perl. For thoose cases where 
 only 32 integer values are supported the Net::NfDump uses Math::Int64 module. 
@@ -680,75 +750,75 @@ sub txt2flow ($) {
 
 =head1 SUPPORTED ITEMS 
 
-=head2 Time items
+  Time items
+  =====================
+  first - Timestamp of first seen packet 
+  msecfirst - Number of miliseconds of first seen packet since B<first>  
+  last - Timestamp of last seen packet 
+  mseclast - Number of miliseconds of last seen packet since B<last>  
+  received - Timestamp when the packet was received by collector 
 
-first - Timestamp of first seen packet E<10>
-msecfirst - Number of miliseconds of first seen packet since B<first>  E<10>
-last - Timestamp of last seen packet E<10>
-mseclast - Number of miliseconds of last seen packet since B<last>  E<10>
-received - Timestamp when the packet was received by collector E<10>
+  Statistical items
+  =====================
+  bytes - The number of bytes 
+  pkts - The number of packets 
+  outbytes - The number of output bytes 
+  outpkts - The number of output packets 
+  flows - The number of flows (aggregated) 
 
-=head2 Statistical items
+  Layer 4 information
+  =====================
+  srcport - Source port 
+  dstport - Destination port 
+  tcpflags - TCP flags  
 
-bytes - The number of bytes E<10>
-pkts - The number of packets E<10>
-outbytes - The number of output bytes  E<10>
-outpkts - The number of output packets  E<10>
-flows - The number of flows (aggregated) E<10>
+  Layer 3 information
+  =====================
+  srcip - Source IP address 
+  dstip - Destination IP address 
+  nexthop - IP next hop 
+  srcmask - Source mask 
+  dstmask - Destination mask 
+  tos - Source type of service 
+  dsttos - Destination type of Service 
+  srcas - Source AS number 
+  dstas - Destination AS number 
+  nextas - BGP Next AS 
+  prevas - BGP Previous AS 
+  bgpnexthop - BGP next hop 
+  proto - IP protocol  
 
-=head2 Layer 4 information
+  Layer 2 information
+  =====================
+  srcvlan - Source vlan label 
+  dstvlan - Destination vlan label 
+  insrcmac - In source MAC address 
+  outsrcmac - Out destination MAC address 
+  indstmac - In destintation MAC address 
+  outdstmac - Out source MAC address 
 
-srcport - Source port E<10>
-dstport - Destination port E<10>
-tcpflags - TCP flags  E<10>
+  MPLS information
+  =====================
+  mpls - MPLS labels 
 
-=head2 Layer 3 information
+  Layer 1 information
+  =====================
+  inif - SNMP input interface number 
+  outif - SNMP output interface number 
+  dir - Flow directions ingress/egress 
+  fwd - Forwarding status 
 
-srcip - Source IP address E<10>
-dstip - Destination IP address E<10>
-nexthop - IP next hop E<10>
-srcmask - Source mask E<10>
-dstmask - Destination mask E<10>
-tos - Source type of service E<10>
-dsttos - Destination type of Service E<10>
-srcas - Source AS number E<10>
-dstas - Destination AS number E<10>
-nextas - BGP Next AS E<10>
-prevas - BGP Previous AS E<10>
-bgpnexthop - BGP next hop E<10>
-proto - IP protocol  E<10>
+  Exporter information
+  =====================
+  router - Exporting router IP 
+  systype - Type of exporter 
+  sysid - Internal SysID of exporter 
 
-=head2 Layer 2 information
-
-srcvlan - Source vlan label E<10>
-dstvlan - Destination vlan label E<10>
-insrcmac - In source MAC address E<10>
-outsrcmac - Out destination MAC address E<10>
-indstmac - In destintation MAC address E<10>
-outdstmac - Out source MAC address E<10>
-
-=head2 MPLS information
-
-mpls - MPLS labels E<10>
-
-=head2 Layer 1 information
-
-inif - SNMP input interface number E<10>
-outif - SNMP output interface number E<10>
-dir - Flow directions ingress/egress E<10>
-fwd - Forwarding status E<10>
-
-=head2 Exporter information
-
-router - Exporting router IP E<10>
-systype - Type of exporter E<10>
-sysid - Internal SysID of exporter E<10>
-
-=head2 Extra/special fields
-
-clientdelay - nprobe latency client_nw_delay_usec E<10>
-serverdelay - nprobe latency server_nw_delay_usec E<10>
-appllatency - nprobe latency appl_latency_usec E<10>
+  Extra/special fields
+  =====================
+  clientdelay - nprobe latency client_nw_delay_usec 
+  serverdelay - nprobe latency server_nw_delay_usec
+  appllatency - nprobe latency appl_latency_usec
 
 =head1 SEE ALSO
 
