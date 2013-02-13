@@ -158,6 +158,7 @@
 SV * libnf_file_info(char *file);
 SV * libnf_instance_info(int handle);
 int libnf_init(void);
+int libnf_set_fields(int handle, SV *fields);
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
 SV * libnf_read_row(int handle);
