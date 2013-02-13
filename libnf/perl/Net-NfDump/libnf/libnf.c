@@ -82,12 +82,12 @@
 
 
 /* hash parameters */
-#define NumPrealloc 128000
+//#define NumPrealloc 128000
 
-#define AGGR_SIZE 7
+//#define AGGR_SIZE 7
 
-#define STRINGSIZE 10240
-static char data_string[STRINGSIZE];
+//#define STRINGSIZE 10240
+//static char data_string[STRINGSIZE];
 
 /* list of maps used in file taht we create */
 typedef struct libnf_file_list_s {
@@ -145,7 +145,7 @@ extern extension_descriptor_t extension_descriptor[];
 
 #include "nfdump_inline.c"
 #include "nffile_inline.c"
-#include "nf_common.c"
+//#include "nf_common.c"
 
 
 /***********************************************************************
@@ -250,7 +250,7 @@ STRLEN len;
 
 /* converts MAC address to SV */
 static inline SV * mac_to_SV(uint8_t *a, int is_defined) {
-char s[MAX_STRING_LENGTH];
+char s[sizeof(uint64_t)];
 int i;
 
 	if (!is_defined) 
