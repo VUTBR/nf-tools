@@ -128,6 +128,8 @@ typedef struct libnf_instance_s {
 //	uint32_t				is_anonymized;
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
+	master_record_t			*master_record_r;		/* pointer to last read master record */
+	master_record_t			master_record_w;		/* pointer to master record that will be stored */
 } libnf_instance_t;
 
 
@@ -728,6 +730,7 @@ int i;
 		instance->max_num_extensions++;
 
 	instance->nffile_w = NULL;
+	instance->master_record_r = NULL;
 
 	return handle;
 }
@@ -862,7 +865,7 @@ libnf_instance_t *instance = libnf_instances[handle];
                                   
 /* returns hashref or NULL if we are et the end of the file */
 SV * libnf_read_row(int handle) {
-master_record_t	*master_record;
+//master_record_t	*master_record;
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
@@ -988,17 +991,17 @@ begin:
 	} 
 
 	instance->processed_records++;
-	master_record = &(instance->extension_map_list.slot[map_id]->master_record);
-	instance->engine->nfrecord = (uint64_t *)master_record;
+	instance->master_record_r = &(instance->extension_map_list.slot[map_id]->master_record);
+	instance->engine->nfrecord = (uint64_t *)instance->master_record_r;
 
 	// changed in 1.6.8 - added exporter info 
 //	ExpandRecord_v2( flow_record, extension_map_list.slot[map_id], master_record);
-	ExpandRecord_v2( instance->flow_record, instance->extension_map_list.slot[map_id], NULL, master_record);
+	ExpandRecord_v2( instance->flow_record, instance->extension_map_list.slot[map_id], NULL, instance->master_record_r);
 
 	// Time based filter
 	// if no time filter is given, the result is always true
-	match  = instance->twin_start && (master_record->first < instance->twin_start || 
-						master_record->last > instance->twin_end) ? 0 : 1;
+	match  = instance->twin_start && (instance->master_record_r->first < instance->twin_start || 
+						instance->master_record_r->last > instance->twin_end) ? 0 : 1;
 
 	// filter netflow record with user supplied filter
 	if ( match ) 
@@ -1026,14 +1029,14 @@ begin:
 */
 
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_AV(handle, master_record, instance->extension_map_list.slot[map_id]->map); 
+	return libnf_master_record_to_AV(handle, instance->master_record_r, instance->extension_map_list.slot[map_id]->map); 
 
 } /* end of _next fnction */
 
 
 /* TAG for check_items_map.pl: libnf_write_row */
 int libnf_write_row(int handle, SV * arrayref) {
-master_record_t rec;
+master_record_t *rec;
 libnf_instance_t *instance = libnf_instances[handle];
 extension_map_t *map;
 bit_array_t ext;
@@ -1058,7 +1061,8 @@ int i, res;
 		return 0;
 	}
 
-	memzero(&rec, sizeof(rec));
+	rec = &instance->master_record_w;
+	memzero(rec, sizeof(master_record_t));
 
 	bit_array_init(&ext, instance->max_num_extensions + 1);
 
@@ -1074,54 +1078,54 @@ int i, res;
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
-					rec.first = SvUV(sv);
+					rec->first = SvUV(sv);
 					break;
 			case NFL_I_MSEC_FIRST: 	
-					rec.msec_first = SvUV(sv);
+					rec->msec_first = SvUV(sv);
 					break;
 			case NFL_I_LAST: 	
-					rec.last = SvUV(sv);
+					rec->last = SvUV(sv);
 					break;
 			case NFL_I_MSEC_LAST: 	
-					rec.msec_last = SvUV(sv);
+					rec->msec_last = SvUV(sv);
 					break;
 
 			case NFL_I_RECEIVED:
-					rec.received = SvU64(sv);
+					rec->received = SvU64(sv);
 					bit_array_set(&ext, EX_RECEIVED, 1);
 					break;
 
 			case NFL_I_DPKTS:
-					rec.dPkts = SvU64(sv);
+					rec->dPkts = SvU64(sv);
 					break;
 			case NFL_I_DOCTETS:
-					rec.dOctets = SvU64(sv);
+					rec->dOctets = SvU64(sv);
 					break;
 
 			// EX_OUT_PKG_4 not used 
 			case NFL_I_OUT_PKTS:
-					rec.out_pkts = SvU64(sv);
+					rec->out_pkts = SvU64(sv);
 					bit_array_set(&ext, EX_OUT_PKG_8, 1);
 					break;
 			// EX_OUT_BYTES_4 not used 
 			case NFL_I_OUT_BYTES:
-					rec.out_bytes = SvU64(sv);
+					rec->out_bytes = SvU64(sv);
 					bit_array_set(&ext, EX_OUT_BYTES_8, 1);
 					break;
 			// EX_AGGR_FLOWS_4 not used 
 			case NFL_I_AGGR_FLOWS:
-					rec.aggr_flows = SvU64(sv);
+					rec->aggr_flows = SvU64(sv);
 					bit_array_set(&ext, EX_AGGR_FLOWS_8, 1);
 					break;
 
 			case NFL_I_SRCPORT:
-					rec.srcport = SvUV(sv);
+					rec->srcport = SvUV(sv);
 					break;
 			case NFL_I_DSTPORT:
-					rec.dstport = SvUV(sv);
+					rec->dstport = SvUV(sv);
 					break;
 			case NFL_I_TCP_FLAGS: 	
-					rec.tcp_flags = SvUV(sv);
+					rec->tcp_flags = SvUV(sv);
 					break;
 
 			// Required extension 1 - IP addresses 
@@ -1129,13 +1133,13 @@ int i, res;
 			// however the structures are compatible so we will pretend 
 			// that v6.srcaddr and v6.dst addr points to same structure 
 			case NFL_I_SRCADDR: 
-					res = SV_to_ip_addr((ip_addr_t *)&rec.v6.srcaddr, sv);
+					res = SV_to_ip_addr((ip_addr_t *)&rec->v6.srcaddr, sv);
 					switch (res) {
 						case AF_INET:
-							ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+							ClearFlag(rec->flags, FLAG_IPV6_ADDR);
 							break;
 					case AF_INET6:
-							SetFlag(rec.flags, FLAG_IPV6_ADDR);
+							SetFlag(rec->flags, FLAG_IPV6_ADDR);
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_SRCADDR);
@@ -1144,13 +1148,13 @@ int i, res;
 					}
 					break;
 			case NFL_I_DSTADDR:
-					res = SV_to_ip_addr((ip_addr_t *)&rec.v6.dstaddr, sv);
+					res = SV_to_ip_addr((ip_addr_t *)&rec->v6.dstaddr, sv);
 					switch (res) {
 						case AF_INET:
-							ClearFlag(rec.flags, FLAG_IPV6_ADDR);
+							ClearFlag(rec->flags, FLAG_IPV6_ADDR);
 							break;
 					case AF_INET6:
-							SetFlag(rec.flags, FLAG_IPV6_ADDR);
+							SetFlag(rec->flags, FLAG_IPV6_ADDR);
 							break;
 					default: 
 						warn("%s invalid value for %s", NFL_LOG, NFL_T_DSTADDR);
@@ -1159,14 +1163,14 @@ int i, res;
 					}
 					break;
 			case NFL_I_IP_NEXTHOP:
-					res = SV_to_ip_addr((ip_addr_t *)&rec.ip_nexthop, sv);
+					res = SV_to_ip_addr((ip_addr_t *)&rec->ip_nexthop, sv);
 					switch (res) {
 						case AF_INET:
-							ClearFlag(rec.flags, FLAG_IPV6_NH);
+							ClearFlag(rec->flags, FLAG_IPV6_NH);
 							bit_array_set(&ext, EX_NEXT_HOP_v4, 1);
 							break;
 					case AF_INET6:
-							SetFlag(rec.flags, FLAG_IPV6_NH);
+							SetFlag(rec->flags, FLAG_IPV6_NH);
 							bit_array_set(&ext, EX_NEXT_HOP_v6, 1);
 							break;
 					default: 
@@ -1176,49 +1180,49 @@ int i, res;
 					}
 					break;
 			case NFL_I_SRC_MASK:
-					rec.src_mask = SvUV(sv);
+					rec->src_mask = SvUV(sv);
 					bit_array_set(&ext, EX_MULIPLE, 1);
 					break;
 			case NFL_I_DST_MASK:
-					rec.dst_mask = SvUV(sv);
+					rec->dst_mask = SvUV(sv);
 					bit_array_set(&ext, EX_MULIPLE, 1);
 					break;
 
 			case NFL_I_TOS:
-					rec.tos = SvUV(sv);
+					rec->tos = SvUV(sv);
 					break;
 			case NFL_I_DST_TOS:
-					rec.dst_tos = SvUV(sv);
+					rec->dst_tos = SvUV(sv);
 					bit_array_set(&ext, EX_MULIPLE, 1);
 					break;
 
 			// EX_AS_2 not used 
 			case NFL_I_SRCAS:
-					rec.srcas = SvUV(sv);
+					rec->srcas = SvUV(sv);
 					bit_array_set(&ext, EX_AS_4, 1);
 					break;
 			case NFL_I_DSTAS:
-					rec.dstas = SvUV(sv);
+					rec->dstas = SvUV(sv);
 					bit_array_set(&ext, EX_AS_4, 1);
 					break;
 
 			case NFL_I_BGPNEXTADJACENTAS:
-					rec.bgpNextAdjacentAS = SvUV(sv);
+					rec->bgpNextAdjacentAS = SvUV(sv);
 					bit_array_set(&ext, EX_BGPADJ, 1);
 					break;
 			case NFL_I_BGPPREVADJACENTAS:
-					rec.bgpPrevAdjacentAS = SvUV(sv);
+					rec->bgpPrevAdjacentAS = SvUV(sv);
 					bit_array_set(&ext, EX_BGPADJ, 1);
 					break;
 			case NFL_I_BGP_NEXTHOP:
-					res = SV_to_ip_addr((ip_addr_t *)&rec.bgp_nexthop, sv);
+					res = SV_to_ip_addr((ip_addr_t *)&rec->bgp_nexthop, sv);
 					switch (res) {
 						case AF_INET:
-							ClearFlag(rec.flags, FLAG_IPV6_NHB);
+							ClearFlag(rec->flags, FLAG_IPV6_NHB);
 							bit_array_set(&ext, EX_NEXT_HOP_BGP_v4, 1);
 							break;
 					case AF_INET6:
-							SetFlag(rec.flags, FLAG_IPV6_NHB);
+							SetFlag(rec->flags, FLAG_IPV6_NHB);
 							bit_array_set(&ext, EX_NEXT_HOP_BGP_v6, 1);
 							break;
 					default: 
@@ -1229,20 +1233,20 @@ int i, res;
 					break;
 
 			case NFL_I_PROT: 	
-					rec.prot = SvUV(sv);
+					rec->prot = SvUV(sv);
 					break;
 
 			case NFL_I_SRC_VLAN:
-					rec.src_vlan = SvUV(sv);
+					rec->src_vlan = SvUV(sv);
 					bit_array_set(&ext, EX_VLAN, 1);
 					break;
 			case NFL_I_DST_VLAN:
-					rec.dst_vlan = SvUV(sv);
+					rec->dst_vlan = SvUV(sv);
 					bit_array_set(&ext, EX_VLAN, 1);
 					break;
 
 			case NFL_I_IN_SRC_MAC:
-					if (SV_to_mac(&rec.in_src_mac, sv) != 0) {
+					if (SV_to_mac(&rec->in_src_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_SRC_MAC);
 						bit_array_release(&ext);
 						return 0;
@@ -1250,7 +1254,7 @@ int i, res;
 					bit_array_set(&ext, EX_MAC_1, 1);
 					break;
 			case NFL_I_OUT_DST_MAC:
-					if (SV_to_mac(&rec.out_dst_mac, sv) != 0) {
+					if (SV_to_mac(&rec->out_dst_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_DST_MAC);
 						bit_array_release(&ext);
 						return 0;
@@ -1258,7 +1262,7 @@ int i, res;
 					bit_array_set(&ext, EX_MAC_1, 1);
 					break;
 			case NFL_I_OUT_SRC_MAC:
-					if (SV_to_mac(&rec.out_src_mac, sv) != 0) {
+					if (SV_to_mac(&rec->out_src_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_OUT_SRC_MAC);
 						bit_array_release(&ext);
 						return 0;
@@ -1266,7 +1270,7 @@ int i, res;
 					bit_array_set(&ext, EX_MAC_2, 1);
 					break;
 			case NFL_I_IN_DST_MAC:
-					if (SV_to_mac(&rec.in_dst_mac, sv) != 0) {
+					if (SV_to_mac(&rec->in_dst_mac, sv) != 0) {
 						warn("%s invalid MAC address %s", NFL_LOG, NFL_T_IN_DST_MAC);
 						bit_array_release(&ext);
 						return 0;
@@ -1275,7 +1279,7 @@ int i, res;
 					break;
 
 			case NFL_I_MPLS_LABEL:
-					if (SV_to_mpls((char *)&rec.mpls_label, sv) != 0) {
+					if (SV_to_mpls((char *)&rec->mpls_label, sv) != 0) {
 						warn("%s invalid item %s", NFL_LOG, NFL_T_MPLS_LABEL);
 						bit_array_release(&ext);
 						return 0;
@@ -1285,32 +1289,32 @@ int i, res;
 
 			// EX_IO_SNMP_2 not used 
 			case NFL_I_INPUT:
-					rec.input = SvUV(sv);
+					rec->input = SvUV(sv);
 					bit_array_set(&ext, EX_IO_SNMP_4, 1);
 					break;
 			case NFL_I_OUTPUT:
-					rec.output = SvUV(sv);
+					rec->output = SvUV(sv);
 					bit_array_set(&ext, EX_IO_SNMP_4, 1);
 					break;
 
 			case NFL_I_DIR:
-					rec.dir = SvUV(sv);
+					rec->dir = SvUV(sv);
 					bit_array_set(&ext, EX_MULIPLE, 1);
 					break;
 
 			case NFL_I_FWD_STATUS:
-					rec.fwd_status = SvUV(sv);
+					rec->fwd_status = SvUV(sv);
 					break;
 
 			case NFL_I_IP_ROUTER:
-					res = SV_to_ip_addr((ip_addr_t *)&rec.ip_router, sv);
+					res = SV_to_ip_addr((ip_addr_t *)&rec->ip_router, sv);
 					switch (res) {
 						case AF_INET:
-							ClearFlag(rec.flags, FLAG_IPV6_EXP);
+							ClearFlag(rec->flags, FLAG_IPV6_EXP);
 							bit_array_set(&ext, EX_ROUTER_IP_v4, 1);
 							break;
 					case AF_INET6:
-							SetFlag(rec.flags, FLAG_IPV6_EXP);
+							SetFlag(rec->flags, FLAG_IPV6_EXP);
 							bit_array_set(&ext, EX_ROUTER_IP_v6, 1);
 							break;
 					default: 
@@ -1320,25 +1324,25 @@ int i, res;
 					}
 					break;
 			case NFL_I_ENGINE_TYPE:
-					rec.engine_type = SvUV(sv);
+					rec->engine_type = SvUV(sv);
 					bit_array_set(&ext, EX_ROUTER_ID, 1);
 					break;
 			case NFL_I_ENGINE_ID:
-					rec.engine_id = SvUV(sv);
+					rec->engine_id = SvUV(sv);
 					bit_array_set(&ext, EX_ROUTER_ID, 1);
 					break;
 
 
 			case NFL_I_CLIENT_NW_DELAY_USEC:
-					rec.client_nw_delay_usec = SvU64(sv);
+					rec->client_nw_delay_usec = SvU64(sv);
 					bit_array_set(&ext, EX_LATENCY, 1);
 					break;
 			case NFL_I_SERVER_NW_DELAY_USEC:
-					rec.server_nw_delay_usec = SvU64(sv);
+					rec->server_nw_delay_usec = SvU64(sv);
 					bit_array_set(&ext, EX_LATENCY, 1);
 					break;
 			case NFL_I_APPL_LATENCY_USEC:
-					rec.appl_latency_usec = SvU64(sv);
+					rec->appl_latency_usec = SvU64(sv);
 					bit_array_set(&ext, EX_LATENCY, 1);
 					break;
 
@@ -1353,9 +1357,9 @@ int i, res;
 	map = libnf_lookup_map(instance, &ext);
 	bit_array_release(&ext);
 
-	rec.map_ref = map;
-	rec.ext_map = map->map_id;
-	rec.type = CommonRecordType;
+	rec->map_ref = map;
+	rec->ext_map = map->map_id;
+	rec->type = CommonRecordType;
 
 /*
 	{
@@ -1366,9 +1370,9 @@ int i, res;
 		printf("WRITE: (%p) \n%s\n", map, s);
 	}
 */
-	UpdateStat(instance->nffile_w->stat_record, &rec);
+	UpdateStat(instance->nffile_w->stat_record, rec);
 
-	PackRecord(&rec, instance->nffile_w);
+	PackRecord(rec, instance->nffile_w);
 
 	return 1;
 
