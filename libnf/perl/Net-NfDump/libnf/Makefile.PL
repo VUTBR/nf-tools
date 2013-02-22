@@ -52,7 +52,7 @@ libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h
 		./h2fields.pl < libnf.h > ../lib/Net/NfDump/Fields.pm 
 		$(CP) ../lib/Net/NfDump.pm ../lib/Net/NfDump.pm.bkp
 		cat ../lib/Net/NfDump.pm.bkp libnf.h.pod | ./mergechapter.pl > ../lib/Net/NfDump.pm
-		$(RM) ../lib/Net/NfDump.pm.bkp
+		$(RM_F) ../lib/Net/NfDump.pm.bkp
 		$(AR) cr libnf$(LIB_EXT) $(O_FILES) 
 		$(RANLIB) libnf$(LIB_EXT)
 ';
