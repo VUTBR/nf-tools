@@ -22,6 +22,17 @@ inline bit_array_t * bit_array_init(bit_array_t *a, int size) {
 		return NULL;	
 }
 
+inline int bit_array_clear(bit_array_t *a) {
+
+	int bytes = a->size / BA_DATA_LEN + 1;
+
+	if (a->data != NULL) {
+		memzero(a->data, bytes);
+		return 1;
+	} else 
+		return -1;	
+}
+
 inline int bit_array_get(bit_array_t *a, int pos) {
 	if (pos >= a->size) 
 		return -1;

@@ -3,7 +3,7 @@ use Test::More tests => 8;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
-open(STDOUT, ">&STDERR");
+#open(STDOUT, ">&STDERR");
 
 require "t/ds.pl";
 

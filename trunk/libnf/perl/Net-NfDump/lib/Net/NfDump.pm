@@ -25,6 +25,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 	mac2txt txt2mac
 	mpls2txt txt2mpls
 	flow2txt txt2flow 
+	file_info
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -33,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02_02';
+our $VERSION = '0.02_03';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -226,13 +227,6 @@ sub new {
 	return $class;
 }
 
-# =head2 file_info
-#
-# Reads information from nfdump file header. It provides various atributes 
-# like number of blocks, version, flags, statistics, etc.  related to the file. 
-# Return has hreference with items
-#
-
 =head2 info
 
 Returns the information the current state of processing input files. It 
@@ -243,7 +237,7 @@ dataset.
 =cut
 
 sub info {
-	my ($self, $file) = @_;
+	my ($self) = @_;
 
 	my $ref =  Net::NfDump::libnf_instance_info($self->{handle}); 
 
@@ -261,7 +255,6 @@ sub info {
 
 	return $ref;
 
-	
 }
 
 =head2 query()
@@ -434,6 +427,26 @@ sub storerow_hashref {
 
 	return $self->storerow_array( values %{$row} );
 	
+}
+
+=head2 clonerow
+
+Copy the full content of the row from the source object (instance). This method 
+is usefull for writing effective scripts (it's much faster that any of the
+prevous row).
+
+=cut
+
+sub clonerow {
+	my ($self, $obj) = @_;
+
+	return undef if ( !defined($obj) || !defined($obj->{handle}) );
+
+	if (!$self->{write_prepared}) {
+		$self->create();
+	}
+
+	return Net::NfDump::libnf_copy_row($self->{handle}, $obj->{handle});
 }
 
 =head2 finish
@@ -747,6 +760,42 @@ sub txt2flow ($) {
 }
 
 =pod 
+
+=head2 file_info
+
+Reads information from nfdump file header. It provides various atributes 
+like number of blocks, version, flags, statistics, etc.  As the result the 
+follwing items are returned: 
+
+  version
+  ident
+  blocks
+  catalog
+  anonymized
+  compressed
+  sequence_failures
+
+  first
+  msec_first
+  last
+  msec_last
+
+  flows, bytes, packets
+
+  flows_tcp, flows_udp, flows_icmp, flows_other
+  bytes_tcp, bytes_udp, bytes_icmp, bytes_other
+  packets_tcp, packets_udp, packets_icmp, packets_other
+
+=cut
+
+sub file_info {
+	my ($file) = @_;
+
+	my $ref =  Net::NfDump::libnf_file_info($file); 
+
+	return $ref;
+}
+
 
 =head1 SUPPORTED ITEMS 
 
