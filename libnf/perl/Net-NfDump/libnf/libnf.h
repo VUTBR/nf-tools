@@ -162,6 +162,7 @@ int libnf_set_fields(int handle, SV *fields);
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
 SV * libnf_read_row(int handle);
+int libnf_copy_row(int handle, int src_handle);
 int libnf_write_row(int handle, SV * arrayref);
 void libnf_finish(int handle);
 

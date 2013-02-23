@@ -22,6 +22,8 @@ t/00-Net-NfDump.t
 t/01-conversions.t
 t/02-read-write-basic.t
 t/03-read-write-back.t
+t/04-file-info.t
+t/05-clonerow.t
 t/10-performance.t
 t/record_v4
 t/record_v6
