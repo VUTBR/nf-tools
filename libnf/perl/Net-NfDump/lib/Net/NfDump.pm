@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02_03';
+our $VERSION = '0.02_04';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -104,6 +104,21 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
 =cut 
 
+# converts comma seperated string to array reference 
+sub split_str($) {
+	my ($arg) = @_;
+
+	if (ref $arg eq 'ARRAY') {
+		# already is an array
+		return $arg;
+	} else {
+		my @arr = split(/,\s*/, $arg);
+		return \@arr;
+	}
+
+}
+
+
 # merge $opts with class default opts and return the resilt. 
 
 sub merge_opts {
@@ -116,22 +131,24 @@ sub merge_opts {
 	}
 
 	while ( my ($key, $val) =  each %opts ) {
+		if ($key eq "InputFiles" || $key eq "Fields") {
+			$val = split_str($val);
+		}
 		$ropts->{$key} = $val;
 	}
 
 	return $ropts; 
 }
 
-
 # Internal function to set output items/fields. At the input takes array that 
 # represents string names of the files 
 sub set_fields {
-	my ($self, @fields) = @_;
+	my ($self, $fieldsref) = @_;
 
 	$self->{fields_num} = [];
 	$self->{fields_txt} = [];
 
-	foreach (@fields) {
+	foreach (@{$fieldsref}) {
 
 		my $fld = lc($_);
 
@@ -278,7 +295,7 @@ sub query {
 		croak("No imput files defined");
 	} 
 
-	$self->set_fields(@{$o->{Fields}});
+	$self->set_fields($o->{Fields});
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
@@ -327,7 +344,11 @@ Same functionality as fetchrow_arrayref however returns items in array.
 sub fetchrow_array {
 	my ($self) = @_;
 
-	return @{$self->fetchrow_arrayref()};
+	my $ref = $self->fetchrow_arrayref();
+
+	return if (!defined($ref));
+
+	return @{$ref};
 }
 
 =head2 fetchrow_hashref
@@ -344,7 +365,7 @@ sub fetchrow_hashref {
 	my %res;
 	my $ref = $self->fetchrow_arrayref();
 
-	return $ref if (!defined($ref));
+	return if (!defined($ref));
  
 	my $numfields = scalar @{$self->{fields_txt}};	
 	for (my $x = 0; $x <  $numfields; $x++) {
@@ -368,7 +389,7 @@ sub create {
 		croak("No output file defined");
 	} 
 
-	$self->set_fields(@{$o->{Fields}});
+	$self->set_fields($o->{Fields});
 
 	# handle, filename, compressed, anonyized, identifier 
 	Net::NfDump::libnf_create_file($self->{handle}, 
@@ -423,7 +444,7 @@ sub storerow_hashref {
 
 	return undef if (!defined($row));
 
-	$self->set_fields( keys %{$row} );
+	$self->set_fields( [ keys %{$row} ] );
 
 	return $self->storerow_array( values %{$row} );
 	

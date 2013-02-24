@@ -1,5 +1,10 @@
 Revision history for Perl extension Net::NfDump.
 
+0.02_04 2013-02-24
+	- a few bugs removed 
+	- clonerow added 
+    - InputFiles and Fields can by handled as a reference to list or comma separated list 
+
 0.02_01 2013-02-11
 	- hasharray functions added
 	- performance optimalisation (4x faster) 
