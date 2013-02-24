@@ -76,24 +76,34 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
   use Net::NfDump;
  
-  my $src = new Net::NfDump(
-        InputFiles => [ 'nfdump_file' ], 
+  my $flow = new Net::NfDump(
+        InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
         Filter => 'icmp and src net 10.0.0.0/8',
-        Fields => [ '*' ] ); 
+        Fields => 'srcip, dstip, bytes' ); 
 
-  my $dst = new Net::NfDump(
-        OutputFile => 'nfdump_icmp_private',
-        Fields => [ '*' ] );
+  %h;
+  $flow->query();
+  while (my ($srcip, $dstip, $bytes) = $src->fetchrow_array() )  {
 
-  $src->query();
-
-  while (my $row = $src->fetchrow_arrayref() )  {
-
-     $dst->storerow_arrayref($row);
+     $h{"$srcip -> $dstip"} += $bytes;	
 
   }
+  $flow->finish();
+ 
+  # print stattistics 
+  while ( my ($k, $v) = each %h ) {
+     printf "%s : %d\n", $k, $v;
+  }
 
-  $src->finish();
+
+  #Example 2: 
+  
+  
+  my $flow = new Net::NfDump(
+        OutputFile => 'output.nfcap',
+        Fields => 'srcip,dstip' );
+
+  $flow->storerow_arrayref(txt2ip('147.229.3.10'), txt2ip('1.2.3.4'));
   $dst->finish();
 
 
