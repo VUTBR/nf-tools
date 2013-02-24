@@ -240,6 +240,7 @@ sub new {
 	$class->{read_prepared} = 0;
 	$class->{write_prepared} = 0;
 	$class->{closed} = 0;
+	$class->{last_hashref_items} = "";
 
 	return $class;
 }
@@ -444,9 +445,12 @@ sub storerow_hashref {
 
 	return undef if (!defined($row));
 
-	$self->set_fields( [ keys %{$row} ] );
+	if (join(',', keys %{$row}) ne $self->{last_hashref_items}) {
+		$self->set_fields( [ keys %{$row} ] );
+		$self->{last_hashref_items} = join(',', keys %{$row});
+	}
 
-	return $self->storerow_array( values %{$row} );
+	return $self->storerow_arrayref( [ values %{$row} ] );
 	
 }
 
