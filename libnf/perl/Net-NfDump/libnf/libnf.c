@@ -77,7 +77,7 @@
 
 /* defining macros for storing numbers, 64 bit numbers and strings into hash */
 #define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
-#define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64v(v), 0)
+#define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64(v), 0)
 #define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
 
@@ -321,32 +321,32 @@ nffile_t *nffile = NULL;
 	HV_STORE_PV(res, "ident", nffile->file_header->ident);
 
 	if (nffile->stat_record != NULL) {
-		HV_STORE_NV(res, "flows", nffile->stat_record->numflows);
-		HV_STORE_NV(res, "bytes", nffile->stat_record->numbytes);
-		HV_STORE_NV(res, "packets", nffile->stat_record->numpackets);
+		HV_STORE_U64V(res, "flows", nffile->stat_record->numflows);
+		HV_STORE_U64V(res, "bytes", nffile->stat_record->numbytes);
+		HV_STORE_U64V(res, "packets", nffile->stat_record->numpackets);
 		
-		HV_STORE_NV(res, "flows_tcp", nffile->stat_record->numflows_tcp);
-		HV_STORE_NV(res, "bytes_tcp", nffile->stat_record->numbytes_tcp);
-		HV_STORE_NV(res, "packets_tcp", nffile->stat_record->numpackets_tcp);
+		HV_STORE_U64V(res, "flows_tcp", nffile->stat_record->numflows_tcp);
+		HV_STORE_U64V(res, "bytes_tcp", nffile->stat_record->numbytes_tcp);
+		HV_STORE_U64V(res, "packets_tcp", nffile->stat_record->numpackets_tcp);
 
-		HV_STORE_NV(res, "flows_udp", nffile->stat_record->numflows_udp);
-		HV_STORE_NV(res, "bytes_udp", nffile->stat_record->numbytes_udp);
-		HV_STORE_NV(res, "packets_udp", nffile->stat_record->numpackets_udp);
+		HV_STORE_U64V(res, "flows_udp", nffile->stat_record->numflows_udp);
+		HV_STORE_U64V(res, "bytes_udp", nffile->stat_record->numbytes_udp);
+		HV_STORE_U64V(res, "packets_udp", nffile->stat_record->numpackets_udp);
 
-		HV_STORE_NV(res, "flows_icmp", nffile->stat_record->numflows_icmp);
-		HV_STORE_NV(res, "bytes_icmp", nffile->stat_record->numbytes_icmp);
-		HV_STORE_NV(res, "packets_icmp", nffile->stat_record->numpackets_icmp);
+		HV_STORE_U64V(res, "flows_icmp", nffile->stat_record->numflows_icmp);
+		HV_STORE_U64V(res, "bytes_icmp", nffile->stat_record->numbytes_icmp);
+		HV_STORE_U64V(res, "packets_icmp", nffile->stat_record->numpackets_icmp);
 
-		HV_STORE_NV(res, "flows_other", nffile->stat_record->numflows_other);
-		HV_STORE_NV(res, "bytes_other", nffile->stat_record->numbytes_other);
-		HV_STORE_NV(res, "packets_other", nffile->stat_record->numpackets_other);
+		HV_STORE_U64V(res, "flows_other", nffile->stat_record->numflows_other);
+		HV_STORE_U64V(res, "bytes_other", nffile->stat_record->numbytes_other);
+		HV_STORE_U64V(res, "packets_other", nffile->stat_record->numpackets_other);
 
-		HV_STORE_NV(res, "first", nffile->stat_record->first_seen);
-		HV_STORE_NV(res, "last", nffile->stat_record->last_seen);
-		HV_STORE_NV(res, "msec_first", nffile->stat_record->msec_first);
-		HV_STORE_NV(res, "msec_last", nffile->stat_record->msec_last);
+		HV_STORE_U64V(res, "first", nffile->stat_record->first_seen * 1000LL + nffile->stat_record->msec_first);
+		HV_STORE_U64V(res, "last", nffile->stat_record->last_seen * 1000LL + nffile->stat_record->msec_last);
+//		HV_STORE_NV(res, "msec_first", nffile->stat_record->msec_first);
+//		HV_STORE_NV(res, "msec_last", nffile->stat_record->msec_last);
 
-		HV_STORE_NV(res, "sequence_failures", nffile->stat_record->sequence_failure);
+		HV_STORE_U64V(res, "sequence_failures", nffile->stat_record->sequence_failure);
 	}
 
 	CloseFile(nffile);
@@ -390,6 +390,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 AV *res_array;
 //bit_array_t ext;
 int i=0;
+uint64_t t;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG);
@@ -413,16 +414,12 @@ int i=0;
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
-					sv = uint_to_SV(rec->first, 1);
-					break;
-			case NFL_I_MSEC_FIRST: 	
-					sv = uint_to_SV(rec->msec_first, 1);
+					t = rec->first * 1000LL + rec->msec_first;
+					sv = uint64_to_SV(&t, 1);
 					break;
 			case NFL_I_LAST: 	
-					sv = uint_to_SV(rec->last, 1);
-					break;
-			case NFL_I_MSEC_LAST: 	
-					sv = uint_to_SV(rec->msec_last, 1);
+					t = rec->last * 1000LL + rec->msec_last;
+					sv = uint64_to_SV(&t, 1);
 					break;
 
 			case NFL_I_RECEIVED:
@@ -1068,6 +1065,7 @@ extension_map_t *map;
 //bit_array_t ext;
 int last_field;
 int i, res;
+uint64_t t;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG);
@@ -1101,16 +1099,14 @@ int i, res;
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
-					rec->first = SvUV(sv);
-					break;
-			case NFL_I_MSEC_FIRST: 	
-					rec->msec_first = SvUV(sv);
+					t = SvU64(sv);
+					rec->first = t / 1000LL;
+					rec->msec_first = t - rec->first * 1000LL;
 					break;
 			case NFL_I_LAST: 	
-					rec->last = SvUV(sv);
-					break;
-			case NFL_I_MSEC_LAST: 	
-					rec->msec_last = SvUV(sv);
+					t = SvU64(sv);
+					rec->last = t / 1000LL;
+					rec->msec_last = t - rec->last * 1000LL;
 					break;
 
 			case NFL_I_RECEIVED:

@@ -1,6 +1,6 @@
 
 use Test::More tests => 1;;
-#open(STDOUT, ">&STDERR");
+open(STDOUT, ">&STDERR");
 
 use Net::NfDump qw ':all';
 
@@ -14,10 +14,8 @@ my %data =(
 	'compressed' => '1',
 	'sequence_failures' => '0',
 
-	'first' => '1354046356',
-	'msec_first' => '360',
-	'last' => '1354046668',
-	'msec_last' => '173',
+	'first' => '1354046356360',
+	'last' => '1354046668173',
 
 	'flows' => '8170',
 	'flows_tcp' => '14',
@@ -41,7 +39,6 @@ my %data =(
 # we will use the output file from the previous test 
 
 my $info = file_info("t/data2.tmp");
-
 
 ok( eq_hash($info, \%data) );
 
