@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::NfDump.
 
+0.02_05 2013-02-26
+    - example1.pl added 
+    - documenation updated 
+
 0.02_04 2013-02-24
 	- a few bugs removed 
 	- clonerow added 

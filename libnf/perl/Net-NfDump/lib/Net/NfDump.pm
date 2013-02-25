@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02_05';
+our $VERSION = '0.02_06';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -75,42 +75,44 @@ Net::NfDump - Perl API for manipulating with nfdump files
 =head1 SYNOPSIS
 
   use Net::NfDump;
- 
-  my $flow = new Net::NfDump(
+
+  #
+  # Example 1: reading nfdump file(s)
+  # 
+  
+  $flow = new Net::NfDump(
         InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
         Filter => 'icmp and src net 10.0.0.0/8',
-        Fields => 'srcip, dstip, bytes' ); 
+        Fields => 'proto, bytes' ); 
 
-  %h;
   $flow->query();
-  while (my ($srcip, $dstip, $bytes) = $src->fetchrow_array() )  {
 
-     $h{"$srcip -> $dstip"} += $bytes;	
-
+  while (my ($proto, $bytes) = $flow->fetchrow_array() )  {
+    $h{$proto} += $bytes;
   }
   $flow->finish();
- 
-  # print stattistics 
-  while ( my ($k, $v) = each %h ) {
-     printf "%s : %d\n", $k, $v;
+
+  foreach ( keys %h ) {
+    printf "%s %d\n", $_, $h{$_};
   }
 
 
-  #Example 2: 
-  
+  #
+  # Example 2: creating and writing records into nfdump file
+  #
   
   my $flow = new Net::NfDump(
         OutputFile => 'output.nfcap',
         Fields => 'srcip,dstip' );
 
-  $flow->storerow_arrayref(txt2ip('147.229.3.10'), txt2ip('1.2.3.4'));
-  $dst->finish();
+  $flow->storerow_arrayref( [ txt2ip('147.229.3.10'), txt2ip('1.2.3.4') ] );
+
+  $flow->finish();
 
 
 =head1 DESCRIPTION
 
 
-=head1 METHODS
 
 =cut 
 
@@ -184,38 +186,67 @@ sub set_fields {
 }
 
 
-=head2 new
+=head1 OPTIONS
 
-The constructor. As the parameter options can be specified. This options will be used
-as a default option set in the particular methods. 
+Options can be nahdled in varios methods. The basic options ses can be handled 
+in the constructor and than modified in methods like $obj->query() or $obj->create(). 
 
-Module supports followinng options 
+The values after => indicates the default value for the item.
 
-  Options for reading data
-  =================================================================
-  InputFiles => []   - List of files to  read (arrayref)
-  Filter => 'any'    - Filter taht will be applied on input 
-                       records. Uses nfdump/tcpdump syntax
-  Fields => [ '*' ]  - List of fields to read or update 
-                       any field from supported fields can 
-                       be used here. See the chapter 
-                       "Supported Fields" for the full list 
-                       of supported fields. Special field * can 
-                       be used for defining all fields. 
-  TimeWindowStart => 0
-  TimeWindowEnd => 0 - Filter flows that starts or ends in the 
-                       specified fied time window. The options uses 
-                       unix timestamp values or 0 if the filter shoul
-                       not be apllied. 
 
-  Options for writing data
-  =================================================================
-  OutputFile => undef - Output file for storerow_* methods.
-  Compressed => 1    - Flag whether the otput files should be 
-                       compressed or not. 
-  Anonymized => 0    - Flag indicating that output file contains 
-                       anonymized data.
-  Ident => ""        - String identificator of files 
+=over 
+
+=item  InputFiles => []
+
+List of files to  read (arrayref). Default: [] (empty arrayref). 
+
+=item Filter => 'any'
+
+Filter taht will be applied on input records. Uses nfdump/tcpdump syntax. 
+
+=item Fields => '*'
+
+List of fields to read or update any field from supported fields can be used 
+here. See the chapter "Supported Fields" for the full list of supported 
+fields.  Special field * can be used for defining all fields. 
+
+
+=item  TimeWindowStart, TimeWindowEnd => 0
+
+Filter flows that starts or ends in the specified fied time window. 
+The options uses unix timestamp values or 0 if the filter should
+not be apllied. 
+
+=item  OutputFile => undef
+
+Output file for storerow_* methods. Default: undef
+
+=item Compressed => 1
+
+Flag whether the otput files should be compressed or not. 
+
+=item  Anonymized => 0
+
+Flag indicating that output file contains anonymized data.
+
+=item Ident => '' 
+
+String identificator of files 
+
+=back 
+
+=head1 METHODS
+
+=over 
+
+=item new Net::NfDump
+
+
+  my $obj = new Net::NfDump( InputFiles => [ 'file1']  );
+
+
+The constructor. As the parameter options can be specified. 
+
 
 =cut
 
@@ -255,12 +286,38 @@ sub new {
 	return $class;
 }
 
-=head2 info
+=pod
+
+=item $obj->info()
+
+
+  my $i = $obj->info();
+  print Dumper($i);
+
 
 Returns the information the current state of processing input files. It 
 returns information about already processed files, blocks, records. Those
 information can be usefull for guessing time of processing whole 
-dataset. 
+dataset. Hashref returs following items:
+
+  total_files           - total number of files to process
+  elapsed_time          - elapsed time 
+  remaining_time        - guessed remaining time to process all records
+  percent               - guessed percent of processed records
+  
+  processed_files       - total number of processed files
+  processed_records     - total number of processed records
+  processed_blocks      - total number of processed blocks
+  processed_bytes       - total number of processed bytes 
+                          number of bytes read from file 
+                          system after uncompressing 
+  
+  current_filename      - the name of the file currently processed
+  current_total_blocks  - the number of blocks in the currently 
+                          processed file 
+  current_processed_blocks -  the number of processd blocks in the 
+                          currently processed file
+
 
 =cut
 
@@ -285,9 +342,17 @@ sub info {
 
 }
 
-=head2 query()
 
-Method that have to be executed before the fetchrow_* method are used. 
+=pod
+
+=item $obj->query( %opts )
+
+
+  $obj->query( Filter => 'src host 10.10.10.1' );
+
+
+Method that have to be executed before any of the fetchrow_* method  is used. Options 
+can be handled to the method. 
 
 =cut 
 
@@ -318,14 +383,21 @@ sub query {
 
 }
 
-=head2 fetchrow_arrayref
+=pod 
 
-Have to be used after query method. If the query wasn't called before the 
-method is called as $obj->query() before the first record is returned. 
+=item $obj->fetchrow_arrayref()
+
+
+  while (my $ref = $obj->fetchrow_arrayref() ) {
+      print Dumper($ref);
+  }
+
+
+Have to be used after query method. The method $obj->query() s called 
+automatically if it wasn't called before. 
 
 Method returns array reference with the record and skips to the next record. Returns 
-true if there are more records to read or false if all record from all 
-files have been read. 
+true if there are more records to read or undef if end of the record set have been reached. 
 
 =cut
 
@@ -346,9 +418,17 @@ sub fetchrow_arrayref {
 	return $ret;
 }
 
-=head2 fetchrow_array
+=pod 
 
-Same functionality as fetchrow_arrayref however returns items in array.
+=item my @arr = $obj->fetchrow_array()
+
+
+  while ( @arr = $obj->fetchrow_arrayref() ) { 
+    print Dumper(\@arr);
+  }
+
+
+Same functionality as fetchrow_arrayref however returns items in array instead.
 
 =cut 
 
@@ -362,9 +442,18 @@ sub fetchrow_array {
 	return @{$ref};
 }
 
-=head2 fetchrow_hashref
+=pod 
 
-Same as fetchrow_arrayref, however the items are returned in the hash reference. 
+=item $ref = $obj->fetchrow_hashref()
+
+
+  while ( $ref = $obj->fetchrow_hashref() ) {
+     print Dumper($ref);
+  }
+
+
+Same as fetchrow_arrayref, however the items are returned in the hash reference as the 
+key => vallue tuples. 
 
 NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
 
@@ -386,11 +475,19 @@ sub fetchrow_hashref {
 	return \%res;
 }
 
-=head2 create
+=pod
 
-Creates a new nfdump file. 
+=item $obj->create()
+
+
+  $obj->create( OutputFile => 'output.nfcapd' );
+
+
+Creates a new nfdump file. This method have to be called before any of $obj->storerow_* 
+method is called. 
 
 =cut 
+
 sub create {
 	my ($self, %opts) = @_;
 
@@ -412,7 +509,13 @@ sub create {
 	$self->{write_prepared} = 1;
 }
 
-=head2 storerow_arrayref
+=pod 
+
+=item $obj->storerow_arrayref( $arrayref );
+
+
+  $obj->storerow_arrayref( [ $srcip, $dstip ] );
+
 
 Insert data defined in arrayref to the file opened by create.  The number of 
 fields and their order have to respect order defined in the Fileds option 
@@ -430,7 +533,13 @@ sub storerow_arrayref {
 	return Net::NfDump::libnf_write_row($self->{handle}, $row);
 }
 
-=head2 storerow_array 
+=pod
+
+=item $obj->storerow_array( @arr );
+
+
+  $obj->storerow_array(  $srcip, $dstip  );
+
 
 Same as storerow_arrayref, however items are handled as the single array 
 
@@ -442,7 +551,13 @@ sub storerow_array {
 	return $self->storerow_arrayref(\@row);
 }
 
-=head2 storerow_hashref
+=pod
+
+=item $obj->storerow_hashref ( \%hash )
+
+
+  $obj->storerow_hashref( { 'srcip' =>  $srcip, 'dstip' => $dstip } );
+
 
 Inserts structure defined as hash reference into output file. 
 
@@ -464,7 +579,13 @@ sub storerow_hashref {
 	
 }
 
-=head2 clonerow
+=pod
+
+=item $obj->clonerow( $obj2 )
+
+
+  $obj->clonerow( $obj2 );
+
 
 Copy the full content of the row from the source object (instance). This method 
 is usefull for writing effective scripts (it's much faster that any of the
@@ -484,12 +605,20 @@ sub clonerow {
 	return Net::NfDump::libnf_copy_row($self->{handle}, $obj->{handle});
 }
 
-=head2 finish
+=pod
+
+=item $obj->finish()
+
+
+  $obj->finish();
+
 
 Closes all openes file handles. It is nescessary to call that method specilly 
 when a new file is created. The method flushes to file records that remains in the memory 
 buffer and updates file statistics in the header. Withat calling this method the 
 output file might be corupted. 
+
+=back
 
 =cut
 
@@ -543,12 +672,24 @@ only on platforms where perl do not supports 64bit integer values.
 The module also provides extra convertion functions that allow convert binnary format 
 of IP address, MAC address and MPLS labels tag into text format and back. 
 
-Those functions are not exported by default 
+Those functions are not exported by default. 
 
-=head2 ip2txt 
+=over 
 
-Converts both IPv4 and IPv6 address into text form. The standart inet_ntop function 
-can be used instead to provide same results. 
+=item $txt = ip2txt( $bin ) 
+
+=item $bin = txt2ip( $txt )
+
+
+  $ip = txt2ip('10.10.10.1');
+  print ip2txt($ip);
+
+
+Converts both IPv4 and IPv6 address into text form and back. The standart 
+inet_ntop/inet_pton functions can be used instead to provide same results. 
+
+Function txt2ip returns binnary format of IP addres or undef 
+if the conversion is impossible. 
 
 =cut 
 
@@ -573,14 +714,6 @@ sub ip2txt ($) {
 	return inet_ntop($type, $addr);
 }
 
-=pod
-
-=head2 txt2ip 
-
-Inversion fuction to ip2txt. Returns binnary format of IP addres or undef 
-if the conversion is impossible. 
-
-=cut 
 
 sub txt2ip ($) {
 	my ($addr) = @_;
@@ -601,9 +734,24 @@ sub txt2ip ($) {
 
 =pod
 
-=head2 mac2txt 
+=item $txt = mac2txt( $bin )
 
-Converts MAC addres to xx:yy:xx:yy:xx:yy format. 
+=item $bin = txt2mac( $txt )
+
+
+  $mac = txt2mac('aa:02:c2:2d:e0:12');
+  print mac2txt($mac);
+
+
+Converts MAC addres to xx:yy:xx:yy:xx:yy format and back. The fuction to mac2txt 
+accepts an address in any of following format: 
+
+  aabbccddeeff
+  aa:bb:cc:dd:ee:ff
+  aa-bb-cc-dd-ee-ff
+  aabb-ccdd-eeff
+
+Returns the binnary format of the address or undef if confersion is impossible. 
 
 =cut 
 
@@ -622,19 +770,6 @@ sub mac2txt ($) {
 	return sprintf("%s%s:%s%s:%s%s:%s%s:%s%s:%s%s", split('',unpack("H12", $addr)));
 }
 
-=pod
-
-=head2 txt2mac 
-
-Inversion fuction to mac2txt. Accept address in any of following format 
-aabbccddeeff
-aa:bb:cc:dd:ee:ff
-aa-bb-cc-dd-ee-ff
-aabb-ccdd-eeff
-
-Return the binnary format of the address or undef if confersion is impossible. 
-
-=cut 
 
 sub txt2mac ($) {
 	my ($addr) = @_;
@@ -654,14 +789,22 @@ sub txt2mac ($) {
 
 =pod
 
-=head2 mpls2txt 
+=item $txt = mpls2txt( $mpls )
 
-Converts label information to format B<Lbl-Exp-S>
+=item $mpls = txt2mpls( $txt )
 
-Whwre 
-Lbl - Value given to the MPLS label by the router. 
-Exp - Value of experimental bit. 
-S - Value of the end-of-stack bit: Set to 1 for the oldest entry in the stack and to zero for all other entries. 
+
+  $mpls = txt2mpls('1002-6-0 1003-6-0 1004-0-1');
+  print mpls2txt($mpls);
+
+
+Converts label information to format B<Lbl-Exp-S> and back. 
+
+Where:
+ 
+  Lbl - Value given to the MPLS label by the router. 
+  Exp - Value of experimental bit. 
+  S - Value of the end-of-stack bit: Set to 1 for the oldest entry in the stack and to zero for all other entries. 
 
 =cut 
 
@@ -684,15 +827,6 @@ sub mpls2txt ($) {
 
 	return  join(' ', @res);
 }
-
-=pod
-
-=head2 txt2mpls
-
-Inversion function to mpls2txt. As the argiment expects the text representaion 
-of the MPLS labels as was described in the previous function (B<Lbl-Exp-S>)
-
-=cut 
 
 sub txt2mpls ($) {
 	my ($addr) = @_;
@@ -720,11 +854,15 @@ sub txt2mpls ($) {
 
 =pod
 
-=head2 flow2txt
+=item $ref = flow2txt( \%row )
 
-Gets hash reference to items returned by fetchrow_hashref and converts all items into
-human readable text format. Applies finction ip2txt, mac2txt, mpl2txt to the items 
-where it make sense. 
+=item $ref = txt2flow( \%row )
+
+
+The function flow2txt gets hash reference to items returned by fetchrow_hashref and 
+converts all items into humman readable text format. Applies finctions 
+ip2txt, mac2txt, mpl2txt to the items where it make sense.  The function 
+txt2flow does opossite functionality.
 
 =cut 
 
@@ -760,14 +898,6 @@ sub flow2txt ($) {
 	return \%res;	
 }
 
-=pod
-
-=head2 txt2flow
-
-Inversion function to flow2txt. It is usefull before calling storerow_hashref
-
-=cut 
-
 
 sub txt2flow ($) {
 	my ($row) = @_;
@@ -796,7 +926,12 @@ sub txt2flow ($) {
 
 =pod 
 
-=head2 file_info
+=item $ref = file_info( $file_name )
+
+
+  $ref = file_info('file.nfcap');
+  print Dumper($ref);
+
 
 Reads information from nfdump file header. It provides various atributes 
 like number of blocks, version, flags, statistics, etc.  As the result the 
@@ -820,6 +955,9 @@ follwing items are returned:
   flows_tcp, flows_udp, flows_icmp, flows_other
   bytes_tcp, bytes_udp, bytes_icmp, bytes_other
   packets_tcp, packets_udp, packets_icmp, packets_other
+
+
+=back 
 
 =cut
 
