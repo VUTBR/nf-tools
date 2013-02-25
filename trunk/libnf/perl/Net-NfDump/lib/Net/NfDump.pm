@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02_04';
+our $VERSION = '0.02_05';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -170,7 +170,7 @@ sub set_fields {
 		} else {
 
 			if ( !defined($Net::NfDump::Fields::NFL_FIELDS_TXT{$fld}) ) {
-				croak("Unknown field \"%s\".", $_); 
+				croak(sprintf("Unknown field \"%s\".", $_)); 
 			}
 
 			push(@{$self->{fields_num}}, $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld});
@@ -837,9 +837,7 @@ sub file_info {
   Time items
   =====================
   first - Timestamp of first seen packet 
-  msecfirst - Number of miliseconds of first seen packet since B<first>  
   last - Timestamp of last seen packet 
-  mseclast - Number of miliseconds of last seen packet since B<last>  
   received - Timestamp when the packet was received by collector 
 
   Statistical items

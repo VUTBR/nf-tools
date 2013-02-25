@@ -2,9 +2,7 @@
 package Net::NfDump::Fields;
 our %NFL_FIELDS_INT = (
 	10 => 'first',
-	20 => 'msecfirst',
 	30 => 'last',
-	40 => 'mseclast',
 	50 => 'received',
 	60 => 'bytes',
 	70 => 'pkts',
@@ -48,9 +46,7 @@ our %NFL_FIELDS_INT = (
 
 our %NFL_FIELDS_TXT = (
 	'first' => 10,
-	'msecfirst' => 20,
 	'last' => 30,
-	'mseclast' => 40,
 	'received' => 50,
 	'bytes' => 60,
 	'pkts' => 70,
