@@ -109,9 +109,91 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
   $flow->finish();
 
+  #
+  # Example 3: reading/writing (merging two input files) and swap
+  #            source and destination address if the destination port 
+  #            is 80/http (I know it doesn't make much sense).
+  #
+
+  $flow1 = new Net::NfDump( 
+		InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
+        Fields => 'srcip, dstip, dstport' ); 
+
+  $flow2 = new Net::NfDump( 
+		OutputFile => 'nfdump_file_out', 
+        Fields => 'srcip, dstip, dstport' ); 
+
+  $flow1->query();
+  $flow2->create();
+
+  while (my $ref = $flow->fetchrow_arrayref() )  {
+
+    if ( $ref->[1] == 80 ) { 
+      ($ref->[0], $ref->[1]) = ($ref->[1], $ref->[0]);
+    }
+
+	$flow2->clonerow($flow1);
+	$floe2->storerow_arrayref($ref);
+
+  }
+
+  $flow1->finish();
+  $flow2->finish();
+
 
 =head1 DESCRIPTION
 
+The module implements basic operations on binary files produced
+with nfdump tool. It allows read, create and write flow records on
+those files.  The modules tries to keep naming conventions for 
+methods same as iare used n DBI nodules/API, so developers that 
+are used to use this interface should be famillar with the 
+interface. 
+
+The module uses original nfdump sources to implement nescessary 
+functions. The compatibility with original 
+nfdump should be asisly keeps and maintance of code 
+to cope with future version shoul be minnimal. 
+
+The architecture is following: 
+
+      
+          APPLICATION 
+   +------------------------+
+   |                        |  
+   | Net::NfDump API (perl) |
+   |                        |
+   +------------------------+
+   |                        |  
+   | libnf - glue code (C)  |
+   |                        |
+   +------------------------+
+   |                        |  
+   |   nfdump sources (C)   |
+   |                        |
+   +------------------------+
+         NFDUMP FILES
+
+=over
+
+=item * B<< Net::NfDump API >> 
+
+Implements all methods and functions described in rest of thi document. 
+
+
+=item * B<< libnf - glue code >>
+
+Creates code that converts internal nfdump structures into perl and 
+back. 
+
+=item * B<< nfdump sources >> 
+
+Are original nfdump package source files downloaded from L<http://sourceforge.net/projects/nfdump/>. 
+There are no changes in thos code and all relevant changes are places into libnf code only. 
+
+This version of Net::NfDump is based on nfdump-1.6.8p1 with nsel option enabled. 
+
+=back 
 
 
 =cut 
@@ -186,7 +268,10 @@ sub set_fields {
 }
 
 
-=head1 OPTIONS
+
+=head1 METHODS, OPTIONS AND RELATED FUNCTIONS
+
+=head2 Options
 
 Options can be nahdled in varios methods. The basic options ses can be handled 
 in the constructor and than modified in methods like $obj->query() or $obj->create(). 
@@ -196,50 +281,50 @@ The values after => indicates the default value for the item.
 
 =over 
 
-=item  InputFiles => []
+=item * B<InputFiles> => []
 
-List of files to  read (arrayref). Default: [] (empty arrayref). 
+List of files to read (arrayref).  
 
-=item Filter => 'any'
+=item * B<Filter> => 'any'
 
 Filter taht will be applied on input records. Uses nfdump/tcpdump syntax. 
 
-=item Fields => '*'
+=item * B<Fields> => '*'
 
 List of fields to read or update any field from supported fields can be used 
 here. See the chapter "Supported Fields" for the full list of supported 
 fields.  Special field * can be used for defining all fields. 
 
 
-=item  TimeWindowStart, TimeWindowEnd => 0
+=item * B<TimeWindowStart>, B<TimeWindowEnd> => 0
 
 Filter flows that starts or ends in the specified fied time window. 
 The options uses unix timestamp values or 0 if the filter should
 not be apllied. 
 
-=item  OutputFile => undef
+=item *  B<OutputFile> => undef
 
 Output file for storerow_* methods. Default: undef
 
-=item Compressed => 1
+=item * B<Compressed> => 1
 
 Flag whether the otput files should be compressed or not. 
 
-=item  Anonymized => 0
+=item * B<Anonymized> => 0
 
 Flag indicating that output file contains anonymized data.
 
-=item Ident => '' 
+=item * B<Ident> => '' 
 
-String identificator of files 
+String identificator of files stored into the header of the file. 
 
 =back 
 
-=head1 METHODS
+=head2 Constructor, status informations methods
 
 =over 
 
-=item new Net::NfDump
+=item * B<$obj = new Net::NfDump( %opts )>
 
 
   my $obj = new Net::NfDump( InputFiles => [ 'file1']  );
@@ -288,7 +373,7 @@ sub new {
 
 =pod
 
-=item $obj->info()
+=item * B<< $ref = $obj->info() >>
 
 
   my $i = $obj->info();
@@ -318,7 +403,6 @@ dataset. Hashref returs following items:
   current_processed_blocks -  the number of processd blocks in the 
                           currently processed file
 
-
 =cut
 
 sub info {
@@ -345,269 +429,7 @@ sub info {
 
 =pod
 
-=item $obj->query( %opts )
-
-
-  $obj->query( Filter => 'src host 10.10.10.1' );
-
-
-Method that have to be executed before any of the fetchrow_* method  is used. Options 
-can be handled to the method. 
-
-=cut 
-
-# Query method can be used in two ways. If the string argument is the 
-# flow query is handled. See section FLOW QUERY how to create flow 
-# queries.
-
-# =cut
-
-sub query {
-	my ($self, %opts) = @_;
-
-	my $o = $self->merge_opts(%opts);
-
-	if (@{$o->{InputFiles}} == 0) {
-		croak("No imput files defined");
-	} 
-
-	$self->set_fields($o->{Fields});
-
-	# handle, filter, windows start, windows end, ref to filelist 
-	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
-					$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
-					$o->{InputFiles});	
-
-	$self->{read_prepared} = 1;
-	$self->{read_started} = time();
-
-}
-
-=pod 
-
-=item $obj->fetchrow_arrayref()
-
-
-  while (my $ref = $obj->fetchrow_arrayref() ) {
-      print Dumper($ref);
-  }
-
-
-Have to be used after query method. The method $obj->query() s called 
-automatically if it wasn't called before. 
-
-Method returns array reference with the record and skips to the next record. Returns 
-true if there are more records to read or undef if end of the record set have been reached. 
-
-=cut
-
-sub fetchrow_arrayref {
-	my ($self) = @_;
-
-	if (!$self->{read_prepared}) {
-		$self->query();
-	}
-
-	my $ret = Net::NfDump::libnf_read_row($self->{handle});
-
-	#the end of the file/files we set back read prepared to 0
-	if (!$ret) {
-		$self->{read_prepared} = 0;
-	}
-
-	return $ret;
-}
-
-=pod 
-
-=item my @arr = $obj->fetchrow_array()
-
-
-  while ( @arr = $obj->fetchrow_arrayref() ) { 
-    print Dumper(\@arr);
-  }
-
-
-Same functionality as fetchrow_arrayref however returns items in array instead.
-
-=cut 
-
-sub fetchrow_array {
-	my ($self) = @_;
-
-	my $ref = $self->fetchrow_arrayref();
-
-	return if (!defined($ref));
-
-	return @{$ref};
-}
-
-=pod 
-
-=item $ref = $obj->fetchrow_hashref()
-
-
-  while ( $ref = $obj->fetchrow_hashref() ) {
-     print Dumper($ref);
-  }
-
-
-Same as fetchrow_arrayref, however the items are returned in the hash reference as the 
-key => vallue tuples. 
-
-NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
-
-=cut
-
-sub fetchrow_hashref {
-	my ($self) = @_;
-
-	my %res;
-	my $ref = $self->fetchrow_arrayref();
-
-	return if (!defined($ref));
- 
-	my $numfields = scalar @{$self->{fields_txt}};	
-	for (my $x = 0; $x <  $numfields; $x++) {
-		$res{$self->{fields_txt}->[$x]} = $ref->[$x] if defined($ref->[$x]);
-	}
-
-	return \%res;
-}
-
-=pod
-
-=item $obj->create()
-
-
-  $obj->create( OutputFile => 'output.nfcapd' );
-
-
-Creates a new nfdump file. This method have to be called before any of $obj->storerow_* 
-method is called. 
-
-=cut 
-
-sub create {
-	my ($self, %opts) = @_;
-
-	my $o = $self->merge_opts(%opts);
-
-	if (!defined($o->{OutputFile}) || $o->{OutputFile} eq "") {
-		croak("No output file defined");
-	} 
-
-	$self->set_fields($o->{Fields});
-
-	# handle, filename, compressed, anonyized, identifier 
-	Net::NfDump::libnf_create_file($self->{handle}, 
-		$o->{OutputFile}, 
-		$o->{Compressed},
-		$o->{Anonymized},
-		$o->{Ident});
-
-	$self->{write_prepared} = 1;
-}
-
-=pod 
-
-=item $obj->storerow_arrayref( $arrayref );
-
-
-  $obj->storerow_arrayref( [ $srcip, $dstip ] );
-
-
-Insert data defined in arrayref to the file opened by create.  The number of 
-fields and their order have to respect order defined in the Fileds option 
-handled during $obj->new() or $obj->create() method. 
-
-=cut
-
-sub storerow_arrayref {
-	my ($self, $row) = @_;
-
-	if (!$self->{write_prepared}) {
-		$self->create();
-	}
-
-	return Net::NfDump::libnf_write_row($self->{handle}, $row);
-}
-
-=pod
-
-=item $obj->storerow_array( @arr );
-
-
-  $obj->storerow_array(  $srcip, $dstip  );
-
-
-Same as storerow_arrayref, however items are handled as the single array 
-
-=cut
-
-sub storerow_array {
-	my ($self, @row) = @_;
-
-	return $self->storerow_arrayref(\@row);
-}
-
-=pod
-
-=item $obj->storerow_hashref ( \%hash )
-
-
-  $obj->storerow_hashref( { 'srcip' =>  $srcip, 'dstip' => $dstip } );
-
-
-Inserts structure defined as hash reference into output file. 
-
-NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
-
-=cut
-
-sub storerow_hashref {
-	my ($self, $row) = @_;
-
-	return undef if (!defined($row));
-
-	if (join(',', keys %{$row}) ne $self->{last_hashref_items}) {
-		$self->set_fields( [ keys %{$row} ] );
-		$self->{last_hashref_items} = join(',', keys %{$row});
-	}
-
-	return $self->storerow_arrayref( [ values %{$row} ] );
-	
-}
-
-=pod
-
-=item $obj->clonerow( $obj2 )
-
-
-  $obj->clonerow( $obj2 );
-
-
-Copy the full content of the row from the source object (instance). This method 
-is usefull for writing effective scripts (it's much faster that any of the
-prevous row).
-
-=cut
-
-sub clonerow {
-	my ($self, $obj) = @_;
-
-	return undef if ( !defined($obj) || !defined($obj->{handle}) );
-
-	if (!$self->{write_prepared}) {
-		$self->create();
-	}
-
-	return Net::NfDump::libnf_copy_row($self->{handle}, $obj->{handle});
-}
-
-=pod
-
-=item $obj->finish()
+=item * B<< $obj->finish() >>
 
 
   $obj->finish();
@@ -642,43 +464,298 @@ sub DESTROY {
 	}
 }
 
+=pod
 
-=head1 FLOW QUERY - NOT IMPLEMENTED YET
+=head2 Methods for reading data 
 
-The flow query is language vyry simmilar to SQL to query data on 
-nfdump files. However flow query have nothing to do with SQL. It uses
-only simmilar command syntax. Example of flow query 
+=over 
 
-  SELECT * FROM data/nfdump1.nfcap, data2/nfdump2.nfcap
-  WHERE src host 147.229.3.10 
-  TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04' 
-  ORDER BY bytes
-  LIMIT 100
+=item * B<< $obj->query( %opts ) >>
 
 
-  INSERT INTO data/nout_nfdump.nfcap (srcip, dstip, srcport, dstport) 
+  $obj->query( Filter => 'src host 10.10.10.1' );
 
-=head1 NOTE ABOUT 32BIT PLATFORMS
 
-Nfdump primary uses 64 bit counters and other items to store single integer value. However 
-the native 64 bit support is not compiled in every perl. For thoose cases where 
-only 32 integer values are supported the Net::NfDump uses Math::Int64 module. 
+Method that have to be executed before any of the C<fetchrow_*> method  is used. Options 
+can be handled to the method. 
 
-The build scripts automatically detect the platform and Math::Int64 module is required
-only on platforms where perl do not supports 64bit integer values. 
+=cut 
 
-=head1 EXTRA CONVERTION FUNCTIONS 
+# Query method can be used in two ways. If the string argument is the 
+# flow query is handled. See section FLOW QUERY how to create flow 
+# queries.
+
+# =cut
+
+sub query {
+	my ($self, %opts) = @_;
+
+	my $o = $self->merge_opts(%opts);
+
+	if (@{$o->{InputFiles}} == 0) {
+		croak("No imput files defined");
+	} 
+
+	$self->set_fields($o->{Fields});
+
+	# handle, filter, windows start, windows end, ref to filelist 
+	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
+					$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
+					$o->{InputFiles});	
+
+	$self->{read_prepared} = 1;
+	$self->{read_started} = time();
+
+}
+
+=pod 
+
+=item * B<< $ref = $obj->fetchrow_arrayref() >>
+
+
+  while (my $ref = $obj->fetchrow_arrayref() ) {
+      print Dumper($ref);
+  }
+
+
+Have to be used after query method. The method $obj->query() s called 
+automatically if it wasn't called before. 
+
+Method returns array reference with the record and skips to the next record. Returns 
+true if there are more records to read or undef if end of the record set have been reached. 
+
+=cut
+
+sub fetchrow_arrayref {
+	my ($self) = @_;
+
+	if (!$self->{read_prepared}) {
+		$self->query();
+	}
+
+	my $ret = Net::NfDump::libnf_read_row($self->{handle});
+
+	#the end of the file/files we set back read prepared to 0
+	if (!$ret) {
+		$self->{read_prepared} = 0;
+	}
+
+	return $ret;
+}
+
+=pod 
+
+=item * B<< @array = $obj->fetchrow_array() >>
+
+
+  while ( @array = $obj->fetchrow_arrayref() ) { 
+    print Dumper(\@array);
+  }
+
+
+Same functionality as fetchrow_arrayref however returns items in array instead.
+
+=cut 
+
+sub fetchrow_array {
+	my ($self) = @_;
+
+	my $ref = $self->fetchrow_arrayref();
+
+	return if (!defined($ref));
+
+	return @{$ref};
+}
+
+=pod 
+
+=item * B<< $ref = $obj->fetchrow_hashref() >>
+
+
+  while ( $ref = $obj->fetchrow_hashref() ) {
+     print Dumper($ref);
+  }
+
+
+Same as fetchrow_arrayref, however the items are returned in the hash reference as the 
+key => vallue tuples. 
+
+NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
+
+=back 
+
+=cut
+
+sub fetchrow_hashref {
+	my ($self) = @_;
+
+	my %res;
+	my $ref = $self->fetchrow_arrayref();
+
+	return if (!defined($ref));
+ 
+	my $numfields = scalar @{$self->{fields_txt}};	
+	for (my $x = 0; $x <  $numfields; $x++) {
+		$res{$self->{fields_txt}->[$x]} = $ref->[$x] if defined($ref->[$x]);
+	}
+
+	return \%res;
+}
+
+=pod
+
+=head2 Methods for writing data 
+
+=over 
+
+=item * B<< $obj->create( %opts ) >>
+
+
+  $obj->create( OutputFile => 'output.nfcapd' );
+
+
+Creates a new nfdump file. This method have to be called before any of $obj->storerow_* 
+method is called. 
+
+=cut 
+
+sub create {
+	my ($self, %opts) = @_;
+
+	my $o = $self->merge_opts(%opts);
+
+	if (!defined($o->{OutputFile}) || $o->{OutputFile} eq "") {
+		croak("No output file defined");
+	} 
+
+	$self->set_fields($o->{Fields});
+
+	# handle, filename, compressed, anonyized, identifier 
+	Net::NfDump::libnf_create_file($self->{handle}, 
+		$o->{OutputFile}, 
+		$o->{Compressed},
+		$o->{Anonymized},
+		$o->{Ident});
+
+	$self->{write_prepared} = 1;
+}
+
+=pod 
+
+=item * B<< $obj->storerow_arrayref( $arrayref ) >>
+
+
+  $obj->storerow_arrayref( [ $srcip, $dstip ] );
+
+
+Insert data defined in arrayref to the file opened by create.  The number of 
+fields and their order have to respect order defined in the Fileds option 
+handled during $obj->new() or $obj->create() method. 
+
+=cut
+
+sub storerow_arrayref {
+	my ($self, $row) = @_;
+
+	if (!$self->{write_prepared}) {
+		$self->create();
+	}
+
+	return Net::NfDump::libnf_write_row($self->{handle}, $row);
+}
+
+=pod
+
+=item * B<< $obj->storerow_array( @array ) >>
+
+
+  $obj->storerow_array(  $srcip, $dstip  );
+
+
+Same as storerow_arrayref, however items are handled as the single array 
+
+=cut
+
+sub storerow_array {
+	my ($self, @row) = @_;
+
+	return $self->storerow_arrayref(\@row);
+}
+
+=pod
+
+=item * B<< $obj->storerow_hashref ( \%hash ) >>
+
+
+  $obj->storerow_hashref( { 'srcip' =>  $srcip, 'dstip' => $dstip } );
+
+
+Inserts structure defined as hash reference into output file. 
+
+NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
+
+=cut
+
+sub storerow_hashref {
+	my ($self, $row) = @_;
+
+	return undef if (!defined($row));
+
+	if (join(',', keys %{$row}) ne $self->{last_hashref_items}) {
+		$self->set_fields( [ keys %{$row} ] );
+		$self->{last_hashref_items} = join(',', keys %{$row});
+	}
+
+	return $self->storerow_arrayref( [ values %{$row} ] );
+	
+}
+
+=pod
+
+=item * B<< $obj->clonerow( $obj2 ) >>
+
+
+  $obj->clonerow( $obj2 );
+
+
+Copy the full content of the row from the source object (instance). This method 
+is usefull for writing effective scripts (it's much faster that any of the
+prevous row).
+
+=back
+
+=cut
+
+sub clonerow {
+	my ($self, $obj) = @_;
+
+	return undef if ( !defined($obj) || !defined($obj->{handle}) );
+
+	if (!$self->{write_prepared}) {
+		$self->create();
+	}
+
+	return Net::NfDump::libnf_copy_row($self->{handle}, $obj->{handle});
+}
+
+=pod
+
+=head2 Extra conversion and support functions
 
 The module also provides extra convertion functions that allow convert binnary format 
 of IP address, MAC address and MPLS labels tag into text format and back. 
 
-Those functions are not exported by default. 
+Those functions are not exported by default, so it have to be either called 
+with full module name or imported when the module is loades. For importing 
+all support function C<:all> synonym can be used. 
+ 
+  use Net::NfDump qw ':all';
 
 =over 
 
-=item $txt = ip2txt( $bin ) 
+=item * B<< $txt = ip2txt( $bin ) >>
 
-=item $bin = txt2ip( $txt )
+=item * B<< $bin = txt2ip( $txt ) >>
 
 
   $ip = txt2ip('10.10.10.1');
@@ -734,9 +811,9 @@ sub txt2ip ($) {
 
 =pod
 
-=item $txt = mac2txt( $bin )
+=item * B<< $txt = mac2txt( $bin ) >>
 
-=item $bin = txt2mac( $txt )
+=item * B<< $bin = txt2mac( $txt ) >>
 
 
   $mac = txt2mac('aa:02:c2:2d:e0:12');
@@ -789,9 +866,9 @@ sub txt2mac ($) {
 
 =pod
 
-=item $txt = mpls2txt( $mpls )
+=item * B<< $txt = mpls2txt( $mpls ) >>
 
-=item $mpls = txt2mpls( $txt )
+=item * B<< $mpls = txt2mpls( $txt ) >>
 
 
   $mpls = txt2mpls('1002-6-0 1003-6-0 1004-0-1');
@@ -804,7 +881,8 @@ Where:
  
   Lbl - Value given to the MPLS label by the router. 
   Exp - Value of experimental bit. 
-  S - Value of the end-of-stack bit: Set to 1 for the oldest entry in the stack and to zero for all other entries. 
+  S   - Value of the end-of-stack bit: Set to 1 for the oldest 
+        entry in the stack and to zero for all other entries. 
 
 =cut 
 
@@ -854,9 +932,9 @@ sub txt2mpls ($) {
 
 =pod
 
-=item $ref = flow2txt( \%row )
+=item * B<< $ref = flow2txt( \%row ) >>
 
-=item $ref = txt2flow( \%row )
+=item * B<< $ref = txt2flow( \%row ) >>
 
 
 The function flow2txt gets hash reference to items returned by fetchrow_hashref and 
@@ -926,7 +1004,7 @@ sub txt2flow ($) {
 
 =pod 
 
-=item $ref = file_info( $file_name )
+=item * B<< $ref = file_info( $file_name ) >>
 
 
   $ref = file_info('file.nfcap');
@@ -946,9 +1024,7 @@ follwing items are returned:
   sequence_failures
 
   first
-  msec_first
   last
-  msec_last
 
   flows, bytes, packets
 
@@ -968,6 +1044,8 @@ sub file_info {
 
 	return $ref;
 }
+
+=pod
 
 
 =head1 SUPPORTED ITEMS 
@@ -1040,6 +1118,89 @@ sub file_info {
   serverdelay - nprobe latency server_nw_delay_usec
   appllatency - nprobe latency appl_latency_usec
 
+
+=head1 PERFORMANCE
+
+It is obvious tahat prformance of the perl interface is lower comparing to 
+highly optimized nfdump utility. As nfdump is able to process up 
+to 2 milions of records per second, the Net::NfDump is not bale to process 
+more than 1 milion of records per second. However there are several rules 
+to keep the code optimised:
+
+=over 
+
+=item * 
+
+Use C<< $obj->fetchrow_arrayref() >> and C<< $obj->storerow_arrayref() >> instead of 
+C<< *_array >> and C<< *_hashref >> equivalents. Arrayref handles only the reference 
+to the structure with data. Avoid of using C<< *_hashref >> functions, it can by 5 times 
+slower.
+
+=item * 
+
+Handle to the perl API only items that are nescessary for using in the code. It is always 
+more effective to define in C<< Fields => 'srcip,dstip,...' >> intead of C<< Fileds => '*' >>. 
+
+=item * 
+
+Prefer of using C<< $obj->clonerow($obj2) >> method. This method copies data between 
+two instances directly in the C code in the libnf layer. 
+
+Following code: 
+
+  $obj1->exec( Fields => '*' );
+  $obj2->create( Fields => '*' );
+
+  while ( my $ref = $obj1->fetchrow_arrayref() ) {
+    # do something with srcip 
+    $obj2->storerow_arrayref($ref);
+  }
+
+can be written in more effective way (several times faster): 
+
+  $obj1->exec( Fields => 'srcip' );
+  $obj2->create( Fields => 'srcip' );
+
+  while ( my $ref = $obj1->fetchrow_arrayref() ) {
+    # do something with srcip 
+    $obj2->clonerow($obj1);
+    $obj2->storerow_arrayref($ref);
+  }
+
+
+=back 
+
+
+
+=cut 
+
+#=head1 FLOW QUERY - NOT IMPLEMENTED YET
+#
+#The flow query is language vyry simmilar to SQL to query data on 
+#nfdump files. However flow query have nothing to do with SQL. It uses
+#only simmilar command syntax. Example of flow query 
+#
+#  SELECT * FROM data/nfdump1.nfcap, data2/nfdump2.nfcap
+#  WHERE src host 147.229.3.10 
+#  TIME WINDOW BETWEEN '2012-06-03' AND '202-06-04' 
+#  ORDER BY bytes
+#  LIMIT 100
+#
+#
+#  INSERT INTO data/nout_nfdump.nfcap (srcip, dstip, srcport, dstport) 
+#
+#
+
+=pod 
+
+=head1 NOTE ABOUT 32BIT PLATFORMS
+
+Nfdump primary uses 64 bit counters and other items to store single integer value. However 
+the native 64 bit support is not compiled in every perl. For thoose cases where 
+only 32 integer values are supported the Net::NfDump uses Math::Int64 module. 
+
+The build scripts automatically detect the platform and Math::Int64 module is required
+only on platforms where perl do not supports 64bit integer values. 
 =head1 SEE ALSO
 
 http://nfdump.sourceforge.net/
@@ -1052,9 +1213,17 @@ Tomas Podermanski, E<lt>tpoder@cis.vutbr.czE<gt>, Brno University of Technology
 
 Copyright (C) 2012 by Brno University of Technology
 
-This library is free software; you can redistribute it and/or modify
+This library is free software; you can redistribute it and modify
 it under the same terms as Perl itself.
 
+If you are uses C<Net::NfDump> please send us a postcard, preferably with a picture from your location / city to: 
+
+  Brno University of Technology 
+  CVIS
+  Tomas Podermanski 
+  Antoninska 1
+  601 90 
+  Czech Republic 
 
 =cut
 

@@ -24,9 +24,9 @@
 // pod:
 // pod:  Time items
 // pod:  =====================
-#define NFL_T_FIRST	 		"first"		// pod:  ## - Timestamp of first seen packet 
+#define NFL_T_FIRST	 		"first"		// pod:  ## - Timestamp of first seen packet in miliseconds
 #define NFL_I_FIRST	 		10
-#define NFL_T_LAST	 		"last"		// pod:  ## - Timestamp of last seen packet 
+#define NFL_T_LAST	 		"last"		// pod:  ## - Timestamp of last seen packet in miliseconds
 #define NFL_I_LAST	 		30	
 #define NFL_T_RECEIVED		"received"	// pod:  ## - Timestamp when the packet was received by collector 
 #define NFL_I_RECEIVED		50	
