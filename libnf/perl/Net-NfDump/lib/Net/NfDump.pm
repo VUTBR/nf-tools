@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02_06';
+our $VERSION = '0.03_01';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -77,38 +77,42 @@ Net::NfDump - Perl API for manipulating with nfdump files
   use Net::NfDump;
 
   #
+  #
   # Example 1: reading nfdump file(s)
   # 
   
   $flow = new Net::NfDump(
-        InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
-        Filter => 'icmp and src net 10.0.0.0/8',
-        Fields => 'proto, bytes' ); 
+              InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
+              Filter => 'icmp and src net 10.0.0.0/8',
+              Fields => 'proto, bytes' ); 
 
   $flow->query();
 
   while (my ($proto, $bytes) = $flow->fetchrow_array() )  {
-    $h{$proto} += $bytes;
+      $h{$proto} += $bytes;
   }
   $flow->finish();
 
   foreach ( keys %h ) {
-    printf "%s %d\n", $_, $h{$_};
+      printf "%s %d\n", $_, $h{$_};
   }
 
 
   #
+  #
   # Example 2: creating and writing records into nfdump file
   #
   
-  my $flow = new Net::NfDump(
-        OutputFile => 'output.nfcap',
-        Fields => 'srcip,dstip' );
+  $flow = new Net::NfDump(
+              OutputFile => 'output.nfcap',
+              Fields => 'srcip,dstip' );
 
   $flow->storerow_arrayref( [ txt2ip('147.229.3.10'), txt2ip('1.2.3.4') ] );
 
   $flow->finish();
 
+
+  #
   #
   # Example 3: reading/writing (merging two input files) and swap
   #            source and destination address if the destination port 
@@ -116,24 +120,24 @@ Net::NfDump - Perl API for manipulating with nfdump files
   #
 
   $flow1 = new Net::NfDump( 
-		InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
-        Fields => 'srcip, dstip, dstport' ); 
+               InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
+               Fields => 'srcip, dstip, dstport' ); 
 
   $flow2 = new Net::NfDump( 
-		OutputFile => 'nfdump_file_out', 
-        Fields => 'srcip, dstip, dstport' ); 
+               OutputFile => 'nfdump_file_out', 
+               Fields => 'srcip, dstip, dstport' ); 
 
   $flow1->query();
   $flow2->create();
 
   while (my $ref = $flow->fetchrow_arrayref() )  {
 
-    if ( $ref->[1] == 80 ) { 
-      ($ref->[0], $ref->[1]) = ($ref->[1], $ref->[0]);
-    }
+      if ( $ref->[2] == 80 ) { 
+          ($ref->[0], $ref->[1]) = ($ref->[1], $ref->[0]);
+      }
 
-	$flow2->clonerow($flow1);
-	$floe2->storerow_arrayref($ref);
+     $flow2->clonerow($flow1);
+     $flow2->storerow_arrayref($ref);
 
   }
 
@@ -142,6 +146,12 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
 
 =head1 DESCRIPTION
+
+Nfdump L<http://nfdump.sourceforge.net/> is very polpular toolset 
+for collecting, storing and processing NetFlow/SFlow/IPFIX data. The 
+one of the key tool is command line utility that bears the same name
+as whole toolset (nfdump). Although this utility can process data 
+very speed, it is cumbersome for some apllications. 
 
 The module implements basic operations on binary files produced
 with nfdump tool. It allows read, create and write flow records on
@@ -160,40 +170,22 @@ The architecture is following:
       
           APPLICATION 
    +------------------------+
-   |                        |  
-   | Net::NfDump API (perl) |
+   |                        |  Implements all methods and functions 
+   | Net::NfDump API (perl) |  described in this document.
    |                        |
    +------------------------+
-   |                        |  
-   | libnf - glue code (C)  |
+   |                        |  reates code that converts internal nfdump 
+   | libnf - glue code (C)  |  structures into perl and back to C.
    |                        |
    +------------------------+
-   |                        |  
-   |   nfdump sources (C)   |
-   |                        |
-   +------------------------+
+   |                        |  All original nfdump source files. There  
+   |   nfdump sources (C)   |  are no changes in theese files and all  
+   |                        |  changes are placed into libnf code.
+   +------------------------+  
          NFDUMP FILES
 
-=over
 
-=item * B<< Net::NfDump API >> 
-
-Implements all methods and functions described in rest of thi document. 
-
-
-=item * B<< libnf - glue code >>
-
-Creates code that converts internal nfdump structures into perl and 
-back. 
-
-=item * B<< nfdump sources >> 
-
-Are original nfdump package source files downloaded from L<http://sourceforge.net/projects/nfdump/>. 
-There are no changes in thos code and all relevant changes are places into libnf code only. 
-
-This version of Net::NfDump is based on nfdump-1.6.8p1 with nsel option enabled. 
-
-=back 
+This version of Net::NfDump module is based on B<nfdump-1.6.8p1> available on L<http://sourceforge.net/projects/nfdump/>.
 
 
 =cut 
@@ -642,7 +634,7 @@ sub create {
 
 =pod 
 
-=item * B<< $obj->storerow_arrayref( $arrayref ) >>
+=item * B<< $obj->storerow_arrayref( [ @array ] ) >>
 
 
   $obj->storerow_arrayref( [ $srcip, $dstip ] );
@@ -669,7 +661,7 @@ sub storerow_arrayref {
 =item * B<< $obj->storerow_array( @array ) >>
 
 
-  $obj->storerow_array(  $srcip, $dstip  );
+  $obj->storerow_array( $srcip, $dstip );
 
 
 Same as storerow_arrayref, however items are handled as the single array 
@@ -1052,8 +1044,8 @@ sub file_info {
 
   Time items
   =====================
-  first - Timestamp of first seen packet 
-  last - Timestamp of last seen packet 
+  first - Timestamp of first seen packet in miliseconds
+  last - Timestamp of last seen packet in miliseconds
   received - Timestamp when the packet was received by collector 
 
   Statistical items
@@ -1118,7 +1110,6 @@ sub file_info {
   serverdelay - nprobe latency server_nw_delay_usec
   appllatency - nprobe latency appl_latency_usec
 
-
 =head1 PERFORMANCE
 
 It is obvious tahat prformance of the perl interface is lower comparing to 
@@ -1152,8 +1143,8 @@ Following code:
   $obj2->create( Fields => '*' );
 
   while ( my $ref = $obj1->fetchrow_arrayref() ) {
-    # do something with srcip 
-    $obj2->storerow_arrayref($ref);
+      # do something with srcip 
+      $obj2->storerow_arrayref($ref);
   }
 
 can be written in more effective way (several times faster): 
@@ -1162,9 +1153,9 @@ can be written in more effective way (several times faster):
   $obj2->create( Fields => 'srcip' );
 
   while ( my $ref = $obj1->fetchrow_arrayref() ) {
-    # do something with srcip 
-    $obj2->clonerow($obj1);
-    $obj2->storerow_arrayref($ref);
+      # do something with srcip 
+      $obj2->clonerow($obj1);
+      $obj2->storerow_arrayref($ref);
   }
 
 
@@ -1197,10 +1188,11 @@ can be written in more effective way (several times faster):
 
 Nfdump primary uses 64 bit counters and other items to store single integer value. However 
 the native 64 bit support is not compiled in every perl. For thoose cases where 
-only 32 integer values are supported the Net::NfDump uses Math::Int64 module. 
+only 32 integer values are supported the C<Net::NfDump> uses C<Math::Int64> module. 
 
-The build scripts automatically detect the platform and Math::Int64 module is required
+The build scripts automatically detect the platform and C<Math::Int64> module is required
 only on platforms where perl do not supports 64bit integer values. 
+
 =head1 SEE ALSO
 
 http://nfdump.sourceforge.net/
@@ -1216,7 +1208,7 @@ Copyright (C) 2012 by Brno University of Technology
 This library is free software; you can redistribute it and modify
 it under the same terms as Perl itself.
 
-If you are uses C<Net::NfDump> please send us a postcard, preferably with a picture from your location / city to: 
+If you are satisfied with using C<Net::NfDump> please send us a postcard, preferably with a picture from your location / city to: 
 
   Brno University of Technology 
   CVIS

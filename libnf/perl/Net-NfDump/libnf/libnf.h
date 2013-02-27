@@ -124,14 +124,72 @@
 #define NFL_T_ENGINE_ID		"sysid"		// pod:  ## - Internal SysID of exporter 
 #define NFL_I_ENGINE_ID		400
 // pod:
+// pod:  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+// pod:  =====================
+#define NFL_T_FLOW_START	"flowstart"	// pod:  ## - NSEL The time that the flow was create
+#define NFL_I_FLOW_START	520
+#define NFL_T_CONN_ID		"connid"	// pod:  ## - NSEL An identifier of a unique flow for the device 
+#define NFL_I_CONN_ID		410
+
+#define NFL_T_ICMP_CODE		"icmpcode"	// pod:  ## - NSEL ICMP code value 
+#define NFL_I_ICMP_CODE		450
+#define NFL_T_ICMP_TYPE		"icmptype"	// pod:  ## - NSEL ICMP type value 
+#define NFL_I_ICMP_TYPE		440
+#define NFL_T_FW_EVENT		"event"	// pod:  ## - NSEL High-level event code
+#define NFL_I_FW_EVENT		500
+#define NFL_T_FW_XEVENT		"xevent"	// pod:  ## - NSEL Extended event code
+#define NFL_I_FW_XEVENT		510
+
+#define NFL_T_XLATE_SRC_IP		"xsrcip"	// pod:  ## - NSEL Mapped source IPv4 address 
+#define NFL_I_XLATE_SRC_IP		560
+#define NFL_T_XLATE_DST_IP		"xdstip"	// pod:  ## - NSEL Mapped destination IPv4 address 
+#define NFL_I_XLATE_DST_IP		570
+#define NFL_T_XLATE_SRC_PORT	"xsrcport"	// pod:  ## - NSEL Mapped source port 
+#define NFL_I_XLATE_SRC_PORT	530
+#define NFL_T_XLATE_DST_PORT	"xdstport"	// pod:  ## - NSEL Mapped destination port 
+#define NFL_I_XLATE_DST_PORT	540
+
+// pod: NSEL The input ACL that permitted or denied the flow
+#define NFL_T_INGRESS_ACL_ID	"iacl"	// pod:  ## - Hash value or ID of the ACL name
+#define NFL_I_INGRESS_ACL_ID	480
+#define NFL_T_INGRESS_ACE_ID	"iace"	// pod:  ## - Hash value or ID of the ACL name 
+#define NFL_I_INGRESS_ACE_ID	481
+#define NFL_T_INGRESS_XACE_ID	"ixace"	// pod:  ## - Hash value or ID of an extended ACE configuration 
+#define NFL_I_INGRESS_XACE_ID	482
+// pod: NSEL The output ACL that permitted or denied a flow  
+#define NFL_T_EGRESS_ACL_ID		"eacl"	// pod:  ## - Hash value or ID of the ACL name
+#define NFL_I_EGRESS_ACL_ID		490
+#define NFL_T_EGRESS_ACE_ID		"eace"	// pod:  ## - Hash value or ID of the ACL name
+#define NFL_I_EGRESS_ACE_ID		491
+#define NFL_T_EGRESS_XACE_ID	"exace"	// pod:  ## - Hash value or ID of an extended ACE configuration
+#define NFL_I_EGRESS_XACE_ID	492
+#define NFL_T_USERNAME			"username"	// pod:  ## - NSEL username
+#define NFL_I_USERNAME			495
+
+// pod:
+// pod:  NEL (NetFlow Event Logging) fields
+// pod:  =====================
+#define NFL_T_NAT_EVENT		"nevent"	// pod:  ## - NEL NAT Event
+#define NFL_I_NAT_EVENT		580
+#define NFL_T_POST_SRC_PORT		"nsrcport"	// pod:  ## - NEL NAT src port 
+#define NFL_I_POST_SRC_PORT		420
+#define NFL_T_POST_DST_PORT		"ndstport"	// pod:  ## - NEL NAT dst port
+#define NFL_I_POST_DST_PORT		430
+#define NFL_T_INGRESS_VRFID		"vrf"	// pod:  ## - NEL NAT ingress vrf id 
+#define NFL_I_INGRESS_VRFID		460
+#define NFL_T_NAT_INSIDE	"nsrcip"	// pod:  ## - NEL NAT inside address
+#define NFL_I_NAT_INSIDE	600
+#define NFL_T_NAT_OUTSIDE	"ndstip"	// pod:  ## - NEL NAT outside address
+#define NFL_I_NAT_OUTSIDE	610
+// pod:
 // pod:  Extra/special fields
 // pod:  =====================
-#define NFL_T_CLIENT_NW_DELAY_USEC	"clientdelay"	// pod:  ## - nprobe latency client_nw_delay_usec 
-#define NFL_I_CLIENT_NW_DELAY_USEC	410
-#define NFL_T_SERVER_NW_DELAY_USEC	"serverdelay"	// pod:  ## - nprobe latency server_nw_delay_usec
-#define NFL_I_SERVER_NW_DELAY_USEC	420
-#define NFL_T_APPL_LATENCY_USEC		"appllatency"	// pod:  ## - nprobe latency appl_latency_usec
-#define NFL_I_APPL_LATENCY_USEC		430
+#define NFL_T_CLIENT_NW_DELAY_USEC	"cl"	// pod:  ## - nprobe latency client_nw_delay_usec 
+#define NFL_I_CLIENT_NW_DELAY_USEC  620	
+#define NFL_T_SERVER_NW_DELAY_USEC	"sl"	// pod:  ## - nprobe latency server_nw_delay_usec
+#define NFL_I_SERVER_NW_DELAY_USEC	630
+#define NFL_T_APPL_LATENCY_USEC		"al"	// pod:  ## - nprobe latency appl_latency_usec
+#define NFL_I_APPL_LATENCY_USEC		640
 // pod:
 //
 

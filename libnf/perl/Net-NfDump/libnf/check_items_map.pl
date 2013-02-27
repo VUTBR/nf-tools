@@ -105,15 +105,18 @@ sub get_master_record() {
 		next if (/#/);
 		next if (/^\s*$/);
 		# uint32_t	srcas;
-		if (/\s+(\w+_t)\s+(\w+)([\[\]\d]*);/) {
+#		printf "$_\n";
+		if (/\s+(\w+_t|char)\s+(\w+)([\[\]\d+]*);/) {
 			my ($type, $name, $arr) = ($1, $2, $3);
 
 			if (defined($arr)) {
 				$type .= $arr;
 			}
 
+		#	printf "$type | $name | $arr \n";
+
 			# ignore items like fill, any 
-			next if ($name =~ /^fill/ || $name =~ /^any$/ || $name =~ /^ext_map$/);
+			next if ($name =~ /fill/ || $name =~ /^any$/ || $name =~ /^ext_map$/);
 
 			push(@MASTER_RECORD, { 'name' => $name, 'type' => $type });
 		}
