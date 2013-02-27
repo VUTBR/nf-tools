@@ -589,6 +589,113 @@ uint64_t t;
 						bit_array_get(&instance->ext_r, EX_ROUTER_ID) );
 					break;
 
+			// NSEL 
+			case NFL_I_FLOW_START:
+					sv = uint64_to_SV(&rec->flow_start, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_CONN_ID:
+					sv = uint_to_SV(rec->conn_id, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_ICMP_CODE:
+					sv = uint_to_SV(rec->icmp_code, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_ICMP_TYPE:
+					sv = uint_to_SV(rec->icmp_type, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_FW_EVENT:
+					sv = uint_to_SV(rec->fw_event, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_FW_XEVENT:
+					sv = uint_to_SV(rec->fw_xevent, 
+						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_XLATE_SRC_IP:
+					sv = ip_addr_to_SV(&rec->xlate_src_ip, rec->xlate_flags,
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
+					break;
+			case NFL_I_XLATE_DST_IP:
+					sv = ip_addr_to_SV(&rec->xlate_dst_ip, rec->xlate_flags,
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
+					break;
+			case NFL_I_XLATE_SRC_PORT:
+					sv = uint_to_SV(rec->xlate_src_port, 
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_PORTS) );
+					break;
+			case NFL_I_XLATE_DST_PORT:
+					sv = uint_to_SV(rec->xlate_dst_port, 
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_PORTS) );
+					break;
+			case NFL_I_INGRESS_ACL_ID:
+					sv = uint_to_SV(rec->ingress_acl_id[0], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_INGRESS_ACE_ID:
+					sv = uint_to_SV(rec->ingress_acl_id[1], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_INGRESS_XACE_ID:
+					sv = uint_to_SV(rec->ingress_acl_id[2], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_ACL_ID:
+					sv = uint_to_SV(rec->egress_acl_id[0], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_ACE_ID:
+					sv = uint_to_SV(rec->egress_acl_id[1], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_XACE_ID:
+					sv = uint_to_SV(rec->egress_acl_id[2], 
+						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_USERNAME:
+					if ( bit_array_get(&instance->ext_r, EX_NSEL_USER) ||
+	 					 bit_array_get(&instance->ext_r, EX_NSEL_USER_MAX ) )  {
+						sv = newSVpvn(rec->username, strlen(rec->username));
+					} else {
+						sv =  newSV(0);
+					}
+					break;
+
+			// END OF NSEL 
+			
+			// NEL support
+			case NFL_I_NAT_EVENT:
+					sv = uint_to_SV(rec->nat_event, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
+			case NFL_I_POST_SRC_PORT:
+					sv = uint_to_SV(rec->post_src_port, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
+			case NFL_I_POST_DST_PORT:
+					sv = uint_to_SV(rec->post_dst_port, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
+			case NFL_I_INGRESS_VRFID:
+					sv = uint_to_SV(rec->ingress_vrfid, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
+			case NFL_I_NAT_INSIDE:
+					sv = ip_addr_to_SV(&rec->nat_inside, rec->nat_flags,
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
+					break;
+			case NFL_I_NAT_OUTSIDE:
+					sv = ip_addr_to_SV(&rec->nat_outside, rec->nat_flags,
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
+					break;
+
+			// END OF NEL 
 
 			case NFL_I_CLIENT_NW_DELAY_USEC:
 					sv = uint64_to_SV(&rec->client_nw_delay_usec, 
@@ -1350,6 +1457,114 @@ uint64_t t;
 					rec->engine_id = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_ROUTER_ID, 1);
 					break;
+
+			// NSEL 
+			case NFL_I_FLOW_START:
+					rec->flow_start = SvU64(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_CONN_ID:
+					rec->conn_id = SvUV(sv);, 
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_ICMP_CODE:
+					rec->icmp_code = SvUV(sv); 
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_ICMP_TYPE:
+					rec->icmp_type = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_FW_EVENT:
+					rec->fw_event = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_FW_XEVENT:
+					rec->fw_xevent = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_COMMON) );
+					break;
+			case NFL_I_XLATE_SRC_IP:
+					sv = ip_addr_to_SV(&rec->xlate_src_ip, rec->xlate_flags,
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
+					break;
+			case NFL_I_XLATE_DST_IP:
+					sv = ip_addr_to_SV(&rec->xlate_dst_ip, rec->xlate_flags,
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
+					break;
+			case NFL_I_XLATE_SRC_PORT:
+					rec->xlate_src_port = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_XLATE_PORTS) );
+					break;
+			case NFL_I_XLATE_DST_PORT:
+					rec->xlate_dst_port = SvUV(sv);
+					bit_array_set(&instance->ext_r, EX_NSEL_XLATE_PORTS) );
+					break;
+			case NFL_I_INGRESS_ACL_ID:
+					rec->ingress_acl_id[0] = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_ACL) );
+					break;
+			case NFL_I_INGRESS_ACE_ID:
+					rec->ingress_acl_id[1] = SvUV(sv);
+					bit_array_get(&instance->ext_w, EX_NSEL_ACL) );
+					break;
+			case NFL_I_INGRESS_XACE_ID:
+					rec->ingress_acl_id[2] = SvUV(sv);
+					bit_array_get(&instance->ext_w, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_ACL_ID:
+					rec->egress_acl_id[0] = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_ACE_ID:
+					rec->egress_acl_id[1] = SvUV(sv); 
+					bit_array_set(&instance->ext_r, EX_NSEL_ACL) );
+					break;
+			case NFL_I_EGRESS_XACE_ID:
+					rec->egress_acl_id[2] = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NSEL_ACL) );
+					break;
+			case NFL_I_USERNAME:
+					if ( bit_array_get(&instance->ext_r, EX_NSEL_USER) ||
+	 					 bit_array_get(&instance->ext_r, EX_NSEL_USER_MAX ) )  {
+						sv = newSVpvn(rec->username, strlen(rec->username));
+					} else {
+						sv =  newSV(0);
+					}
+					break;
+
+			// END OF NSEL 
+			
+			// NEL support
+			case NFL_I_NAT_EVENT:
+					rec->nat_event = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NEL_COMMON) );
+					break;
+			case NFL_I_POST_SRC_PORT:
+					rec->post_src_port = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NEL_COMMON) );
+					break;
+			case NFL_I_POST_DST_PORT:
+					rec->post_dst_port = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NEL_COMMON) );
+					break;
+			case NFL_I_INGRESS_VRFID:
+					rec->ingress_vrfid = SvUV(sv);
+					bit_array_get(&instance->ext_w, EX_NEL_COMMON) );
+					break;
+			case NFL_I_NAT_INSIDE:
+					sv = ip_addr_to_SV(&rec->nat_inside, rec->nat_flags,
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
+					break;
+			case NFL_I_NAT_OUTSIDE:
+					sv = ip_addr_to_SV(&rec->nat_outside, rec->nat_flags,
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
+						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
+					break;
+
+			// END OF NEL 
 
 
 			case NFL_I_CLIENT_NW_DELAY_USEC:
