@@ -1,5 +1,5 @@
 --- nfdump-1.6.9b2/bin/nffile_inline.c	2013-01-20 18:33:30.000000000 +0100
-+++ nfdump-1.6.9b2-x1/bin/nffile_inline.c	2013-03-01 14:50:54.858224918 +0100
++++ nfdump-1.6.9b2-x1/bin/nffile_inline.c	2013-03-01 17:34:00.538296265 +0100
 @@ -398,6 +398,7 @@ void		*p = (void *)input_record;
  				output_record->nat_event = tpl->nat_event;
  				output_record->post_src_port = tpl->post_src_port;
@@ -8,7 +8,21 @@
  				p = (void *)tpl->data;
  			} break;
  			case EX_NEL_GLOBAL_IP_v4: {
-@@ -706,7 +707,7 @@ int		i;
+@@ -665,6 +666,13 @@ int		i;
+ 				tpl->bgpPrevAdjacentAS = master_record->bgpPrevAdjacentAS;
+ 				p = (void *)tpl->data;
+ 				} break;
++			case EX_LATENCY: {
++				tpl_ext_latency_t *tpl = (tpl_ext_latency_t *)p;
++				tpl->client_nw_delay_usec = master_record->client_nw_delay_usec;
++				tpl->server_nw_delay_usec = master_record->server_nw_delay_usec;
++				tpl->appl_latency_usec = master_record->appl_latency_usec;
++				p = (void *)tpl->data;
++				} break;
+ 			case EX_RECEIVED: {
+ 				tpl_ext_27_t *tpl = (tpl_ext_27_t *)p;
+ 				tpl->received = master_record->received;
+@@ -706,7 +714,7 @@ int		i;
  			case EX_NSEL_ACL: {
  				tpl_ext_41_t *tpl = (tpl_ext_41_t *)p;
  				int j;
@@ -17,7 +31,7 @@
  					tpl->ingress_acl_id[j] = master_record->ingress_acl_id[j];
  					tpl->egress_acl_id[j]  = master_record->egress_acl_id[j];
  				}
-@@ -733,6 +734,7 @@ int		i;
+@@ -733,6 +741,7 @@ int		i;
  				tpl->flags = 0;
  				tpl->post_src_port	 = master_record->post_src_port;
  				tpl->post_dst_port	 = master_record->post_dst_port;

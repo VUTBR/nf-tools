@@ -55,8 +55,8 @@ $floww->finish();
 
 $flowr = new Net::NfDump(InputFiles => [ "t/v4_nel_nsel_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
-	diag Dumper($DS{'v4_nel_nsel_txt'});
-	diag Dumper(flow2txt($row));
+#	diag Dumper($DS{'v4_nel_nsel_txt'});
+#	diag Dumper(flow2txt($row));
 	ok( eq_hash( $DS{'v4_nel_nsel_raw'}, $row) );
 	ok( eq_hash( $DS{'v4_nel_nsel_txt'}, flow2txt($row)) );
 }
