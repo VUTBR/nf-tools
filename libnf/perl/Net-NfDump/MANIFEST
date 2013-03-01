@@ -31,5 +31,5 @@ t/record_v4
 t/record_v6
 t/data1
 examples/example1.pl
-#nfdump-1.6.8p1.tar.gz
 nfdump-1.6.9b2.tar.gz
+nfdump-bugs.patch 
