@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::NfDump.
 
+0.03_01 2013-02-28
+	- NEL, NSEL support added 
+	- a few bugs removed
+
 0.02_05 2013-02-26
     - example1.pl added 
     - documenation updated 

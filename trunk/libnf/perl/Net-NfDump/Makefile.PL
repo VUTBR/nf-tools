@@ -86,11 +86,13 @@ nfdump: $(NFDUMP).tar.gz
 		./md5sum.sh $(NFDUMP_MD5) $(NFDUMP).tar.gz 
 		tar xzf $(NFDUMP).tar.gz
 		$(MV) -f $(NFDUMP) nfdump 
+		# apply patches in beta code 
+		cd nfdump && patch -p1 < ../nfdump-bugs.patch && cd ..
 		# nfdump gzip contains object files, so we rid them off
 		$(RM_F) nfdump/bin/nfdump
 		$(RM_F) nfdump/bin/*.o
 		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
-		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
+		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel --enable-nel && cd bin && make nfdump
 		$(RM_F) nfdump/bin/*.o
 
 $(MYEXTLIB): nfdump libnf/Makefile

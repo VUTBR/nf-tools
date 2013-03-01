@@ -24,9 +24,12 @@ t/02-read-write-basic.t
 t/03-read-write-back.t
 t/04-file-info.t
 t/05-clonerow.t
+t/06-addr-conversion.t
+t/07-nel-nsel.t
 t/10-performance.t
 t/record_v4
 t/record_v6
 t/data1
 examples/example1.pl
-nfdump-1.6.8p1.tar.gz
+#nfdump-1.6.8p1.tar.gz
+nfdump-1.6.9b2.tar.gz

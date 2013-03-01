@@ -940,7 +940,8 @@ txt2flow does opossite functionality.
 my %CVTTYPE = ( 
 	'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
 	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
-	'mpls' => 'mpls' );
+	'mpls' => 'mpls',
+	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip' );
 	
 
 sub flow2txt ($) {
@@ -1104,11 +1105,42 @@ sub file_info {
   systype - Type of exporter 
   sysid - Internal SysID of exporter 
 
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+  flowstart - NSEL The time that the flow was create
+  connid - NSEL An identifier of a unique flow for the device 
+  icmpcode - NSEL ICMP code value 
+  icmptype - NSEL ICMP type value 
+  event - NSEL High-level event code
+  xevent - NSEL Extended event code
+  xsrcip - NSEL Mapped source IPv4 address 
+  xdstip - NSEL Mapped destination IPv4 address 
+  xsrcport - NSEL Mapped source port 
+  xdstport - NSEL Mapped destination port 
+ NSEL The input ACL that permitted or denied the flow
+  iacl - Hash value or ID of the ACL name
+  iace - Hash value or ID of the ACL name 
+  ixace - Hash value or ID of an extended ACE configuration 
+ NSEL The output ACL that permitted or denied a flow  
+  eacl - Hash value or ID of the ACL name
+  eace - Hash value or ID of the ACL name
+  exace - Hash value or ID of an extended ACE configuration
+  username - NSEL username
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+  nevent - NEL NAT Event
+  nsrcport - NEL NAT src port 
+  ndstport - NEL NAT dst port
+  vrf - NEL NAT ingress vrf id 
+  nsrcip - NEL NAT inside address
+  ndstip - NEL NAT outside address
+
   Extra/special fields
   =====================
-  clientdelay - nprobe latency client_nw_delay_usec 
-  serverdelay - nprobe latency server_nw_delay_usec
-  appllatency - nprobe latency appl_latency_usec
+  cl - nprobe latency client_nw_delay_usec 
+  sl - nprobe latency server_nw_delay_usec
+  al - nprobe latency appl_latency_usec
 
 =head1 PERFORMANCE
 
