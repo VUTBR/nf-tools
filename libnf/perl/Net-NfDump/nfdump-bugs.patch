@@ -1,0 +1,56 @@
+--- nfdump-1.6.9b2/bin/nffile_inline.c	2013-01-20 18:33:30.000000000 +0100
++++ nfdump-1.6.9b2-x1/bin/nffile_inline.c	2013-03-01 14:50:54.858224918 +0100
+@@ -398,6 +398,7 @@ void		*p = (void *)input_record;
+ 				output_record->nat_event = tpl->nat_event;
+ 				output_record->post_src_port = tpl->post_src_port;
+ 				output_record->post_dst_port = tpl->post_dst_port;
++				output_record->ingress_vrfid = tpl->ingress_vrfid;
+ 				p = (void *)tpl->data;
+ 			} break;
+ 			case EX_NEL_GLOBAL_IP_v4: {
+@@ -706,7 +707,7 @@ int		i;
+ 			case EX_NSEL_ACL: {
+ 				tpl_ext_41_t *tpl = (tpl_ext_41_t *)p;
+ 				int j;
+-				for (j=0; j<<3; j++) {
++				for (j=0; j<3; j++) {
+ 					tpl->ingress_acl_id[j] = master_record->ingress_acl_id[j];
+ 					tpl->egress_acl_id[j]  = master_record->egress_acl_id[j];
+ 				}
+@@ -733,6 +734,7 @@ int		i;
+ 				tpl->flags = 0;
+ 				tpl->post_src_port	 = master_record->post_src_port;
+ 				tpl->post_dst_port	 = master_record->post_dst_port;
++				tpl->ingress_vrfid   = master_record->ingress_vrfid;
+ 				p = (void *)tpl->data;
+ 				} break;
+ 			case EX_NEL_GLOBAL_IP_v4: {
+--- nfdump-1.6.9b2/bin/nfx.c	2013-01-19 16:24:47.000000000 +0100
++++ nfdump-1.6.9b2-x1/bin/nfx.c	2013-03-01 15:06:04.379280676 +0100
+@@ -114,7 +114,7 @@ extension_descriptor_t extension_descrip
+ 	{ EX_RESERVED_9,		0,	0, 0,    NULL},
+ 
+ 	// ASA - Network Security Event Logging NSEL extensions
+-	{ EX_NSEL_COMMON,		4,	26, 0,		"NSEL Common block"},
++	{ EX_NSEL_COMMON,		20,	26, 0,		"NSEL Common block"},
+ 	{ EX_NSEL_XLATE_PORTS,  4,	27, 0,		"NSEL xlate ports"},
+ 	{ EX_NSEL_XLATE_IP_v4,  8,	28, 0,		"NSEL xlate IPv4 addr"},
+ 	{ EX_NSEL_XLATE_IP_v6, 32,	28, 0,		"NSEL xlate IPv6 addr"},
+--- nfdump-1.6.9b2/bin/nf_common.c	2013-01-20 18:33:30.000000000 +0100
++++ nfdump-1.6.9b2-x1/bin/nf_common.c	2013-03-01 15:40:54.070417585 +0100
+@@ -1922,6 +1922,7 @@ char 	*s;
+ 
+ } // End of String_Received
+ 
++#ifdef NSEL
+ static void String_FlowStart(master_record_t *r, char *string) {
+ time_t 	tt;
+ struct tm * ts;
+@@ -1935,6 +1936,7 @@ char 	*s;
+ 	string[MAX_STRING_LENGTH-1] = '\0';
+ 
+ } // End of String_FlowStart
++#endif 
+ 
+ static void String_Duration(master_record_t *r, char *string) {
+ 
