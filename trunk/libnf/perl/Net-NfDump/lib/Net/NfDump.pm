@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.03_01';
+our $VERSION = '0.04';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -149,21 +149,21 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
 Nfdump L<http://nfdump.sourceforge.net/> is very polpular toolset 
 for collecting, storing and processing NetFlow/SFlow/IPFIX data. The 
-one of the key tool is command line utility that bears the same name
+one of the key tool is command line utility bearing the same name
 as whole toolset (nfdump). Although this utility can process data 
 very speed, it is cumbersome for some apllications. 
 
-The module implements basic operations on binary files produced
+This module implements basic operations on binary files produced
 with nfdump tool. It allows read, create and write flow records on
-those files.  The modules tries to keep naming conventions for 
-methods same as iare used n DBI nodules/API, so developers that 
+thoose files.  The modules tries to keep naming conventions for 
+methods same as are used in DBI nodules/API, so developers that 
 are used to use this interface should be famillar with the 
 interface. 
 
 The module uses original nfdump sources to implement nescessary 
-functions. The compatibility with original 
-nfdump should be asisly keeps and maintance of code 
-to cope with future version shoul be minnimal. 
+functions. The compatibility with the original 
+nfdump should be eaisly keet and there should be a minimal effort
+to cope with future version of original nfdump. 
 
 The architecture is following: 
 
@@ -174,7 +174,7 @@ The architecture is following:
    | Net::NfDump API (perl) |  described in this document.
    |                        |
    +------------------------+
-   |                        |  reates code that converts internal nfdump 
+   |                        |  Creates the code converting internal nfdump 
    | libnf - glue code (C)  |  structures into perl and back to C.
    |                        |
    +------------------------+
@@ -185,7 +185,7 @@ The architecture is following:
          NFDUMP FILES
 
 
-This version of Net::NfDump module is based on B<nfdump-1.6.8p1> available on L<http://sourceforge.net/projects/nfdump/>.
+This version of Net::NfDump module is based on B<nfdump-1.6.9> available on L<http://sourceforge.net/projects/nfdump/>. Support for NSEL and NEL code is enabled. 
 
 
 =cut 
@@ -199,6 +199,7 @@ sub split_str($) {
 		return $arg;
 	} else {
 		my @arr = split(/,\s*/, $arg);
+		chomp @arr;
 		return \@arr;
 	}
 
@@ -1223,7 +1224,7 @@ the native 64 bit support is not compiled in every perl. For thoose cases where
 only 32 integer values are supported the C<Net::NfDump> uses C<Math::Int64> module. 
 
 The build scripts automatically detect the platform and C<Math::Int64> module is required
-only on platforms where perl do not supports 64bit integer values. 
+only on platforms where available perl do not supports 64bit integer values. 
 
 =head1 SEE ALSO
 

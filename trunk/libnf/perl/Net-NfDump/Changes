@@ -1,5 +1,11 @@
 Revision history for Perl extension Net::NfDump.
 
+0.04 2013-03-03
+	- the first stable version 
+
+0.03_02 2013-03-03
+	- the version of nfdump updated to 1.6.9
+
 0.03_01 2013-02-28
 	- NEL, NSEL support added 
 	- a few bugs removed

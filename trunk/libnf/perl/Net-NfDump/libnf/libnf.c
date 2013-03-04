@@ -244,14 +244,14 @@ STRLEN len;
 		//a->v4 = ip4;
 		a->v4 = ntohl(ip4);
 		return AF_INET;
-	} else {
+	} else if ( len == sizeof(ip6) ) {
 		memcpy(ip6, s, sizeof(ip6));
 		a->v6[0] = ntohll(ip6[0]);
 		a->v6[1] = ntohll(ip6[1]);
 		return AF_INET6;
+	} else {
+		return -1;
 	}
-
-	return -1;
 }
 
 /* converts MAC address to SV */
