@@ -38,7 +38,7 @@ my %data =(
 
 # we will use the output file from the previous test 
 
-my $info = file_info("t/data2.tmp");
+my $info = file_info("t/data2");
 
 ok( eq_hash($info, \%data) );
 

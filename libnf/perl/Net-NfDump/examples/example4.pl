@@ -2,34 +2,33 @@
 #
 
 use ExtUtils::testlib;
-use Net::NfDump;
-use Data::Dumper;
-use Socket qw( AF_INET );
-use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+use Net::NfDump ':all';
 
 
 # instance of source and destination files
-my $flow = new Net::NfDump(InputFiles => [ "t/record_v4" ], RawData => 1 );
-#my $flow = new Net::NfDump(InputFiles => [ "../t/data1" ], Filter => "ipv4" );
+my $flow = new Net::NfDump(
+					OutputFile => "rec.tmp",
+					Fields => 'connid,srcip,srcport,dstip,dstport,
+					xsrcip,xsrcport,xdstip,xdstport,
+					proto,first,flowstart,inif,outif,bytes,pkts,tcpflags,event,xevent' 
+				);
 
-# exec query 
-$flow->query();
 
-while ($ref = $flow->read()) {
+$flow->storerow_array(
+	71434019, txt2ip('192.168.20.30'), 60268, txt2ip('8.8.8.8'), 53, 
+	undef, undef, undef, undef, 
+	17, 1361206834000, 1361206834000, 4, 3, 116, 6666, 0, 2, 3	);
 
-	print Dumper(\$ref);
+$flow->storerow_array(
+	71434019, txt2ip('192.168.20.30'), 60268, txt2ip('8.8.8.8'), 53, 
+	undef, 1111, undef, 2222,
+	17, 1361206834000, 1361206834000, 4, 3, 116, 6666, 0, 2, 3	);
 
-	my $addr = inet_pton(AF_INET, "10.255.5.6");
-
-	printf "a0: %s, %d\n", unpack("h*", $ref->{'dstip'}), length($ref->{'dstip'});
-	printf "a1: %s, %d\n", unpack("h*", $addr), length($addr);
-	printf "A1: %s\n", unpack("H*", $addr);
-
-	last;
-
-}
-
-$flow->close();
+#$flow->storerow_array(
+#	71434019, '192.168.20.30', 60268, '8.8.8.8', 53, 
+#	0, 111, 0, 555, 
+#	17, 1361206834000, 1361206834000, 4, 3, 116, 6666, 0, 2, 3	);
+$flow->finish();
 
 
 
