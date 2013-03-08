@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::IP::LPM.
 
+0.02  Fri Mar 8 2013
+	- byte order buf fix (bug appear when mathcing x.y.z.a/4 mask)
+    - non existing prefix returns undef instead of empty string 
+
 0.02  Sat Jan 12 2013
 	- code updated to be compatible with perl 6.2.2
 	- first stable version 

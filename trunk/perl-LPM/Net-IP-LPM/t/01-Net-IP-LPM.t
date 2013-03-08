@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-use Test::More tests => 5;
+use Test::More tests => 8;
 BEGIN { use_ok('Net::IP::LPM') };
 
 use Socket qw( AF_INET );
@@ -25,9 +25,13 @@ my @prefixes = (
 		'0.0.0.0/0', 
 		'147.229.3.1', '147.229.3.2/32', '147.229.3.0/24', '147.229.0.0/16',
 		'10.255.3.0/24', '10.255.3.0/32',
+		'224.0.0.0/4', '224.0.0.0/4',
+		'224.0.0.0/5', '224.0.0.0/5',
 		'::/0',
 		'2001:67c:1220:f565::1234', '2001:67c:1220:f565::1235/128', 
-		'2001:67c:1220:f565::/64', '2001:67c:1220::/32'
+		'2001:67c:1220:f565::/64', '2001:67c:1220::/32',
+		'2001:67c:1220:f565::/64', '2001:67c:1220::/32',
+		'ff3a::/32', 'ff3a::/32'
 		);
 
 
@@ -134,3 +138,116 @@ while ( my ($a, $p) = each %tests ) {
 
 ok( eq_hash(\%tests, \%results) );
 
+# check for retruning undef
+my @prefixes2 = ( 
+		'147.229.3.1', '147.229.3.2/32', '147.229.3.0/24', '147.229.0.0/16',
+		'10.255.3.0/24', '10.255.3.0/32',
+		'224.0.0.0/4', '224.0.0.0/4',
+		'224.0.0.0/5', '224.0.0.0/5',
+		'2001:67c:1220:f565::1234', '2001:67c:1220:f565::1235/128', 
+		'2001:67c:1220:f565::/64', '2001:67c:1220::/32',
+		'2001:67c:1220:f565::/64', '2001:67c:1220::/32',
+		'ff3a::/32', 'ff3a::/32'
+		);
+
+my $lpm2 = Net::IP::LPM->new();
+foreach (@prefixes2) {
+	$lpm2->add($_, $_);
+}
+
+$lpm2->rebuild();
+
+my %tests2 = ( 
+		'147.229.3.0'	=> '147.229.3.0/24',
+		'147.229.3.1'	=> '147.229.3.1',
+		'147.229.3.2'	=> '147.229.3.2/32',
+		'147.229.3.3'	=> '147.229.3.0/24',
+		'147.229.3.10'	=> '147.229.3.0/24',
+		'147.229.3.254'	=> '147.229.3.0/24',
+		'147.229.3.255'	=> '147.229.3.0/24',
+		'147.229.4.0'	=> '147.229.0.0/16',
+		'147.229.4.1'	=> '147.229.0.0/16',
+		'147.228.255.255'	=> undef,
+		'147.229.0.0'	=> '147.229.0.0/16',
+		'147.229.255.255'	=> '147.229.0.0/16',
+		'147.230.0.0'	=> undef,
+		'147.230.0.1'	=> undef,
+		'10.255.3.0'	=> '10.255.3.0/32',
+		'0.0.0.0'		=> undef,
+		'0.0.0.1'		=> undef,
+		'255.255.255.254'	=> undef,
+		'255.255.255.255'	=> undef,
+		'2001:67c:1220::1'			=> '2001:67c:1220::/32',
+		'2001:67c:1220:f565::1234'	=> '2001:67c:1220:f565::1234',
+		'2001:67c:1220:f565::'		=> '2001:67c:1220:f565::/64',
+		'2001:67c:1220:f565::1'		=> '2001:67c:1220:f565::/64',
+		'2001:67c:1220:f565:FFFF:FFFF:FFFF:FFFF'	=> '2001:67c:1220:f565::/64',
+		'2001:67c:1220:f566::'	=> '2001:67c:1220::/32',
+		'2001:67c:1220:f566::1'	=> '2001:67c:1220::/32',
+		'2001:67c:2325:f566::1'	=> '2001:67c:1220::/32',
+		'2001:67b:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF'	=> undef,
+		'2001:67d::1'			=> undef,
+		'2001::1'				=> undef,
+		'FFFF:FFFF:FFFF:FFF:FFFF:FFFF:FFFF:FFFF'	=> undef,
+		'FFFF:FFFF:FFFF:FFF:FFFF:FFFF:FFFF:FFFE'	=> undef,
+		'::0.0.0.0'	=> undef,
+		'0001::'	=> undef,
+		'2001::1'	=> undef,
+		);
+
+# std lookup
+my %results2 = ();
+#diag "\n";
+while ( my ($a, $p) = each %tests2 ) {
+	my $res = $lpm2->lookup($a);
+	$results2{$a} = $res;
+	$p = "<undef>" if (!defined($p));
+	$res = "<undef>" if (!defined($res));
+	if ($p ne $res) {
+		diag sprintf "FAIL %s \t-> \t%s =%s %s\n", $a, $p, $p eq $res ? '=' : '!', $res;
+	}
+}
+
+ok( eq_hash(\%tests2, \%results2) );
+
+# std raw lookup
+%results2 = ();
+#diag "\n";
+while ( my ($a, $p) = each %tests2 ) {
+	my $ab ;
+	if ($a =~ /:/) {
+		$ab = inet_pton(AF_INET6, $a);
+	} else {
+		$ab = inet_pton(AF_INET, $a);
+	}
+	my $res = $lpm2->lookup_raw($ab);
+	$results2{$a} = $res;
+	$p = "<undef>" if (!defined($p));
+	$res = "<undef>" if (!defined($res));
+	if ($p ne $res) {
+		diag sprintf "FAIL RAW %s \t-> \t%s =%s %s\n", $a, $p, $p eq $res ? '=' : '!', $res;
+	}
+}
+
+ok( eq_hash(\%tests2, \%results2) );
+
+# std cache raw lookup
+%results2 = ();
+#diag "\n";
+while ( my ($a, $p) = each %tests2 ) {
+	my $ab ;
+	if ($a =~ /:/) {
+		$ab = inet_pton(AF_INET6, $a);
+	} else {
+		$ab = inet_pton(AF_INET, $a);
+	}
+	my $res = $lpm2->lookup_cache_raw($ab);
+	$results2{$a} = $res;
+	$p = "<undef>" if (!defined($p));
+	$res = "<undef>" if (!defined($res));
+	if ($p ne $res) {
+		diag sprintf "FAIL CACHE RAW %s \t-> \t%s =%s %s\n", $a, $p, $p eq $res ? '=' : '!', $res;
+	}
+}
+
+ok( eq_hash(\%tests2, \%results2) );

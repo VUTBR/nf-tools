@@ -37,7 +37,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.02';
+our $VERSION = '0.02_01';
 
 
 # Preloaded methods go here.
@@ -188,14 +188,14 @@ sub add {
 sub get_range {
 	my ($self, $prefix, $plen) = @_;
 
-	my ($type, $addr_bin) = unpack("Cb*", $prefix);
+	my ($type, $addr_bin) = unpack("CB*", $prefix);
 
 	my $addrlen = ($type == AF_INET6) ? 128 : 32;
 	
 	my $first = substr($addr_bin, 0, $plen) . "0"x($addrlen - $plen);
 	my $last = substr($addr_bin, 0, $plen) . "1"x($addrlen - $plen);
 
-	return (pack("Cb*", $type, $first).V0, pack("Cb*", $type, $last).VF);
+	return (pack("CB*", $type, $first).V0, pack("CB*", $type, $last).VF);
 }
 	
 =head2 rebuild - Rebuild Prefix Database
@@ -216,11 +216,11 @@ sub rebuild {
 	my ($self, $addr) = @_;
 
 	# initalize whole range as undef
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').V0, undef);
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').VF, undef);
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').V0, '');
+	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').VF, '');
 
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').V0, undef);
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').VF, undef);
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').V0, '');
+	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').VF, '');
 
 	foreach my $plen ( sort { $a <=> $b } keys %{$self->{PREFIXES}} ) {
 		while ( my ($prefix, $value) = each ( %{$self->{PREFIXES}->{$plen}} ) ) {
@@ -269,7 +269,9 @@ sub lookup {
 
 	return undef if (! defined($addr_bin) );
 
-	return $self->lookup_raw($addr_bin);
+	my $result = $self->_lookup_raw($addr_bin);
+	return undef if length($result) == 0;
+	return $result;
 }
 
 =head2  lookup_raw - Lookup Address in raw format
@@ -283,7 +285,7 @@ nescessary.
 
 =cut 
 
-sub lookup_raw {
+sub _lookup_raw {
 	my ($self, $addr_bin) = @_;
 
 	if (length($addr_bin) == 4) {
@@ -302,6 +304,14 @@ sub lookup_raw {
 	}
 
 	return undef;
+}
+
+sub lookup_raw {
+	my ($self, $addr_bin) = @_;
+
+	my $result = $self->_lookup_raw($addr_bin);
+	return undef if length($result) == 0;
+	return $result;
 }
 
 =head2  lookup_cache_raw - Lookup Address in raw format with cache
@@ -326,10 +336,11 @@ sub lookup_cache_raw {
 	my $result = $self->{CACHE}->{$addr_bin};
 
 	if (!defined($result)) {
-		$result = $self->lookup_raw($addr_bin);
+		$result = $self->_lookup_raw($addr_bin);
 		$self->{CACHE}->{$addr_bin} = $result;
 	}
 
+	return undef if ( ! defined($result) || length($result) == 0 );
 	return $result;
 }	
 
