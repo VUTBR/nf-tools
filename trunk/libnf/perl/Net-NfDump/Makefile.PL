@@ -91,7 +91,6 @@ nfdump: $(NFDUMP).tar.gz
 		# nfdump gzip contains object files, so we rid them off
 		$(RM_F) nfdump/bin/nfdump
 		$(RM_F) nfdump/bin/*.o
-		#cd nfdump && export CFLAGS=-fPIC && ./configure && make 
 		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel --enable-nel && cd bin && make nfdump
 		$(RM_F) nfdump/bin/*.o
 

@@ -32,5 +32,7 @@ t/record_v6
 t/data1
 t/data2
 examples/example1.pl
+examples/download_asn_db
+examples/nf_asn_geo_update
 nfdump-1.6.9.tar.gz
 nfdump-bugs.patch 

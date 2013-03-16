@@ -1053,9 +1053,28 @@ begin:
 				instance->processed_bytes += ret;
 		}
 
+		switch (instance->nffile_r->block_header->id) {
+			case Large_BLOCK_Type:
+					goto begin;
+					break;
+			case ExporterRecordType:
+					goto begin;
+					break;
+			case SamplerRecordype:
+					goto begin;
+					break;
+			case ExporterInfoRecordType:
+					goto begin;
+					break;
+			case ExporterStatRecordType:
+					goto begin;
+					break;
+			case SamplerInfoRecordype:
+					goto begin;
+					break;
+		}
+
 		if ( instance->nffile_r->block_header->id == Large_BLOCK_Type ) {
-			// skip
-			//printf("Xstat block skipped ...\n");
 			goto begin;
 		}
 

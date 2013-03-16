@@ -1,5 +1,9 @@
 Revision history for Perl extension Net::NfDump.
 
+0.05 2013-03-16
+	- silently skip known (but not supported) blocks 
+	- example added (update AS info)
+
 0.04 2013-03-03
 	- the first stable version 
 
@@ -11,13 +15,13 @@ Revision history for Perl extension Net::NfDump.
 	- a few bugs removed
 
 0.02_05 2013-02-26
-    - example1.pl added 
-    - documenation updated 
+	- example1.pl added 
+	- documenation updated 
 
 0.02_04 2013-02-24
 	- a few bugs removed 
 	- clonerow added 
-    - InputFiles and Fields can by handled as a reference to list or comma separated list 
+	- InputFiles and Fields can by handled as a reference to list or comma separated list 
 
 0.02_01 2013-02-11
 	- hasharray functions added

@@ -34,7 +34,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -162,8 +162,8 @@ interface.
 
 The module uses original nfdump sources to implement nescessary 
 functions. The compatibility with the original 
-nfdump should be eaisly keet and there should be a minimal effort
-to cope with future version of original nfdump. 
+nfdump should be eaisly keept and there should be a minimal effort
+to cope with future version of the nfdump tool. 
 
 The architecture is following: 
 
@@ -174,7 +174,7 @@ The architecture is following:
    | Net::NfDump API (perl) |  described in this document.
    |                        |
    +------------------------+
-   |                        |  Creates the code converting internal nfdump 
+   |                        |  The code converting internal nfdump 
    | libnf - glue code (C)  |  structures into perl and back to C.
    |                        |
    +------------------------+
@@ -1225,6 +1225,41 @@ only 32 integer values are supported the C<Net::NfDump> uses C<Math::Int64> modu
 
 The build scripts automatically detect the platform and C<Math::Int64> module is required
 only on platforms where available perl do not supports 64bit integer values. 
+
+=head1 EXAMPLES OF USE 
+
+There are several examples in the C<examples> directory. 
+
+=over 
+
+=item * 
+
+C<example1.pl> -  The trivial example showing how the C<Net::NfDump> can be used for 
+reading files. The exaple also uses the progress bar to show the status 
+of processed files. 
+
+=item * 
+
+C<download_asn_db>, C<nf_asn_geo_update> - The set of sripts for updating information 
+about AS numbers and country codes based on BGP and geaolocation database. Every flow 
+can be extended with src/dst AS number and src/dst country code. 
+
+The firts script (C<download_asn_db>) downloads the BGP database that is available 
+on RIPE server. The database then is preprocessed and prepared for second script (with 
+support of C<Net::IP::LPM> module).
+
+The sceond script (C<download_asn_db>) updates the AS (or country code) information 
+in the nfdump file. It can be run as the extra command (-x option of nfcapd) to update 
+information as the new file is available. 
+
+The information about src/dst country works in simmilar way. It uses maxmind database 
+and C<Geo::IP> module. However nfdump do not support any field for storing that kinf of 
+information the xsrcport andf xdstport fiealds are used indtead. The contry code is 
+converted into 16 bit informatiuon (firt 8 bytes for first characted of country code and 
+second 8 bytes for second one). 
+
+=back
+
 
 =head1 SEE ALSO
 

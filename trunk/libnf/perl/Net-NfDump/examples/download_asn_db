@@ -1,0 +1,161 @@
+#!/usr/bin/perl -w 
+#
+
+use strict;
+#use BerkeleyDB;
+#use MLDBM qw (DB_File);
+use Net::IP::LPM;
+use POSIX;
+use Sys::Syslog qw(:DEFAULT setlogsock); 
+use Getopt::Std;
+
+my $VERSION 	= "0.04";
+
+# path to bgpdump, wget 
+# bgpdump is available on 
+# https://bitbucket.org/ripencc/bgpdump/wiki/Home
+# please compile it and place into $PATH 
+my $BGPDUMP		= "bgpdump -vm %s";
+my $WGET		= "wget -q -O %s %s";
+my $GUNZIP		= "gunzip -t %s";
+
+# any source with valid bgpdata can be used. The bgp 
+# databases from ripe becoons is available on 
+# http://www.ripe.net/data-tools/stats/ris/ris-raw-data
+my $BVIEW_URL	= "http://data.ris.ripe.net/rrc03/latest-bview.gz";
+
+# directory where download and updated file will be stored
+# the directory must be writable 
+my $DBDIR		= "/var/db/flowtools";
+
+my $ASN_DB		= $DBDIR.'/asns.db';
+my $ASN_DB_TXT	= $DBDIR.'/asns.txt';
+my $BVIEW_DB	= $DBDIR.'/latest-bview.gz';
+
+
+my $DEBUG		= 1;
+my $LOGNAME 	= substr($0, rindex($0, "/") + 1);;
+my $LOGFACILITY	= "daemon.info";
+
+my $LPM;
+my %OPTS;
+my %ASNS;
+
+# logging rutine
+sub mylog {
+	my ($msg, @par) = @_;
+	my $lmsg = sprintf($msg, @par);
+	if ($DEBUG > 0) {
+		printf "%s[%d]: %s\n", strftime("%Y-%m-%d.%H:%M:%S", localtime), $$, $lmsg;
+	}
+	setlogsock('unix');
+	openlog("$LOGNAME\[$$\]", 'ndelay', 'user');
+	syslog($LOGFACILITY, $lmsg);
+}
+
+
+sub usage() {
+
+	printf "Command downloads bgpdump database from URL and converts to BerkeleyDB format\n";
+	printf "Options: \n\n";
+	printf " -d <level> : debug level 1 - prints logs output to stdout, 10 - more detailed\n";
+	printf " -w         : do not fetch bgpview file (%s) from URL\n", $BVIEW_DB;
+	printf " -u <url>   : overwrite default URL %s \n", $BVIEW_URL;
+	printf " -a <file>  : overwrite default database ASN file %s \n", $ASN_DB;
+	printf " -t <file>  : overwrite default text database ASN file %s \n", $ASN_DB_TXT;
+	printf " -b <file>  : overwrite bgpview file %s \n\n", $BVIEW_DB;
+	printf " Version: %s \n", $VERSION;
+}
+
+
+if (!getopts("d:wu:a:b:t:", \%OPTS)) {
+	usage();
+	exit 1;
+}
+
+$DEBUG = $OPTS{"d"} if (defined($OPTS{"d"}));
+$BVIEW_URL = $OPTS{"u"} if (defined($OPTS{"u"}));
+$BVIEW_DB = $OPTS{"b"} if (defined($OPTS{"b"}));
+$ASN_DB = $OPTS{"a"} if (defined($OPTS{"a"}));
+$ASN_DB_TXT = $OPTS{"t"} if (defined($OPTS{"t"}));
+
+
+# download bgpdata file 
+if (!defined($OPTS{'w'})) {
+	mylog("Downloading bgpview database from %s", $BVIEW_URL);
+	system(sprintf($WGET, $BVIEW_DB, $BVIEW_URL));
+	if ($? != 0) {
+		mylog("Can not dowload bgpview database from %s", $BVIEW_URL);
+		exit 1;
+	}
+}
+
+# verify file
+system(sprintf($GUNZIP, $BVIEW_DB));
+if ($? != 0) {
+	mylog("Invalid bgpview database %s", $BVIEW_DB);
+	exit 1;
+}
+
+
+mylog("Updating ASN database %s", $ASN_DB);
+my $cmd = sprintf($BGPDUMP, $BVIEW_DB);
+open F1, "$cmd |";
+
+#if (!tie %ASN, 'MLDBM', $ASN_DB.".tmp") {
+$LPM = Net::IP::LPM->new($ASN_DB.".tmp");
+if (!$LPM) {
+ 	mylog "Can not open $ASN_DB.tmp: $!";
+	exit 1; 
+}
+
+
+my $cnt = 1;
+while (<F1>) {
+
+	my @a1 = split(/\|/);
+
+my ($prefix, $aspath) = ($a1[5], $a1[6]);
+
+    # empty AS ptaht - locally connected networks
+	next if (!defined($aspath) || $aspath eq "");
+    
+	# AS in { }
+	$aspath =~ s/{//g;
+	$aspath =~ s/}//g;
+	$aspath =~ s/,/ /g;
+    
+	my ($origin) = reverse(split(/ /, $aspath));
+    
+    if (defined($prefix) && defined($origin) ) {
+		printf "Adding: %s -> %s \n", $prefix, $origin if ($DEBUG > 10);
+		if (!$LPM->add($prefix, $origin)) {
+			mylog("Cannot add entry %s -> %s. Exiting.", $prefix, $origin);
+			exit 1;
+		}
+		$ASNS{$prefix} = $origin;
+		$cnt++;
+	} else {
+		mylog("Invalid line form bgpdump ($_). Exiting.");
+		exit 1;
+	}
+}
+
+mylog("Rebuilding prefix database");
+$LPM->rebuild();
+
+close F1;
+
+mylog("Dumping text format database into %s", $ASN_DB_TXT);
+open FT, " > $ASN_DB_TXT";
+
+foreach  my $p ( sort keys %ASNS )  {
+	printf FT "%s %s\n", $p, $ASNS{$p};	
+}
+close FT;
+
+rename($ASN_DB.".tmp", $ASN_DB);
+
+mylog("ASN database %s updated (%d recs processed)", $ASN_DB, $cnt);
+
+
