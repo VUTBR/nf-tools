@@ -101,7 +101,7 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
   #
   #
-  # Example 2: creating and writing records into nfdump file
+  # Example 2: creating and writing records to nfdump file
   #
   
   $flow = new Net::NfDump(
@@ -148,11 +148,11 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
 =head1 DESCRIPTION
 
-Nfdump L<http://nfdump.sourceforge.net/> is very polpular toolset 
-for collecting, storing and processing NetFlow/SFlow/IPFIX data. The 
-one of the key tool is command line utility bearing the same name
-as whole toolset (nfdump). Although this utility can process data 
-very speed, it is cumbersome for some apllications. 
+Nfdump L<http://nfdump.sourceforge.net/> is a very popular toolset 
+for collecting, storing and processing NetFlow/SFlow/IPFIX data. 
+One of the key tools is a command line utility bearing the same name
+as the whole toolset (nfdump). Although this utility can process data 
+very fast, it is cumbersome for some applications. 
 
 This module implements basic operations on binary files produced
 with nfdump tool. It allows read, create and write flow records on
