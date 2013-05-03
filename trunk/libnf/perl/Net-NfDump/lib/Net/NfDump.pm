@@ -154,17 +154,15 @@ One of the key tools is a command line utility bearing the same name
 as the whole toolset (nfdump). Although this utility can process data 
 very fast, it is cumbersome for some applications. 
 
-This module implements basic operations on binary files produced
-with nfdump tool. It allows read, create and write flow records on
-thoose files.  The modules tries to keep naming conventions for 
-methods same as are used in DBI nodules/API, so developers that 
-are used to use this interface should be famillar with the 
-interface. 
+This module implements basic operations and allows to 
+read, create and write flow records on binary files produced
+with nfdump tool. The module tries to keep the same naming conventions for 
+methods as are used in DBI modules/API, so developers who 
+got used to work with such interface should remain familiar with the new one. 
 
-The module uses original nfdump sources to implement nescessary 
-functions. The compatibility with the original 
-nfdump should be eaisly keept and there should be a minimal effort
-to cope with future version of the nfdump tool. 
+The module uses the original nfdump sources to implement necessary 
+functions. This enables to keep the compatibility with the original 
+nfdump quiet easily and to cope with future versions of the nfdump tool with a minimal effort. 
 
 The architecture is following: 
 
@@ -175,12 +173,12 @@ The architecture is following:
    | Net::NfDump API (perl) |  described in this document.
    |                        |
    +------------------------+
-   |                        |  The code converting internal nfdump 
+   |                        |  The code converts internal nfdump 
    | libnf - glue code (C)  |  structures into perl and back to C.
    |                        |
    +------------------------+
    |                        |  All original nfdump source files. There  
-   |   nfdump sources (C)   |  are no changes in theese files and all  
+   |   nfdump sources (C)   |  are no changes in these files. All  
    |                        |  changes are placed into libnf code.
    +------------------------+  
          NFDUMP FILES
@@ -267,10 +265,10 @@ sub set_fields {
 
 =head2 Options
 
-Options can be nahdled in varios methods. The basic options ses can be handled 
-in the constructor and than modified in methods like $obj->query() or $obj->create(). 
+Options can be handled by various methods. The basic options can be handled 
+by the constructor and then modified by methods such as $obj->query() or $obj->create(). 
 
-The values after => indicates the default value for the item.
+The values after => indicate the default value for the item.
 
 
 =over 
@@ -281,20 +279,20 @@ List of files to read (arrayref).
 
 =item * B<Filter> => 'any'
 
-Filter taht will be applied on input records. Uses nfdump/tcpdump syntax. 
+Filter that is applied on input records. It uses nfdump/tcpdump syntax. 
 
 =item * B<Fields> => '*'
 
-List of fields to read or update any field from supported fields can be used 
-here. See the chapter "Supported Fields" for the full list of supported 
-fields.  Special field * can be used for defining all fields. 
+List of fields to read or to update any of supported fields can be used 
+here. See the chapter "Supported Fields" for the full list.
+Special field * can be used to define all fields. 
 
 
 =item * B<TimeWindowStart>, B<TimeWindowEnd> => 0
 
-Filter flows that starts or ends in the specified fied time window. 
-The options uses unix timestamp values or 0 if the filter should
-not be apllied. 
+Filter flows that starts or ends in the specific time window. 
+The options use unix timestamp values or 0 if the filter should
+not be applied. 
 
 =item *  B<OutputFile> => undef
 
@@ -302,7 +300,7 @@ Output file for storerow_* methods. Default: undef
 
 =item * B<Compressed> => 1
 
-Flag whether the otput files should be compressed or not. 
+Flag indicating whether the output files should be compressed or not. 
 
 =item * B<Anonymized> => 0
 
@@ -310,11 +308,11 @@ Flag indicating that output file contains anonymized data.
 
 =item * B<Ident> => '' 
 
-String identificator of files stored into the header of the file. 
+String identificator of files stored in the header of a file. 
 
 =back 
 
-=head2 Constructor, status informations methods
+=head2 Constructor, status information methods
 
 =over 
 
@@ -324,7 +322,7 @@ String identificator of files stored into the header of the file.
   my $obj = new Net::NfDump( InputFiles => [ 'file1']  );
 
 
-The constructor. As the parameter options can be specified. 
+The constructor. It defines the way the parameter options can be specified. 
 
 
 =cut
@@ -374,15 +372,15 @@ sub new {
   print Dumper($i);
 
 
-Returns the information the current state of processing input files. It 
-returns information about already processed files, blocks, records. Those
-information can be usefull for guessing time of processing whole 
-dataset. Hashref returs following items:
+informs about the current state of processing input files. It 
+returns information about already processed files, blocks and records. The
+information may be useful for estimating the time of processing the whole 
+dataset. Hashref returns following items:
 
   total_files           - total number of files to process
   elapsed_time          - elapsed time 
-  remaining_time        - guessed remaining time to process all records
-  percent               - guessed percent of processed records
+  remaining_time        - estimated remaining time to process all records
+  percent               - estimated percentage of processed records
   
   processed_files       - total number of processed files
   processed_records     - total number of processed records
@@ -394,7 +392,7 @@ dataset. Hashref returs following items:
   current_filename      - the name of the file currently processed
   current_total_blocks  - the number of blocks in the currently 
                           processed file 
-  current_processed_blocks -  the number of processd blocks in the 
+  current_processed_blocks -  the number of processed blocks in the 
                           currently processed file
 
 =cut
@@ -429,10 +427,10 @@ sub info {
   $obj->finish();
 
 
-Closes all openes file handles. It is nescessary to call that method specilly 
-when a new file is created. The method flushes to file records that remains in the memory 
-buffer and updates file statistics in the header. Withat calling this method the 
-output file might be corupted. 
+closes all open file handles. It is necessary to call the method especially 
+when a new file is created. The method flushes the file records which remained in the memory 
+buffer and updates file statistics in the header. Without calling this method the 
+output file might be corrupted. 
 
 =back
 
@@ -470,7 +468,7 @@ sub DESTROY {
   $obj->query( Filter => 'src host 10.10.10.1' );
 
 
-Method that have to be executed before any of the C<fetchrow_*> method  is used. Options 
+This method has to be applied before any of the C<fetchrow_*> methods is used. Options 
 can be handled to the method. 
 
 =cut 
@@ -512,11 +510,11 @@ sub query {
   }
 
 
-Have to be used after query method. The method $obj->query() s called 
-automatically if it wasn't called before. 
+This method has to be used after the query method. The method $obj->query() is called 
+automatically if it has not been called before. 
 
-Method returns array reference with the record and skips to the next record. Returns 
-true if there are more records to read or undef if end of the record set have been reached. 
+It returns array reference with the record and skips to next record. It returns 
+"true" if there are more records to read or "undef" if the end of a record set has been reached. 
 
 =cut
 
@@ -547,7 +545,7 @@ sub fetchrow_arrayref {
   }
 
 
-Same functionality as fetchrow_arrayref however returns items in array instead.
+It has the same function as fetchrow_arrayref; however, it returns items in array instead.
 
 =cut 
 
@@ -571,10 +569,10 @@ sub fetchrow_array {
   }
 
 
-Same as fetchrow_arrayref, however the items are returned in the hash reference as the 
+The same case as fetchrow_arrayref; however, the items are returned in the hash reference as the 
 key => vallue tuples. 
 
-NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
+NOTE: This method can be very ineffective in some cases, please, see PERFORMANCE section.
 
 =back 
 
@@ -608,7 +606,7 @@ sub fetchrow_hashref {
   $obj->create( OutputFile => 'output.nfcapd' );
 
 
-Creates a new nfdump file. This method have to be called before any of $obj->storerow_* 
+This method creates a new nfdump file and has to be applied before any of $obj->storerow_* 
 method is called. 
 
 =cut 
@@ -642,8 +640,8 @@ sub create {
   $obj->storerow_arrayref( [ $srcip, $dstip ] );
 
 
-Insert data defined in arrayref to the file opened by create.  The number of 
-fields and their order have to respect order defined in the Fileds option 
+It inserts data defined in arrayref to the file opened by create.  The number of 
+fields and their order have to follow the order defined in the Fields options 
 handled during $obj->new() or $obj->create() method. 
 
 =cut
@@ -666,7 +664,7 @@ sub storerow_arrayref {
   $obj->storerow_array( $srcip, $dstip );
 
 
-Same as storerow_arrayref, however items are handled as the single array 
+The same case as storerow_arrayref; however, the items are handled as a single array. 
 
 =cut
 
@@ -684,9 +682,9 @@ sub storerow_array {
   $obj->storerow_hashref( { 'srcip' =>  $srcip, 'dstip' => $dstip } );
 
 
-Inserts structure defined as hash reference into output file. 
+It inserts the structure defined as hash reference into output file. 
 
-NOTE: This method can be very uneffective in some cases, please see PERFORMANCE section.
+NOTE: This method can be very ineffective in some cases, please, see PERFORMANCE section.
 
 =cut
 
@@ -712,9 +710,8 @@ sub storerow_hashref {
   $obj->clonerow( $obj2 );
 
 
-Copy the full content of the row from the source object (instance). This method 
-is usefull for writing effective scripts (it's much faster that any of the
-prevous row).
+This method copies the full content of the row from the source object (instance). This method 
+is useful for writing effective scripts (it is much faster than any of the previous row).
 
 =back
 
@@ -736,12 +733,12 @@ sub clonerow {
 
 =head2 Extra conversion and support functions
 
-The module also provides extra convertion functions that allow convert binnary format 
+The module also provides extra convertion functions which allow to convert binnary format 
 of IP address, MAC address and MPLS labels tag into text format and back. 
 
-Those functions are not exported by default, so it have to be either called 
-with full module name or imported when the module is loades. For importing 
-all support function C<:all> synonym can be used. 
+Those functions are not exported by default, therefore it has to be either called 
+with full module name or imported when the module is loaded. To import
+all support function C<:all> a synonym may be used. 
  
   use Net::NfDump qw ':all';
 
@@ -756,11 +753,11 @@ all support function C<:all> synonym can be used.
   print ip2txt($ip);
 
 
-Converts both IPv4 and IPv6 address into text form and back. The standart 
-inet_ntop/inet_pton functions can be used instead to provide same results. 
+Converts both IPv4 and IPv6 addresses into text form and back. The standard 
+inet_ntop/inet_pton functions can be used instead to provide the same results. 
 
-Function txt2ip returns binnary format of IP addres or undef 
-if the conversion is impossible. 
+Function txt2ip returns binnary format of IP address or "undef"
+if the conversion is not possible. 
 
 =cut 
 
@@ -814,15 +811,15 @@ sub txt2ip ($) {
   print mac2txt($mac);
 
 
-Converts MAC addres to xx:yy:xx:yy:xx:yy format and back. The fuction to mac2txt 
-accepts an address in any of following format: 
+It converts MAC address to xx:yy:xx:yy:xx:yy format and back. The function mac2txt 
+accepts an address of any following format: 
 
   aabbccddeeff
   aa:bb:cc:dd:ee:ff
   aa-bb-cc-dd-ee-ff
   aabb-ccdd-eeff
 
-Returns the binnary format of the address or undef if confersion is impossible. 
+It returns the binnary format of an address or "undef" if the conversion is not possible. 
 
 =cut 
 
@@ -869,12 +866,12 @@ sub txt2mac ($) {
   print mpls2txt($mpls);
 
 
-Converts label information to format B<Lbl-Exp-S> and back. 
+It converts label information into format B<Lbl-Exp-S> and back. 
 
 Where:
  
   Lbl - Value given to the MPLS label by the router. 
-  Exp - Value of experimental bit. 
+  Exp - Value of the experimental bit. 
   S   - Value of the end-of-stack bit: Set to 1 for the oldest 
         entry in the stack and to zero for all other entries. 
 
@@ -931,10 +928,10 @@ sub txt2mpls ($) {
 =item * B<< $ref = txt2flow( \%row ) >>
 
 
-The function flow2txt gets hash reference to items returned by fetchrow_hashref and 
-converts all items into humman readable text format. Applies finctions 
-ip2txt, mac2txt, mpl2txt to the items where it make sense.  The function 
-txt2flow does opossite functionality.
+The function flow2txt gets hash reference to the items returned by fetchrow_hashref and 
+converts all items into text format readable for human. It applies functions 
+ip2txt, mac2txt, mpl2txt to the items for which it makes sense. The function 
+txt2flow does the exact opossite.
 
 =cut 
 
@@ -1006,9 +1003,9 @@ sub txt2flow ($) {
   print Dumper($ref);
 
 
-Reads information from nfdump file header. It provides various atributes 
-like number of blocks, version, flags, statistics, etc.  As the result the 
-follwing items are returned: 
+It reads information from the nfdump file header and provides various attributes 
+such as number of blocks, version, flags, statistics, etc.  As the result, the 
+following items are returned: 
 
   version
   ident
@@ -1047,9 +1044,9 @@ sub file_info {
 
   Time items
   =====================
-  first - Timestamp of first seen packet in miliseconds
-  last - Timestamp of last seen packet in miliseconds
-  received - Timestamp when the packet was received by collector 
+  first - Timestamp of the first packet seen (in miliseconds)
+  last - Timestamp of the last packet seen (in miliseconds)
+  received - Timestamp regarding when the packet was received by collector 
 
   Statistical items
   =====================
@@ -1073,7 +1070,7 @@ sub file_info {
   srcmask - Source mask 
   dstmask - Destination mask 
   tos - Source type of service 
-  dsttos - Destination type of Service 
+  dsttos - Destination type of service 
   srcas - Source AS number 
   dstas - Destination AS number 
   nextas - BGP Next AS 
@@ -1087,7 +1084,7 @@ sub file_info {
   dstvlan - Destination vlan label 
   insrcmac - In source MAC address 
   outsrcmac - Out destination MAC address 
-  indstmac - In destintation MAC address 
+  indstmac - In destination MAC address 
   outdstmac - Out source MAC address 
 
   MPLS information
@@ -1109,7 +1106,7 @@ sub file_info {
 
   NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
   =====================
-  flowstart - NSEL The time that the flow was create
+  flowstart - NSEL The time that the flow was created
   connid - NSEL An identifier of a unique flow for the device 
   icmpcode - NSEL ICMP code value 
   icmptype - NSEL ICMP type value 
@@ -1146,11 +1143,10 @@ sub file_info {
 
 =head1 PERFORMANCE
 
-It is obvious tahat prformance of the perl interface is lower comparing to 
-highly optimized nfdump utility. As nfdump is able to process up 
-to 2 milions of records per second, the Net::NfDump is not bale to process 
-more than 1 milion of records per second. However there are several rules 
-to keep the code optimised:
+It is obvious that performance of the perl interface is lower in comparison to 
+highly optimized nfdump utility. While nfdump is able to process up 
+to 2 milion of records per second, the Net::NfDump is not able to process 
+more than 1 milion. However, there are several rules to keep the code optimised:
 
 =over 
 
@@ -1158,17 +1154,17 @@ to keep the code optimised:
 
 Use C<< $obj->fetchrow_arrayref() >> and C<< $obj->storerow_arrayref() >> instead of 
 C<< *_array >> and C<< *_hashref >> equivalents. Arrayref handles only the reference 
-to the structure with data. Avoid of using C<< *_hashref >> functions, it can by 5 times 
+to the structure with data. Avoid using C<< *_hashref >> functions, it can be 5-times 
 slower.
 
 =item * 
 
-Handle to the perl API only items that are nescessary for using in the code. It is always 
-more effective to define in C<< Fields => 'srcip,dstip,...' >> intead of C<< Fileds => '*' >>. 
+Handle to the perl API only items which are necessary to be used in the code. It is always 
+more effective to define in C<< Fields => 'srcip,dstip,...' >> instead of in C<< Fields => '*' >>. 
 
 =item * 
 
-Prefer of using C<< $obj->clonerow($obj2) >> method. This method copies data between 
+Preference to using C<< $obj->clonerow($obj2) >> method is highly recommended. This method copies data between 
 two instances directly in the C code in the libnf layer. 
 
 Following code: 
@@ -1181,7 +1177,7 @@ Following code:
       $obj2->storerow_arrayref($ref);
   }
 
-can be written in more effective way (several times faster): 
+can be written in a more effective way (several times faster): 
 
   $obj1->exec( Fields => 'srcip' );
   $obj2->create( Fields => 'srcip' );
@@ -1201,9 +1197,9 @@ can be written in more effective way (several times faster):
 
 #=head1 FLOW QUERY - NOT IMPLEMENTED YET
 #
-#The flow query is language vyry simmilar to SQL to query data on 
-#nfdump files. However flow query have nothing to do with SQL. It uses
-#only simmilar command syntax. Example of flow query 
+#The flow query is a language very simmilar to SQL to query data on 
+#nfdump files. However, the flow query has nothing to do with SQL. It uses
+#only similar command syntax. Example of flow query 
 #
 #  SELECT * FROM data/nfdump1.nfcap, data2/nfdump2.nfcap
 #  WHERE src host 147.229.3.10 
@@ -1220,12 +1216,12 @@ can be written in more effective way (several times faster):
 
 =head1 NOTE ABOUT 32BIT PLATFORMS
 
-Nfdump primary uses 64 bit counters and other items to store single integer value. However 
-the native 64 bit support is not compiled in every perl. For thoose cases where 
-only 32 integer values are supported the C<Net::NfDump> uses C<Math::Int64> module. 
+Nfdump primary uses 64 bit counters and other items to store single integer value. However, 
+the native 64 bit support is not compiled in every perl. For those cases where 
+only 32 integer values are supported, the C<Net::NfDump> uses C<Math::Int64> module. 
 
-The build scripts automatically detect the platform and C<Math::Int64> module is required
-only on platforms where available perl do not supports 64bit integer values. 
+The build scripts detect the platform automatically and C<Math::Int64> module is required
+only on platforms where an available perl does not support 64bit integer values. 
 
 =head1 EXAMPLES OF USE 
 
@@ -1236,28 +1232,28 @@ There are several examples in the C<examples> directory.
 =item * 
 
 C<example1.pl> -  The trivial example showing how the C<Net::NfDump> can be used for 
-reading files. The exaple also uses the progress bar to show the status 
+reading files. In the example, the progress bar is also used to show the status 
 of processed files. 
 
 =item * 
 
-C<download_asn_db>, C<nf_asn_geo_update> - The set of sripts for updating information 
-about AS numbers and country codes based on BGP and geaolocation database. Every flow 
+C<download_asn_db>, C<nf_asn_geo_update> - The set of scripts for updating the information 
+about AS numbers and country codes based on BGP and geolocation database. Every flow 
 can be extended with src/dst AS number and src/dst country code. 
 
-The firts script (C<download_asn_db>) downloads the BGP database that is available 
-on RIPE server. The database then is preprocessed and prepared for second script (with 
+The first script (C<download_asn_db>) downloads the BGP database which is available 
+on RIPE server. Then, the database is preprocessed and prepared for the second script (with 
 support of C<Net::IP::LPM> module).
 
-The sceond script (C<download_asn_db>) updates the AS (or country code) information 
+The second script (C<download_asn_db>) updates the AS (or country code) information 
 in the nfdump file. It can be run as the extra command (-x option of nfcapd) to update 
-information as the new file is available. 
+information when the new file is available. 
 
-The information about src/dst country works in simmilar way. It uses maxmind database 
-and C<Geo::IP> module. However nfdump do not support any field for storing that kinf of 
-information the xsrcport andf xdstport fiealds are used indtead. The contry code is 
-converted into 16 bit informatiuon (firt 8 bytes for first characted of country code and 
-second 8 bytes for second one). 
+The information about src/dst country works in a similar way. It uses maxmind database 
+and C<Geo::IP> module. However, nfdump does not support any field to store such kind of 
+information; the xsrcport and xdstport fields are used instead. The country code is 
+converted into 16 bit information (8 bytes for the first character of a country code and 
+another 8 bytes for the second one). 
 
 =back
 
@@ -1270,14 +1266,14 @@ http://nfdump.sourceforge.net/
 
 Tomas Podermanski, E<lt>tpoder@cis.vutbr.czE<gt>, Brno University of Technology
 
-=head1 COPYRIGHT AND LICENSE
+=head1 COPYRIGHT AND LICENCE
 
 Copyright (C) 2012 by Brno University of Technology
 
 This library is free software; you can redistribute it and modify
 it under the same terms as Perl itself.
 
-If you are satisfied with using C<Net::NfDump> please send us a postcard, preferably with a picture from your location / city to: 
+If you are satisfied with using C<Net::NfDump>, please, send us a postcard, preferably with a picture of your location / city to: 
 
   Brno University of Technology 
   CVIS
