@@ -283,14 +283,14 @@ Filter that is applied on input records. It uses nfdump/tcpdump syntax.
 
 =item * B<Fields> => '*'
 
-List of fields to read or to update any of supported fields can be used 
+List of fields to read or to update. Any supported field can be used 
 here. See the chapter "Supported Fields" for the full list.
 Special field * can be used to define all fields. 
 
 
 =item * B<TimeWindowStart>, B<TimeWindowEnd> => 0
 
-Filter flows that starts or ends in the specific time window. 
+Filter flows that start or end in the specific time window. 
 The options use unix timestamp values or 0 if the filter should
 not be applied. 
 
@@ -308,7 +308,7 @@ Flag indicating that output file contains anonymized data.
 
 =item * B<Ident> => '' 
 
-String identificator of files stored in the header of a file. 
+String identificator of files. The value is stored in the file header. 
 
 =back 
 
@@ -468,8 +468,7 @@ sub DESTROY {
   $obj->query( Filter => 'src host 10.10.10.1' );
 
 
-This method has to be applied before any of the C<fetchrow_*> methods is used. Options 
-can be handled to the method. 
+This method has to be applied before any of the C<fetchrow_*> methods is used. Any option described before can be used as a parameter of the method. 
 
 =cut 
 
@@ -640,8 +639,8 @@ sub create {
   $obj->storerow_arrayref( [ $srcip, $dstip ] );
 
 
-It inserts data defined in arrayref to the file opened by create.  The number of 
-fields and their order have to follow the order defined in the Fields options 
+The method inserts data defined in arrayref to the file opened by the method $obj->create(). The number of 
+fields and their order have to follow the order defined in the B<Fields> option 
 handled during $obj->new() or $obj->create() method. 
 
 =cut
@@ -711,7 +710,7 @@ sub storerow_hashref {
 
 
 This method copies the full content of the row from the source object (instance). This method 
-is useful for writing effective scripts (it is much faster than any of the previous row).
+is useful for writing effective scripts. See above the PERFORMANCE chapter. 
 
 =back
 
@@ -1252,8 +1251,8 @@ information when the new file is available.
 The information about src/dst country works in a similar way. It uses maxmind database 
 and C<Geo::IP> module. However, nfdump does not support any field to store such kind of 
 information; the xsrcport and xdstport fields are used instead. The country code is 
-converted into 16 bit information (8 bytes for the first character of a country code and 
-another 8 bytes for the second one). 
+converted into 16 bit information (8 bits for the first character of a country code and 
+another 8 bits for the second one). 
 
 =back
 
