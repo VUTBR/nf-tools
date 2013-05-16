@@ -1,5 +1,11 @@
 Revision history for Perl extension Net::NfDump.
 
+0.06 xxxx-xx-xx
+	- removed bug in examples, thanks to James Deaton 
+
+0.05 2013-05-03
+	- language corrections
+
 0.05 2013-03-16
 	- silently skip known (but not supported) blocks 
 	- example added (update AS info)
