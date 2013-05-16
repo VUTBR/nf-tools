@@ -24,11 +24,11 @@
 // pod:
 // pod:  Time items
 // pod:  =====================
-#define NFL_T_FIRST	 		"first"		// pod:  ## - Timestamp of first seen packet in miliseconds
+#define NFL_T_FIRST	 		"first"		// pod:  ## - Timestamp of the first packet seen (in miliseconds)
 #define NFL_I_FIRST	 		10
-#define NFL_T_LAST	 		"last"		// pod:  ## - Timestamp of last seen packet in miliseconds
+#define NFL_T_LAST	 		"last"		// pod:  ## - Timestamp of the last packet seen (in miliseconds)
 #define NFL_I_LAST	 		30	
-#define NFL_T_RECEIVED		"received"	// pod:  ## - Timestamp when the packet was received by collector 
+#define NFL_T_RECEIVED		"received"	// pod:  ## - Timestamp regarding when the packet was received by collector 
 #define NFL_I_RECEIVED		50	
 // pod:
 // pod:  Statistical items
@@ -67,7 +67,7 @@
 #define NFL_I_DST_MASK		180
 #define NFL_T_TOS			"tos"		// pod:  ## - Source type of service 
 #define NFL_I_TOS			190
-#define NFL_T_DST_TOS		"dsttos"	// pod:  ## - Destination type of Service 
+#define NFL_T_DST_TOS		"dsttos"	// pod:  ## - Destination type of service 
 #define NFL_I_DST_TOS		200
 
 #define NFL_T_SRCAS			"srcas"		// pod:  ## - Source AS number 
@@ -94,7 +94,7 @@
 #define NFL_I_IN_SRC_MAC	290
 #define NFL_T_OUT_SRC_MAC	"outsrcmac"	// pod:  ## - Out destination MAC address 
 #define NFL_I_OUT_SRC_MAC	300
-#define NFL_T_IN_DST_MAC	"indstmac"	// pod:  ## - In destintation MAC address 
+#define NFL_T_IN_DST_MAC	"indstmac"	// pod:  ## - In destination MAC address 
 #define NFL_I_IN_DST_MAC	310
 #define NFL_T_OUT_DST_MAC	"outdstmac"	// pod:  ## - Out source MAC address 
 #define NFL_I_OUT_DST_MAC	320
@@ -126,7 +126,7 @@
 // pod:
 // pod:  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
 // pod:  =====================
-#define NFL_T_FLOW_START	"flowstart"	// pod:  ## - NSEL The time that the flow was create
+#define NFL_T_FLOW_START	"flowstart"	// pod:  ## - NSEL The time that the flow was created
 #define NFL_I_FLOW_START	520
 #define NFL_T_CONN_ID		"connid"	// pod:  ## - NSEL An identifier of a unique flow for the device 
 #define NFL_I_CONN_ID		410

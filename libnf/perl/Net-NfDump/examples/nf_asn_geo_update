@@ -37,7 +37,7 @@ sub geo_lookup_raw {
 	# convert code to 16 bit number
 	my ($a, $b) =  unpack('CC', $code);
 	
-	return 255 * $a + $b;
+	return 256 * $a + $b;
 }
 
 # parse options 
