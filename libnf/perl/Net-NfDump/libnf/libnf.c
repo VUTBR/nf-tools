@@ -1,4 +1,5 @@
- 
+
+#define NEED_PACKRECORD 1 
 
 #include "EXTERN.h"
 #include "perl.h"
@@ -105,7 +106,8 @@ typedef struct libnf_map_list_s {
 
 /* structure that bears all data related to one instance */
 typedef struct libnf_instance_s {
-	extension_map_list_t 	extension_map_list;		/* nfdup structure containig extmap */
+	//extension_map_list_t 	extension_map_list;		/* nfdup structure containig extmap */
+	extension_map_list_t 	*extension_map_list;		/* nfdup structure containig extmap */
 	libnf_map_list_t		*map_list;				/* libnf structure that holds maps */
 	int 					max_num_extensions;		/* mamimum number of extensions */
 	libnf_file_list_t		*files;					/* list of files to read */
@@ -798,7 +800,8 @@ int map_id = 0;
 		i++;
 	}
 
-	Insert_Extension_Map(&instance->extension_map_list, map); 
+	//Insert_Extension_Map(&instance->extension_map_list, map); 
+	Insert_Extension_Map(instance->extension_map_list, map); 
 	AppendToBuffer(instance->nffile_w, (void *)map, map->size);
 
 	return map;
@@ -834,7 +837,8 @@ int i;
 
 	libnf_instances[handle] = instance;
 
-	InitExtensionMaps(&(instance->extension_map_list));
+//	InitExtensionMaps(&(instance->extension_map_list));
+	instance->extension_map_list = InitExtensionMaps(NEEDS_EXTENSION_LIST);
 	i = 1;
 	instance->max_num_extensions = 0;
 	while ( extension_descriptor[i++].id )
@@ -1100,7 +1104,8 @@ begin:
 
 	if ( instance->flow_record->type == ExtensionMapType ) {
 		extension_map_t *map = (extension_map_t *)instance->flow_record;
-		Insert_Extension_Map(&instance->extension_map_list, map);
+		//Insert_Extension_Map(&instance->extension_map_list, map);
+		Insert_Extension_Map(instance->extension_map_list, map);
 
 		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 		goto begin;
@@ -1118,19 +1123,19 @@ begin:
 		croak("%s Corrupt data file. Extension map id %u too big.\n", NFL_LOG, instance->flow_record->ext_map);
 		return 0;
 	}
-	if ( instance->extension_map_list.slot[map_id] == NULL ) {
+	if ( instance->extension_map_list->slot[map_id] == NULL ) {
 		warn("%s Corrupt data file. Missing extension map %u. Skip record.\n", NFL_LOG, instance->flow_record->ext_map);
 		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 		goto begin;
 	} 
 
 	instance->processed_records++;
-	instance->master_record_r = &(instance->extension_map_list.slot[map_id]->master_record);
+	instance->master_record_r = &(instance->extension_map_list->slot[map_id]->master_record);
 	instance->engine->nfrecord = (uint64_t *)instance->master_record_r;
 
 	// changed in 1.6.8 - added exporter info 
 //	ExpandRecord_v2( flow_record, extension_map_list.slot[map_id], master_record);
-	ExpandRecord_v2( instance->flow_record, instance->extension_map_list.slot[map_id], NULL, instance->master_record_r);
+	ExpandRecord_v2( instance->flow_record, instance->extension_map_list->slot[map_id], NULL, instance->master_record_r);
 
 	// Time based filter
 	// if no time filter is given, the result is always true
@@ -1148,7 +1153,7 @@ begin:
 	}
 
 	// update number of flows matching a given map
-	instance->extension_map_list.slot[map_id]->ref_count++;
+	instance->extension_map_list->slot[map_id]->ref_count++;
 
 	// Advance pointer by number of bytes for netflow record
 	instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
@@ -1163,7 +1168,7 @@ begin:
 */
 
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_AV(handle, instance->master_record_r, instance->extension_map_list.slot[map_id]->map); 
+	return libnf_master_record_to_AV(handle, instance->master_record_r, instance->extension_map_list->slot[map_id]->map); 
 
 } /* end of _next fnction */
 
@@ -1732,8 +1737,8 @@ libnf_instance_t *instance = libnf_instances[handle];
 	bit_array_release(&instance->ext_r);
 	bit_array_release(&instance->ext_w);
 
-	PackExtensionMapList(&instance->extension_map_list);
-	FreeExtensionMaps(&instance->extension_map_list);
+	PackExtensionMapList(instance->extension_map_list);
+	FreeExtensionMaps(instance->extension_map_list);
 	free(instance); 
 	libnf_instances[handle] = NULL;
 	//return stat_record;

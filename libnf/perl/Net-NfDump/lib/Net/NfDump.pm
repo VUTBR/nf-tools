@@ -35,7 +35,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.06';
+our $VERSION = '0.07';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -184,7 +184,7 @@ The architecture is following:
          NFDUMP FILES
 
 
-This version of Net::NfDump module is based on B<nfdump-1.6.9> available on L<http://sourceforge.net/projects/nfdump/>. Support for NSEL and NEL code is enabled. 
+This version of Net::NfDump module is based on B<nfdump-1.6.10> available on L<http://sourceforge.net/projects/nfdump/>. Support for NSEL and NEL code is enabled. 
 
 
 =cut 
