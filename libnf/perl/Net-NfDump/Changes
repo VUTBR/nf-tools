@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::NfDump.
 
+0.08 2013-06-06
+	- removed bug in TimeWindowStart, thanks to Pavel Sejnoha
+
 0.07 2013-05-21
 	- removed bug in examples, thanks to James Deaton 
 	- updated to nfdump 1.6.10

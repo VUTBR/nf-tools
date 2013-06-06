@@ -924,6 +924,8 @@ int i;
 	pfile->filename = NULL;
 	instance->files = pfile;
 	instance->total_files = numfiles + 1;
+	instance->twin_start = window_start;
+	instance->twin_end = window_end;
 
 	for (i = 0; i <= numfiles; i++) {
 		STRLEN l;
