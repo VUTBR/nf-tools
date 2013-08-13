@@ -61,8 +61,8 @@ DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
 
 sub MY::postamble {
 '
-NFDUMP		= nfdump-1.6.10
-NFDUMP_MD5	= 8c2927d82f9fbbb4a76475ea01686a5e
+NFDUMP		= nfdump-1.6.10p1
+NFDUMP_MD5	= a3da6716b47ac7a0cae6ccd07c2e3a6d
 NFDUMP_SRC	= $(NFDUMP).tar.gz
 NFDUMP_URL	= http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP_SRC)
 
