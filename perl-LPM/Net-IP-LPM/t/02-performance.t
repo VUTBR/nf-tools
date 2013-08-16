@@ -17,7 +17,7 @@ use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 # test speed 
-my $cnt = 9000000;
+my $cnt = 15000000;
 
 unlink ("t/asns.db") if ( -f "t/asns.db" );
 my $lpm2 = Net::IP::LPM->new("t/asns.db");
@@ -26,11 +26,11 @@ isa_ok($lpm2, 'Net::IP::LPM', 'Constructor');
 
 diag "";
 diag "Testing performance on full Internet BGP tables";
-diag "please wait... (it can take a few minutes)";
 
 # load database from text file
 open F1, "< t/asns.txt";
 my $prefixes = 0;
+my $t1 = time();
 while (<F1>) {
 	chomp;
 	my ($prefix, $as) = split(/ /);
@@ -38,17 +38,18 @@ while (<F1>) {
 	$prefixes++;
 }
 $lpm2->rebuild();
+my $t2 = time() - $t1;
 
-diag "loaded $prefixes prefixes...";
+diag sprintf "loaded $prefixes prefixes in %d secs", $t2;
 
-my $t1 = time();
+$t1 = time();
 for (my $x = 0; $x < $cnt; $x++ ) {
 	my $a = $x % 250; 	
 	my $addr = "$a.10.$a.20";
 	my $val = $lpm2->lookup($addr);
 }
 
-my $t2 = time() - $t1;
+$t2 = time() - $t1;
 diag sprintf "SPEED: %d lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
 
 # test speed  - raw
@@ -60,14 +61,5 @@ for (my $x = 0; $x < $cnt; $x++ ) {
 $t2 = time() - $t1;
 diag sprintf "SPEED: %d raw lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
 
-# test speed  - cache raw
-$t1 = time();
-for (my $x = 0; $x < $cnt; $x++ ) {
-	my $y = $x % ($cnt / 8);
-	my $val = $lpm2->lookup_cache_raw($y * $y);
-}
-
-$t2 = time() - $t1;
-diag sprintf "SPEED: %d cache raw lookups (87%% hits) in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
 
 
