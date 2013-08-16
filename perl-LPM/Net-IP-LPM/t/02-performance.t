@@ -17,7 +17,7 @@ use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 # test speed 
-my $cnt = 1500000;
+my $cnt = 9000000;
 
 unlink ("t/asns.db") if ( -f "t/asns.db" );
 my $lpm2 = Net::IP::LPM->new("t/asns.db");

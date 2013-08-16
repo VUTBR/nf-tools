@@ -5,6 +5,8 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
+open(STDOUT, ">&STDERR");
+
 use Test::More tests => 8;
 BEGIN { use_ok('Net::IP::LPM') };
 
@@ -36,20 +38,11 @@ my @prefixes = (
 		'ff3a::/32', 'ff3a::/32'
 		);
 
-
 foreach (@prefixes) {
 	$lpm->add($_, $_);
 }
 
-$lpm->rebuild();
-
-#use DB_File;
-#my $x = $lpm->{DB};
-#my $value = undef;
-#my $key = undef;
-#for ($st = $x->seq($key, $value, R_FIRST) ; $st == 0 ; $st = $x->seq($key, $value, R_NEXT) ) {
-#    diag sprintf "%s  -> $value\n", unpack("H*", $key);
-#}
+#$lpm->rebuild();
 
 my %tests = ( 
 		'147.229.3.0'	=> '147.229.3.0/24',
@@ -102,7 +95,7 @@ while ( my ($a, $p) = each %tests ) {
 	$results{$a} = $res;
 }
 
-ok( eq_hash(\%tests, \%results) );
+ok( eq_hash(\%tests, \%results), 'lookup' );
 
 # std raw lookup
 %results = ();
@@ -121,7 +114,7 @@ while ( my ($a, $p) = each %tests ) {
 	$results{$a} = $res;
 }
 
-ok( eq_hash(\%tests, \%results) );
+ok( eq_hash(\%tests, \%results), 'lookup_raw' );
 
 # std cache raw lookup
 %results = ();
@@ -140,7 +133,7 @@ while ( my ($a, $p) = each %tests ) {
 	$results{$a} = $res;
 }
 
-ok( eq_hash(\%tests, \%results) );
+ok( eq_hash(\%tests, \%results), 'lookup_cache_raw' );
 
 # check for retruning undef
 my @prefixes2 = ( 
@@ -216,7 +209,7 @@ while ( my ($a, $p) = each %tests2 ) {
 	}
 }
 
-ok( eq_hash(\%tests2, \%results2) );
+ok( eq_hash(\%tests2, \%results2), 'lookup = undef' );
 
 # std raw lookup
 %results2 = ();
@@ -237,7 +230,7 @@ while ( my ($a, $p) = each %tests2 ) {
 	}
 }
 
-ok( eq_hash(\%tests2, \%results2) );
+ok( eq_hash(\%tests2, \%results2), 'lookup_raw - undef' );
 
 # std cache raw lookup
 %results2 = ();
@@ -258,4 +251,4 @@ while ( my ($a, $p) = each %tests2 ) {
 	}
 }
 
-ok( eq_hash(\%tests2, \%results2) );
+ok( eq_hash(\%tests2, \%results2), 'lookup_cache_raw - undef' );
