@@ -11,11 +11,6 @@ require Exporter;
 use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 use Data::Dumper;
-use DB_File;
-use constant V4P => pack('C', AF_INET);
-use constant V6P => pack('C', AF_INET6);
-use constant VF => pack('C', 0xF);
-use constant V0 => pack('C', 0x0);
 
 #our @ISA = qw(DB_File);
 our @ISA = qw();
@@ -37,8 +32,33 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.03';
+our $VERSION = '1.01';
+sub AUTOLOAD {
+	# This AUTOLOAD is used to 'autoload' constants from the constant()
+	# XS function.
+	
+    my $constname;
+    our $AUTOLOAD;
+    ($constname = $AUTOLOAD) =~ s/.*:://;
+    croak "&Net::NfDump::constant not defined" if $constname eq 'constant';
+    my ($error, $val) = constant($constname);
+    if ($error) { croak $error; }
+    {
+    no strict 'refs';
+    # Fixed between 5.005_53 and 5.005_61
 
+#XXX    if ($] >= 5.00561) {
+#XXX        *$AUTOLOAD = sub () { $val };
+#XXX    }
+#XXX    else {
+		*$AUTOLOAD = sub { $val };
+#XXX    }
+	}
+	goto &$AUTOLOAD;
+}
+
+require XSLoader;
+XSLoader::load('Net::IP::LPM', $VERSION);
 
 # Preloaded methods go here.
 
@@ -116,13 +136,7 @@ sub new {
 	my %h;
 	my $self = {};
 	
-	#my $class = $self->SUPER::new( @opts );
-	my $b = new DB_File::BTREEINFO ;
-#	$b->{'compare'} = sub { return $_[1] cmp $_[0]; };
-#	$b->{'cachesize'} = 40000000;
-#	$b->{'cachesize'} = 40000000;
-
-	$self->{DB} = tie %h, 'DB_File', $dbfile, O_RDWR|O_CREAT, 0666, $b ;
+	$self->{handle} = lpm_init();
 
 	bless $self, $class;
 	return $self;
@@ -161,43 +175,10 @@ After adding prefixes rebuild of database have to be performed.
 sub add {
 	my ($self, $prefix, $value) = @_;
 
-	# IPv4 addresses (x.x.x.x/p) are converted to IPv6 ::x.x.x.x/(128 - 32 + p) format 
-	my ($addr, $plen) = split('/', $prefix); 
-
-	my ($type, $addr_bin) = format_addr($self, $addr);
-	$addr_bin = pack('C', $type).$addr_bin;
-
-	if (!defined($plen)) {
-		$plen = 128 if ($type == AF_INET6);
-		$plen = 32 if ($type == AF_INET);
-	}
-
-#	if ($type == AF_INET) {
-#		$plen = 128 - 32 + $plen;
-#	}
-
-	# invalid conversion
-	return undef if ( !defined($addr_bin) || !defined($value) );
-
-	# add to prefix structure 
-	$self->{PREFIXES}->{$plen}->{$addr_bin} = $value ; 
-
-	return 1;
+#	printf "PPP: %s %s %s\n", $self->{handle}, $prefix, $value;
+	return lpm_add($self->{handle}, $prefix, $value);
 }
 
-sub get_range {
-	my ($self, $prefix, $plen) = @_;
-
-	my ($type, $addr_bin) = unpack("CB*", $prefix);
-
-	my $addrlen = ($type == AF_INET6) ? 128 : 32;
-	
-	my $first = substr($addr_bin, 0, $plen) . "0"x($addrlen - $plen);
-	my $last = substr($addr_bin, 0, $plen) . "1"x($addrlen - $plen);
-
-	return (pack("CB*", $type, $first).V0, pack("CB*", $type, $last).VF);
-}
-	
 =head2 rebuild - Rebuild Prefix Database
 
  
@@ -213,41 +194,6 @@ Returns 1 if the the rebuild was succesfull or 0 if something wrong happend.
 =cut 
 
 sub rebuild {
-	my ($self, $addr) = @_;
-
-	# initalize whole range as undef
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, '::').V0, '');
-	$self->{DB}->put(pack('C', AF_INET6).inet_pton(AF_INET6, 'FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF').VF, '');
-
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '0.0.0.0').V0, '');
-	$self->{DB}->put(pack('C', AF_INET).inet_pton(AF_INET, '255.255.255.255').VF, '');
-
-	foreach my $plen ( sort { $a <=> $b } keys %{$self->{PREFIXES}} ) {
-		while ( my ($prefix, $value) = each ( %{$self->{PREFIXES}->{$plen}} ) ) {
-			my ($first, $last) = $self->get_range($prefix, $plen);
-			
-			# try to find longer prefix
-			my $up_val = undef;
-			my $up_key = $first.V0;
-    		my $st1 = $self->{DB}->seq($up_key, $up_val, R_CURSOR);
-    		my $st2 = $self->{DB}->seq($up_key, $up_val, R_PREV);
-
-#			printf "NEW: %s , %s -> %s\n", unpack("H*", $first), unpack("H*", $last), $value;
-#			printf "UP : %s -> %s\n", unpack("H*", $up_key), $up_val;
-
-			#  inserted prefix            first |-----value-----| last 
-			#  up prefix        up_key |----------up_val------------------| 
-			#  result           up_key |-up_val-|-----value-----|-up_val----|
-			#                                   first           last + 1 	
-			if ($st1 == 0 && $st2 == 0) {
-#			if ($st1 == 0) {
-				$self->{DB}->put($last, $up_val);
-				$self->{DB}->put($first, $value);
-			} else {	# prefix not in a database yet 
-				croak "This should never happen!!";
-			}
-		}
-	}
 }
 
 =head2  lookup - Lookup Address
@@ -265,13 +211,7 @@ Before lookups are performed the database have to be rebuilded by C<$lpm-E<gt>re
 sub lookup {
 	my ($self, $addr) = @_;
 
-	my ($type, $addr_bin) = format_addr($self, $addr);
-
-	return undef if (! defined($addr_bin) );
-
-	my $result = $self->_lookup_raw($addr_bin);
-	return undef if length($result) == 0;
-	return $result;
+	return lpm_lookup($self->{handle}, $addr);
 }
 
 =head2  lookup_raw - Lookup Address in raw format
@@ -285,33 +225,10 @@ nescessary.
 
 =cut 
 
-sub _lookup_raw {
-	my ($self, $addr_bin) = @_;
-
-	if (length($addr_bin) == 4) {
-		$addr_bin = V4P.$addr_bin.VF;
-	} else {
-		$addr_bin = V6P.$addr_bin.VF;
-	}
-
-	my ($key, $value);
-	
-    my $st1 = $self->{DB}->seq($addr_bin, $value, R_CURSOR);
-    my $st2 = $self->{DB}->seq($addr_bin, $value, R_PREV);
-
-	if ($st1 == 0 && $st2 == 0 ) {
-		return $value;
-	}
-
-	return undef;
-}
-
 sub lookup_raw {
 	my ($self, $addr_bin) = @_;
 
-	my $result = $self->_lookup_raw($addr_bin);
-	return undef if length($result) == 0;
-	return $result;
+	return lpm_lookup_raw($self->{handle}, $addr_bin);
 }
 
 =head2  lookup_cache_raw - Lookup Address in raw format with cache
@@ -333,15 +250,29 @@ NOTE: Cache entries are stored into memory, so it can lead to unexpected memory 
 sub lookup_cache_raw {
 	my ($self, $addr_bin) = @_;
 
-	my $result = $self->{CACHE}->{$addr_bin};
+	return lpm_lookup_raw($self->{handle}, $addr_bin);
 
-	if (!defined($result)) {
-		$result = $self->_lookup_raw($addr_bin);
-		$self->{CACHE}->{$addr_bin} = $result;
-	}
+#	my $result = $self->{CACHE}->{$addr_bin};
 
-	return undef if ( ! defined($result) || length($result) == 0 );
-	return $result;
+#	if (!defined($result)) {
+#		$result = $self->_lookup_raw($addr_bin);
+#		$self->{CACHE}->{$addr_bin} = $result;
+#	}
+
+#	return undef if ( ! defined($result) || length($result) == 0 );
+#	return $result;
+}
+
+sub finish {
+	my ($self) = @_;
+
+	lpm_finish($self->{handle});
+}	
+
+sub DESTROY {
+	my ($self) = @_;
+
+	lpm_destroy($self->{handle});
 }	
 
 =head1 SEE ALSO
