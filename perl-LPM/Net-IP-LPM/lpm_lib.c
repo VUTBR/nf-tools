@@ -337,33 +337,42 @@ lpm_instance_t *instance;
 
 int lpm_add(int handle, char *prefix, SV *value) {
 lpm_instance_t *instance = lpm_instances[handle];
-char *strPrefix = NULL;
+//char *strPrefix = NULL;
 char *strPrefixLen = NULL;
 unsigned int prefixLen;
 unsigned char buf[16];
+int i = 0;
 
 	if (instance == NULL ) {
 		croak("handler %d not initialized");
 		return 0;
 	}
 
-
-	strPrefix = strtok_r(prefix, "/", &strPrefixLen);       
+//	strPrefix = prefix;
+	while (prefix[i] != '/' && prefix[i] != '\0') {
+		i++;	
+		if (prefix[i] == '\0') {
+			strPrefixLen = prefix + i;
+		} else if (prefix[i] == '/') {
+			prefix[i] = '\0';
+			strPrefixLen = prefix + i + 1;
+		}
+	}
         
-	if(strPrefix == NULL || strPrefixLen == NULL){
-		croak("Invalid prefix %s", prefix);
+	if(prefix == NULL || strPrefixLen == NULL){
+		croak("Invalid prefix %s %s", prefix, strPrefixLen);
 		return 0;
 	}
 
 	prefixLen = atoi(strPrefixLen);
 
-	if(inet_pton(AF_INET, strPrefix, buf)){
+	if(inet_pton(AF_INET, prefix, buf)){
 		if (strPrefixLen[0] == '\0') { 
 			prefixLen = 32;
 		}
 		addPrefixToTrie(buf, prefixLen, value, &instance->pTrieIPV4);
 	}
-	else if(inet_pton(AF_INET6, strPrefix, buf)){ // IPV6
+	else if(inet_pton(AF_INET6, prefix, buf)){ // IPV6
 		if (strPrefixLen[0] == '\0') { 
 			prefixLen = 128;
 		}
@@ -428,7 +437,7 @@ STRLEN len;
     }
     else if(len == 16){ // IPV6
       pTN = lookupAddress((void *)addr, 128, instance->pTrieIPV6);
-    }
+    } 
 
     if ( pTN == NULL ){
 		return &PL_sv_undef;
