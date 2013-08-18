@@ -15,6 +15,8 @@
 #define BUFFSIZE 60
 #define ALOCSIZE 100000
 
+#define HV_STORE_NV(r,k,v) (void)hv_store(r, k, strlen(k), newSVnv(v), 0)
+
 const int lastAlocIndex = ALOCSIZE - 1;  
 
 /// Structure of Node in Trie
@@ -76,6 +78,20 @@ void freeTrieNode(TTrieNode *pTN) {
 		freeTrieNode(pTN->pTN0);
 		freeTrieNode(pTN->pTN1);
 		free(pTN);
+	}
+}
+
+/* count the number of nodes in subtree */
+void countTrieNode(TTrieNode *pTN, int * totalNodes, int * valueNodes, int * trieBytes, int * dataBytes) {
+	if (pTN != NULL) {
+		if (pTN->hasValue) {
+			(*valueNodes)++;
+			(*dataBytes) += 0;
+		}
+		countTrieNode(pTN->pTN0, totalNodes, valueNodes, trieBytes, dataBytes);
+		countTrieNode(pTN->pTN1, totalNodes, valueNodes, trieBytes, dataBytes);
+		(*totalNodes)++;
+		(*trieBytes) += sizeof(struct TrieNode);
 	}
 }
 
@@ -340,7 +356,7 @@ unsigned char buf[16];
 int i = 0;
 
 	if (instance == NULL ) {
-		croak("handler %d not initialized");
+		croak("handler %d not initialized", handle);
 		return 0;
 	}
 
@@ -391,7 +407,7 @@ lpm_instance_t *instance = lpm_instances[handle];
 unsigned char addr[16];
 
 	if (instance == NULL ) {
-		croak("handler %d not initialized");
+		croak("handler %d not initialized", handle);
 		return NULL;
 	}
 
@@ -421,7 +437,7 @@ char *addr;
 STRLEN len;
 
 	if (instance == NULL ) {
-		croak("handler %d not initialized");
+		croak("handler %d not initialized", handle);
 		return NULL;
 	}
 
@@ -443,11 +459,47 @@ STRLEN len;
     }
 }
 
+SV * lpm_info(int handle) {
+lpm_instance_t *instance = lpm_instances[handle];
+int totalNodes, valueNodes, trieBytes, dataBytes;
+HV * res;
+
+	if (instance == NULL ) {
+		croak("handler %d not initialized", handle);
+		return &PL_sv_undef;
+	}
+
+	res = (HV *)sv_2mortal((SV *)newHV());
+
+	totalNodes = 0;
+	valueNodes = 0;
+	trieBytes = 0;
+	dataBytes = 0;
+	countTrieNode(instance->pTrieIPV4, &totalNodes, &valueNodes, &trieBytes, &dataBytes);
+	HV_STORE_NV(res, "ipv4_nodes_total", totalNodes);
+	HV_STORE_NV(res, "ipv4_nodes_value", valueNodes);
+	HV_STORE_NV(res, "ipv4_trie_bytes", trieBytes);
+//	HV_STORE_NV(res, "ipv4_data_bytes", dataBytes);
+
+	totalNodes = 0;
+	valueNodes = 0;
+	trieBytes = 0;
+	dataBytes = 0;
+	countTrieNode(instance->pTrieIPV6, &totalNodes, &valueNodes, &trieBytes, &dataBytes);
+	HV_STORE_NV(res, "ipv6_nodes_total", totalNodes);
+	HV_STORE_NV(res, "ipv6_nodes_value", valueNodes);
+	HV_STORE_NV(res, "ipv6_trie_bytes", trieBytes);
+//	HV_STORE_NV(res, "ipv6_data_bytes", dataBytes);
+
+	return newRV((SV *)res);
+
+}
+
 void lpm_finish(int handle) {
 lpm_instance_t *instance = lpm_instances[handle];
 
 	if (instance == NULL ) {
-		croak("handler %d not initialized");
+		croak("handler %d not initialized", handle);
 		return;
 	}
 
@@ -468,7 +520,7 @@ void lpm_destroy(int handle) {
 lpm_instance_t *instance = lpm_instances[handle];
 
 	if (instance == NULL ) {
-		croak("handler %d not initialized");
+		croak("handler %d not initialized", handle);
 		return;
 	}
 

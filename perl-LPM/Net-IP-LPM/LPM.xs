@@ -29,10 +29,17 @@ lpm_lookup(handle, addr)
 	int handle
 	char *addr
 
+
 SV * 
 lpm_lookup_raw(handle, addr)
 	int handle
 	SV *addr
+
+
+SV * 
+lpm_info(handle)
+	int handle
+
 
 void 
 lpm_finish(handle)

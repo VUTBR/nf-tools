@@ -1,9 +1,10 @@
 Revision history for Perl extension Net::IP::LPM.
 
-1.01_01 Fri Sept 16 2013
+1.02 Fri Sept 16 2013
 	- critical part of code moved to C
 	- algo changed from prefix search to Trie 
 	- significant performance increase (5-10 times faaster)
+	- methos ->info added 
 
 0.03  Fri Mar 15 2013
 	- byte order buf fix (bug appear when mathcing x.y.z.a/4 mask)

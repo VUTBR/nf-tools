@@ -17,10 +17,9 @@ use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 # test speed 
-my $cnt = 15000000;
+my $cnt = 9000000;
 
-unlink ("t/asns.db") if ( -f "t/asns.db" );
-my $lpm2 = Net::IP::LPM->new("t/asns.db");
+my $lpm2 = Net::IP::LPM->new();
 
 isa_ok($lpm2, 'Net::IP::LPM', 'Constructor');
 
@@ -61,5 +60,11 @@ for (my $x = 0; $x < $cnt; $x++ ) {
 $t2 = time() - $t1;
 diag sprintf "SPEED: %d raw lookups in %d secs, %.2f lookups/s", $cnt, $t2, $cnt/$t2;
 
+
+my $info = $lpm2->info();
+diag "Trie info:";
+foreach ( sort keys %{$info} ) {
+	diag sprintf "   %s -> %s", $_, $info->{$_};
+}
 
 
