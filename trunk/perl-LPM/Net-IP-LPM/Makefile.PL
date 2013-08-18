@@ -21,7 +21,7 @@ WriteMakefile(
     #MYEXTLIB          => 'libnf/libnf$(LIB_EXT)',
     NORECURS          => 0,
     #CCFLAGS			  => '-std=c99 -Wall -pedantic -O3'
-    CCFLAGS			  => '-std=c99 -Wall -O3'
+    CCFLAGS			  => '-O3'
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,

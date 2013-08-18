@@ -1,7 +1,3 @@
-///Program: lpm.c
-///Autor: Martin Ministr
-///Datum: 10.2.2013
-//
 
 #include "EXTERN.h"
 #include "perl.h"
