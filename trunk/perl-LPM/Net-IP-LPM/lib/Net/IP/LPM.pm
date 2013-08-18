@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.01_02';
+our $VERSION = '1.01_04';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
@@ -74,7 +74,7 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match algorithm
 
   use Net::IP::LPM;
 
-  my $lpm = Net::IP::LPM->new("prefixes.db");
+  my $lpm = Net::IP::LPM->new();
 
   # add prefixes 
   $lpm->add('0.0.0.0/0', 'default');
@@ -88,8 +88,6 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match algorithm
   $lpm->add('2001:67c:1220:f565::1235/128', 'host36');
   $lpm->add('2001:67c:1220:f565::1236', 'host46');
 
-  # rebuild the database
-  $lpm->rebuild();
 
   printf $lpm->lookup('147.229.100.100'); # returns net1
   printf $lpm->lookup('147.229.3.10');    # returns host3
@@ -99,24 +97,14 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match algorithm
 =head1 DESCRIPTION
 
 The module Net::IP::LPM implements the Longest Prefix Matxh algo 
-for both IPv4 and IPv6 protocols. Module divides prefixes into 
-intervals of numbers and them uses range search to match proper 
-prefix. 
-
-
-Module also allows to store builded database into file. It is usefull 
-when the module is used on large database (for example full BGP tables 
-containing over half of milion records) when initial building can take 
-long time (a few seconds). The separate script can  
-download and prepare prebuilded database and another one can just use
-the prepared database and perform fast lookups. 
+for both IPv4 and IPv6 protocols.  The module uses Trie algo. 
 
 =head1 PERFORMANCE
 
-The module is able to match  ~ 180 000 lookups (or 300 000 with cache enables) 
+The module is able to match  ~ 1 mln. lookups  
 per second on complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
 hardware (2.4GHz Xeon CPU). For more detail you can try make test on module source
-to check performance on your system.
+to check performance on your system. Module supports both IPv4 and IPv6 protocol.
 
 =head1 CLASS METHODS
 
@@ -124,11 +112,9 @@ to check performance on your system.
 =head2  new - Class Constructor
 
 
-  $lpm = Net::IP::LPM->new( [ $filename ] );
+  $lpm = Net::IP::LPM->new( );
 
-Constructs a new Net::IP::LPM object. The F<$filename> can be specified as the 
-database of prebuilded prefixes. If the file name is not handled the whole 
-structure will be stored into the memory. 
+Constructs a new Net::IP::LPM object. 
 
 =cut 
 sub new {
@@ -164,13 +150,11 @@ sub format_addr {
 
 =head2 add - Add Prefix
 
-
    $code = $lpm->add( $prefix, $value );
 
 Adds prefix B<$prefix> into database with value B<$value>. Returns 1 if 
 the prefix was added sucesfully. Returns 0 when some error happens (typically wrong address formating).
 
-After adding prefixes rebuild of database have to be performed. 
 =cut 
 sub add {
 	my ($self, $prefix, $value) = @_;
@@ -179,20 +163,7 @@ sub add {
 	return lpm_add($self->{handle}, $prefix, $value);
 }
 
-=head2 rebuild - Rebuild Prefix Database
-
- 
-  $code = $lpm->rebuild();
-
-Rebuilds the database. After adding new prefixes the database have to 
-be rebuilded before lookups are performed. Depends on the F<$filename>
-handled in the constructor the database will be stored into F<$filename> or
-keept in the memory if the file name was nos specified. 
-
-Returns 1 if the the rebuild was succesfull or 0 if something wrong happend. 
-
-=cut 
-
+# legacy code
 sub rebuild {
 }
 
@@ -231,38 +202,40 @@ sub lookup_raw {
 	return lpm_lookup_raw($self->{handle}, $addr_bin);
 }
 
-=head2  lookup_cache_raw - Lookup Address in raw format with cache
-
- 
-  $value = $lpm->lookup_cache_raw( $address );
-
-Same as C<$lpm-E<gt>lookup_raw> but the cache is used to speed up lookups. 
-It might be usefull when there is big probability that lookup 
-for the same address will be porformed more often.  
-
-The cache becomes effective when the ratio of hit cache entries is bigger 
-than 50%. For less hit ratio the overhead discard the cache benefits. 
-
-NOTE: Cache entries are stored into memory, so it can lead to unexpected memory comsumption. 
-
-=cut 
+# legacy code
 
 sub lookup_cache_raw {
 	my ($self, $addr_bin) = @_;
 
 	return lpm_lookup_raw($self->{handle}, $addr_bin);
 
-#	my $result = $self->{CACHE}->{$addr_bin};
-
-#	if (!defined($result)) {
-#		$result = $self->_lookup_raw($addr_bin);
-#		$self->{CACHE}->{$addr_bin} = $result;
-#	}
-
-#	return undef if ( ! defined($result) || length($result) == 0 );
-#	return $result;
 }
 
+=head2  info - Returns information about builded trie 
+
+  $ref = $lpm->info();
+
+Returns following items 
+
+  ipv4_nodes_total - total number of allocated nodes in trie
+  ipv4_nodes_value - number of allocated nodes in trie that have stored some value 
+  ipv4_trie_bytes - number of allocated for trie nodes (withnout data)
+  ipv6_ - same for IPv6 
+
+=cut 
+
+sub info {
+	my ($self) = @_;
+
+	return lpm_info($self->{handle});
+}	
+
+=head2  finish - Release all data in object
+
+ 
+  $lpm->finish();
+
+=cut 
 sub finish {
 	my ($self) = @_;
 
