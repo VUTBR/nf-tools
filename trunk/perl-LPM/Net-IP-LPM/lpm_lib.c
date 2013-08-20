@@ -347,48 +347,23 @@ lpm_instance_t *instance;
 	return handle;
 }
 
-int lpm_add(int handle, char *prefix, SV *value) {
+int lpm_add_raw(int handle, SV * svprefix, int prefix_len, SV *value) {
 lpm_instance_t *instance = lpm_instances[handle];
-//char *strPrefix = NULL;
-char *strPrefixLen = NULL;
-unsigned int prefixLen;
-unsigned char buf[16];
-int i = 0;
+STRLEN len;
+char * prefix;
 
 	if (instance == NULL ) {
 		croak("handler %d not initialized", handle);
 		return 0;
 	}
 
-//	strPrefix = prefix;
-	while (prefix[i] != '/' && prefix[i] != '\0') {
-		i++;	
-		if (prefix[i] == '\0') {
-			strPrefixLen = prefix + i;
-		} else if (prefix[i] == '/') {
-			prefix[i] = '\0';
-			strPrefixLen = prefix + i + 1;
-		}
-	}
-        
-	if(prefix == NULL || strPrefixLen == NULL){
-		croak("Invalid prefix %s %s", prefix, strPrefixLen);
-		return 0;
-	}
+	prefix = SvPV(svprefix, len);
 
-	prefixLen = atoi(strPrefixLen);
-
-	if(inet_pton(AF_INET, prefix, buf)){
-		if (strPrefixLen[0] == '\0') { 
-			prefixLen = 32;
-		}
-		addPrefixToTrie(buf, prefixLen, value, &instance->pTrieIPV4);
-	}
-	else if(inet_pton(AF_INET6, prefix, buf)){ // IPV6
-		if (strPrefixLen[0] == '\0') { 
-			prefixLen = 128;
-		}
-		addPrefixToTrie(buf, prefixLen, value, &instance->pTrieIPV6);
+	if (len == 4){
+		addPrefixToTrie((void *)prefix, prefix_len, value, &instance->pTrieIPV4);
+	} 
+	else if (len == 16) {
+		addPrefixToTrie((void *)prefix, prefix_len, value, &instance->pTrieIPV6);
 	}
 	else{ // Corrupted input file
 		croak("Cannot add prefix %s", prefix);
@@ -397,35 +372,6 @@ int i = 0;
 	
 	/* included code */
 	return 1;
-}
-
-SV *lpm_lookup(int handle, char *straddr) {
-lpm_instance_t *instance = lpm_instances[handle];
-//SV *out = NULL;
-//char buf[BUFFSIZE];
-//char *buf = NULL;
-unsigned char addr[16];
-
-	if (instance == NULL ) {
-		croak("handler %d not initialized", handle);
-		return NULL;
-	}
-
-	TTrieNode *pTN = NULL;
-    
-    if(inet_pton(AF_INET, straddr, addr)){
-      pTN = lookupAddress(addr, 32, instance->pTrieIPV4);
-    }
-    else if(inet_pton(AF_INET6, straddr, addr)){ // IPV6
-      pTN = lookupAddress(addr, 128, instance->pTrieIPV6);
-    }
-
-    if ( pTN == NULL ){
-		return &PL_sv_undef;
-    } else {
-		SvREFCNT_inc(pTN->Value);
-		return pTN->Value;
-    }
 }
 
 SV *lpm_lookup_raw(int handle, SV *svaddr) {

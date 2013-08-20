@@ -18,16 +18,11 @@ lpm_init()
 
 
 int 
-lpm_add(handle, prefix, value)
+lpm_add_raw(handle, prefix, prefix_len, value)
 	int handle
-	char *prefix
+	SV *prefix
+	int prefix_len
 	SV *value
-
-
-SV * 
-lpm_lookup(handle, addr)
-	int handle
-	char *addr
 
 
 SV * 
