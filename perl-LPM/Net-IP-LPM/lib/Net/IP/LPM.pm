@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.01_04';
+our $VERSION = '1.03';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
@@ -130,20 +130,14 @@ sub new {
 
 # converts IPv4 and IPv6 address into common format 
 sub format_addr {
-	my ($self, $addr) = @_;
+	my ($addr) = @_;
 
-	my ($type);
-		
-	if (index($addr, ':') != -1) {
-		$type = AF_INET6;	
+	if ((my $addr_bin = inet_pton(AF_INET, $addr))) {
+		return $addr_bin;
 	} else {
-		$type = AF_INET;
+		return inet_pton(AF_INET6, $addr);
 	}
 
-	my $addr_bin = inet_pton($type, $addr);
-
-	return ($type, $addr_bin);
-	
 }
 
 =head1 OBJECT METHODS
@@ -160,7 +154,23 @@ sub add {
 	my ($self, $prefix, $value) = @_;
 
 #	printf "PPP: %s %s %s\n", $self->{handle}, $prefix, $value;
-	return lpm_add($self->{handle}, $prefix, $value);
+	my ($prefix_bin, $prefix_len);
+
+	($prefix, $prefix_len) = split('/', $prefix);	
+
+	if (! ($prefix_bin = inet_pton(AF_INET, $prefix)) ) {
+		$prefix_bin = inet_pton(AF_INET6, $prefix);
+	}
+
+	if (!defined($prefix_len)) {
+		if (length($prefix_bin) == 4) {
+			$prefix_len = 32;
+		} else {
+			$prefix_len = 128;
+		}
+	}
+
+	return lpm_add_raw($self->{handle}, $prefix_bin, $prefix_len, $value);
 }
 
 # legacy code
@@ -181,8 +191,14 @@ Before lookups are performed the database have to be rebuilded by C<$lpm-E<gt>re
 
 sub lookup {
 	my ($self, $addr) = @_;
+	my $addr_bin;
 
-	return lpm_lookup($self->{handle}, $addr);
+	if (! ($addr_bin = inet_pton(AF_INET, $addr)) ) {
+		$addr_bin = inet_pton(AF_INET6, $addr);
+	}
+
+	return lpm_lookup_raw($self->{handle}, $addr_bin);
+#	return lpm_lookup($self->{handle}, $addr);
 }
 
 =head2  lookup_raw - Lookup Address in raw format
@@ -197,17 +213,17 @@ nescessary.
 =cut 
 
 sub lookup_raw {
-	my ($self, $addr_bin) = @_;
+#	my ($self, $addr_bin) = @_;
 
-	return lpm_lookup_raw($self->{handle}, $addr_bin);
+	return lpm_lookup_raw($_[0]->{handle}, $_[1]);
 }
 
 # legacy code
 
 sub lookup_cache_raw {
-	my ($self, $addr_bin) = @_;
+#	my ($self, $addr_bin) = @_;
 
-	return lpm_lookup_raw($self->{handle}, $addr_bin);
+	return lpm_lookup_raw($_[0]->{handle}, $_[1]);
 
 }
 

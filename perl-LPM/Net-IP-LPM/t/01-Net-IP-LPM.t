@@ -5,7 +5,7 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-open(STDOUT, ">&STDERR");
+#open(STDOUT, ">&STDERR");
 
 use Test::More tests => 8;
 BEGIN { use_ok('Net::IP::LPM') };

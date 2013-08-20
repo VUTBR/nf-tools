@@ -4,9 +4,8 @@
 
 
 int lpm_init(void);
-int lpm_add(int handle, char *prefix, SV *value);
-SV * lpm_lookup(int handle, char *addr);
-SV *lpm_lookup_raw(int handle, SV *svaddr);
+int lpm_add_raw(int handle, SV * svprefix, int prefix_len, SV *value);
+SV * lpm_lookup_raw(int handle, SV *svaddr);
 void lpm_finish(int handle);
 void lpm_destroy(int handle);
 SV * lpm_info(int handle);
