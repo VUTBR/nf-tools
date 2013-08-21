@@ -102,7 +102,7 @@ to both protocols, IPv4 and IPv6.  The module uses Trie algo.
 =head1 PERFORMANCE
 
 The module is able to match  ~ 1 mln. lookups  
-per second to a complete Internet BGP table (aprox 500 000 prefixes) using a common 
+per second to a complete Internet BGP table (approx. 500,000 prefixes) using a common 
 hardware (2.4GHz Xeon CPU). For more detail, make a test on the module source
 to check its performance on your system. Module supports both, IPv4 and IPv6 protocols.
 
