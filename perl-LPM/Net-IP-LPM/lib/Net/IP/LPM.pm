@@ -96,15 +96,15 @@ Net::IP::LPM - Perl implementation of Longest Prefix Match algorithm
 
 =head1 DESCRIPTION
 
-The module Net::IP::LPM implements the Longest Prefix Matxh algo 
-for both IPv4 and IPv6 protocols.  The module uses Trie algo. 
+The module Net::IP::LPM implements the Longest Prefix Match algorithm 
+to both protocols, IPv4 and IPv6.  The module uses Trie algo. 
 
 =head1 PERFORMANCE
 
 The module is able to match  ~ 1 mln. lookups  
-per second on complete Internet BGP table (aprox 500 000 prefixes) on ordinary 
-hardware (2.4GHz Xeon CPU). For more detail you can try make test on module source
-to check performance on your system. Module supports both IPv4 and IPv6 protocol.
+per second to a complete Internet BGP table (aprox 500 000 prefixes) using a common 
+hardware (2.4GHz Xeon CPU). For more detail, make a test on the module source
+to check its performance on your system. Module supports both, IPv4 and IPv6 protocols.
 
 =head1 CLASS METHODS
 
@@ -146,8 +146,8 @@ sub format_addr {
 
    $code = $lpm->add( $prefix, $value );
 
-Adds prefix B<$prefix> into database with value B<$value>. Returns 1 if 
-the prefix was added sucesfully. Returns 0 when some error happens (typically wrong address formating).
+Adds a prefix B<$prefix> into the database with value B<$value>. Returns 1 if 
+the prefix was added successfully. Returns 0 when an error occurs (typically the wrong address formating).
 
 =cut 
 sub add {
@@ -182,10 +182,10 @@ sub rebuild {
  
   $value = $lpm->$lookup( $address );
 
-Lookups the prefix in the database and returns the value. If the prefix is
-not found or error ocured the undef value is returned. 
+Looks up the prefix in the database and returns the value. If the prefix is
+not found or an error occured, the undef value is returned. 
 
-Before lookups are performed the database have to be rebuilded by C<$lpm-E<gt>rebuild()> operation. 
+Before lookups are performed the database has to be rebuilt by C<$lpm-E<gt>rebuild()> operation. 
 
 =cut 
 
@@ -206,9 +206,9 @@ sub lookup {
  
   $value = $lpm->lookup_raw( $address );
 
-Same as C<$lpm-E<gt>lookup> but takes $address in raw format (result of inet_ntop function). It is 
-more effective than C<$lpm-E<gt>lookup>, because convertion from text format is not 
-nescessary. 
+The same case as C<$lpm-E<gt>lookup> but it takes $address in raw format (result of the inet_ntop function). It is 
+more effective than C<$lpm-E<gt>lookup>, because the conversion from text format is not 
+necessary. 
 
 =cut 
 
@@ -227,7 +227,7 @@ sub lookup_cache_raw {
 
 }
 
-=head2  info - Returns information about builded trie 
+=head2  info - Returns information about the built trie 
 
   $ref = $lpm->info();
 
@@ -235,8 +235,8 @@ Returns following items
 
   ipv4_nodes_total - total number of allocated nodes in trie
   ipv4_nodes_value - number of allocated nodes in trie that have stored some value 
-  ipv4_trie_bytes - number of allocated for trie nodes (withnout data)
-  ipv6_ - same for IPv6 
+  ipv4_trie_bytes - number of bytes allocated for trie nodes (without data)
+  ipv6_ - the same for IPv6 
 
 =cut 
 
@@ -266,9 +266,9 @@ sub DESTROY {
 
 =head1 SEE ALSO
 
-There are also other implementation of Longest Prefix Matxh in perl. However 
-most of them have some disadvantage (poor performance, lack of support for IPv6
-or requires a lot of time for initial database building). However in some cases 
+There are also other implementations of the Longest Prefix Match in Perl. However, 
+most of them have some disadvantages (poor performance, lack of support for IPv6
+or require a lot of time for initial database building). However, in some cases 
 it might be usefull:
 
 L<Net::IPTrie>
@@ -292,7 +292,7 @@ Brno University of Technology
 
 Copyright (C) 2012, Brno University of Technology
 
-This library is free software; you can redistribute it and/or modify
+This library is a free software; you can redistribute it and/or modify
 it under the same terms as Perl itself.
 
 
