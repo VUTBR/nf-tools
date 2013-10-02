@@ -1,12 +1,19 @@
 Revision history for Perl extension Net::IP::LPM.
 
+1.05 Wen Nov 1 2013
+	- crashes on emty database
+
+1.04 Mon Sept 26 2013
+	- language corrections 
+	- doc updated 
+
 1.03 Tue Sept 20 2013
 	- code update to work on Windows platform 
 	- removed dependencu on DBFile package 
 	- little performance increased (4-5%)
 
 1.02 Fri Sept 16 2013
-	- critical part of code moved to C
+	- critical part of code moved to C (thanks to Martin Ministr)
 	- algo changed from prefix search to Trie 
 	- significant performance increase (5-10 times faaster)
 	- methos ->info added 

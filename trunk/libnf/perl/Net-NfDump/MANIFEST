@@ -29,6 +29,8 @@ t/07-nel-nsel.t
 t/10-performance.t
 t/record_v4
 t/record_v6
+t/data1
+t/data2
 examples/example1.pl
 examples/download_asn_db
 examples/nf_asn_geo_update

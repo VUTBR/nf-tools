@@ -191,6 +191,10 @@ TTrieNode *lookupAddress(unsigned char *address, int addrLen, TTrieNode *pTN){
   unsigned char bit = 128; // most significant bit 
 //  TTrieNode *pTN = pTrieIPV6;
   TTrieNode *pTNValue = NULL; 
+
+  if (pTN == NULL) {
+  	return NULL;
+  }
   
   unsigned char addrPassed = 0;
   while(addrPassed++ <= addrLen){
