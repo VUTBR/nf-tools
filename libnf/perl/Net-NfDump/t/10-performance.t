@@ -11,7 +11,7 @@ require "t/ds.pl";
 diag "";
 diag "Testing  performance, it will take while...";
 diag "Method \$obj->storerow_hashref():";
-my $recs = 3000000;
+my $recs = 300000;
 
 my %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
 
@@ -44,7 +44,7 @@ while (my ($key, $val) = each %tests ) {
 }
 
 diag "Method  \$obj->storerow_arrayref():";
-$recs = 20000000;
+$recs = 2000000;
 
 %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
 

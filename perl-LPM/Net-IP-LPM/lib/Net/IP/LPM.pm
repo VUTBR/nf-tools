@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.03';
+our $VERSION = '1.05';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
@@ -285,8 +285,7 @@ L<Net::CIDR::Compare>
 
 =head1 AUTHOR
 
-Tomas Podermanski E<lt>tpoder@cis.vutbr.czE<gt>
-Brno University of Technology
+Tomas Podermanski E<lt>tpoder@cis.vutbr.czE<gt>, Martin Ministr E<lt>leadersmash@email.czE<gt>, Brno University of Technology
 
 =head1 COPYRIGHT AND LICENSE
 

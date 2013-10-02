@@ -7,7 +7,7 @@
 
 #open(STDOUT, ">&STDERR");
 
-use Test::More tests => 8;
+use Test::More tests => 10;
 BEGIN { use_ok('Net::IP::LPM') };
 
 use Socket qw( AF_INET );
@@ -21,6 +21,12 @@ use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 my $lpm = Net::IP::LPM->new();
 
 isa_ok($lpm, 'Net::IP::LPM', 'Constructor');
+
+# testo on empty database 
+my $lpm_empty = Net::IP::LPM->new();
+
+ok( !defined($lpm_empty->lookup('1.2.3.4')),  'lookup on empty DB' );
+ok( !defined($lpm_empty->lookup('fe0::1')),  'lookup on empty DB' );
 
 # list of prefixes to test
 my @prefixes = ( 
