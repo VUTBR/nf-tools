@@ -171,16 +171,8 @@
 // pod:  =====================
 #define NFL_T_NAT_EVENT		"nevent"	// pod:  ## - NEL NAT Event
 #define NFL_I_NAT_EVENT		580
-#define NFL_T_POST_SRC_PORT		"nsrcport"	// pod:  ## - NEL NAT src port 
-#define NFL_I_POST_SRC_PORT		420
-#define NFL_T_POST_DST_PORT		"ndstport"	// pod:  ## - NEL NAT dst port
-#define NFL_I_POST_DST_PORT		430
 #define NFL_T_INGRESS_VRFID		"vrf"	// pod:  ## - NEL NAT ingress vrf id 
 #define NFL_I_INGRESS_VRFID		460
-#define NFL_T_NAT_INSIDE	"nsrcip"	// pod:  ## - NEL NAT inside address
-#define NFL_I_NAT_INSIDE	600
-#define NFL_T_NAT_OUTSIDE	"ndstip"	// pod:  ## - NEL NAT outside address
-#define NFL_I_NAT_OUTSIDE	610
 // pod:
 // pod:  Extra/special fields
 // pod:  =====================

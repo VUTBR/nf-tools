@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::NfDump.
 
+0.11 2013-11-26
+	- adjusted to nfdump 1.6.11
+
 0.10 2013-09-12
 	- decreased test length 
 

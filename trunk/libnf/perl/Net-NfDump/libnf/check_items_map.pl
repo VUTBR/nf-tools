@@ -186,6 +186,7 @@ foreach (@MAP_DESCR) {
 	# skip "Required extension" and extension with no description 
 	next if ($_->{'description'} =~ /^Required extension:/);
 	next if ($_->{'description'} =~ /^$/);
+	next if ($_->{'description'} =~ /Compat NEL/);
 
 	my $read = str_count($LIBNF_C_FUNC{'libnf_master_record_to_SV'}, $_->{'id'}); 
 	my $write = str_count($LIBNF_C_FUNC{'libnf_write_row'}, $_->{'id'}); 
@@ -211,6 +212,7 @@ foreach (@MASTER_RECORD) {
 	next if ($_->{'name'} =~ /type|size/); 
 	next if ($_->{'name'} =~ /u\d{2}_\d/);
 	next if ($_->{'name'} =~ /exporter_sysid/); 
+	next if ($_->{'name'} =~ /nat_flags/); 
 
 	my $read = str_count($LIBNF_C_FUNC{'libnf_master_record_to_SV'}, $_->{'name'}); 
 	my $write = str_count($LIBNF_C_FUNC{'libnf_write_row'}, $_->{'name'}); 

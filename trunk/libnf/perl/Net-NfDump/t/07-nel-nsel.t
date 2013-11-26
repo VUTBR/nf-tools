@@ -31,15 +31,15 @@ $DS{'v4_nel_nsel_txt'} = {
 
 	'username' => 'tpoder@vutbr.czxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
 	#NEL (NetFlow Event Logging) fields
-	'nevent' => 1,
-	'nsrcport' => 5555,
-	'ndstport' => 6666,
+#	'nevent' => 1,
+#	'nsrcport' => 5555,
+#	'ndstport' => 6666,
 
 # !!! BUG in NFDUMP PackRecord and Expand record doesn't work 
-	'vrf' => 1,
+#	'vrf' => 1,
 
-	'nsrcip' => '192.168.1.6',
-	'ndstip' => '10.255.6.1'
+#	'nsrcip' => '192.168.1.6',
+#	'ndstip' => '10.255.6.1'
 };
 
 

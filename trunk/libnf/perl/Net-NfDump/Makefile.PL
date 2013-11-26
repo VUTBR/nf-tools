@@ -61,8 +61,8 @@ DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
 
 sub MY::postamble {
 '
-NFDUMP		= nfdump-1.6.10p1
-NFDUMP_MD5	= a3da6716b47ac7a0cae6ccd07c2e3a6d
+NFDUMP		= nfdump-1.6.11
+NFDUMP_MD5	= 2b90d9f799d7f16b854485dffbe08e54
 NFDUMP_SRC	= $(NFDUMP).tar.gz
 NFDUMP_URL	= http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP_SRC)
 
@@ -89,7 +89,7 @@ nfdump: $(NFDUMP).tar.gz
 		# nfdump gzip contains object files, so we rid them off
 		$(RM_F) nfdump/bin/nfdump
 		$(RM_F) nfdump/bin/*.o
-		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel --enable-nel && cd bin && make nfdump
+		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
 		$(RM_F) nfdump/bin/*.o
 
 $(MYEXTLIB): nfdump libnf/Makefile

@@ -19,7 +19,7 @@ WriteMakefile(
 		'../nfdump/bin/flist.c', 
 		'../nfdump/bin/nf_common.c', 
 		],	
-	CCFLAGS => '-DNSEL=1 -DNEL=1 -D__SUNPRO_C=1 ', # see note 
+	CCFLAGS => '-DNSEL=1 -D__SUNPRO_C=1 ', # see note 
 #	CCFLAGS => '-D__SUNPRO_C=1', # see note 
 	clean => { 'FILES' => '*$(LIB_EXT) *$(OBJ_EXT) $(O_FILES)' },
 );
