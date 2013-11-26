@@ -669,37 +669,17 @@ uint64_t t;
 						sv =  newSV(0);
 					}
 					break;
-#endif // 
 
 			// END OF NSEL 
 		
-#ifdef NEL	
 			// NEL support
 			case NFL_I_NAT_EVENT:
 					sv = uint_to_SV(rec->nat_event, 
 						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
 					break;
-			case NFL_I_POST_SRC_PORT:
-					sv = uint_to_SV(rec->post_src_port, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
-			case NFL_I_POST_DST_PORT:
-					sv = uint_to_SV(rec->post_dst_port, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
 			case NFL_I_INGRESS_VRFID:
 					sv = uint_to_SV(rec->ingress_vrfid, 
 						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
-			case NFL_I_NAT_INSIDE:
-					sv = ip_addr_to_SV(&rec->nat_inside, rec->nat_flags,
-						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
-					break;
-			case NFL_I_NAT_OUTSIDE:
-					sv = ip_addr_to_SV(&rec->nat_outside, rec->nat_flags,
-						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NEL_GLOBAL_IP_v6) );
 					break;
 
 			// END OF NEL 
@@ -1601,60 +1581,16 @@ uint64_t t;
 						}
 					}
 					break;
-#endif 
 			// END OF NSEL 
 			
 			// NEL support
-#ifdef NEL
 			case NFL_I_NAT_EVENT:
 					rec->nat_event = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-			case NFL_I_POST_SRC_PORT:
-					rec->post_src_port = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-			case NFL_I_POST_DST_PORT:
-					rec->post_dst_port = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
 					break;
 			case NFL_I_INGRESS_VRFID:
 					rec->ingress_vrfid = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-			case NFL_I_NAT_INSIDE:
-					res = SV_to_ip_addr((ip_addr_t *)&rec->nat_inside, sv);
-					switch (res) {
-						case AF_INET:
-							rec->nat_flags = 0;
-							bit_array_set(&instance->ext_w, EX_NEL_GLOBAL_IP_v4, 1);
-							break;
-					case AF_INET6:
-							rec->nat_flags = 1;
-							bit_array_set(&instance->ext_w, EX_NEL_GLOBAL_IP_v6, 1);
-							break;
-					default: 
-						warn("%s invalid value for %s", NFL_LOG, NFL_T_NAT_INSIDE);
-						bit_array_clear(&instance->ext_w);
-						return 0;
-					}
-					break;
-			case NFL_I_NAT_OUTSIDE:
-					res = SV_to_ip_addr((ip_addr_t *)&rec->nat_outside, sv);
-					switch (res) {
-						case AF_INET:
-							rec->nat_flags = 0;
-							bit_array_set(&instance->ext_w, EX_NEL_GLOBAL_IP_v4, 1);
-							break;
-					case AF_INET6:
-							rec->nat_flags = 1;
-							bit_array_set(&instance->ext_w, EX_NEL_GLOBAL_IP_v6, 1);
-							break;
-					default: 
-						warn("%s invalid value for %s", NFL_LOG, NFL_T_NAT_OUTSIDE);
-						bit_array_clear(&instance->ext_w);
-						return 0;
-					}
 					break;
 #endif 
 

@@ -35,7 +35,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.11';
+our $VERSION = '0.12';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -1128,11 +1128,7 @@ sub file_info {
   NEL (NetFlow Event Logging) fields
   =====================
   nevent - NEL NAT Event
-  nsrcport - NEL NAT src port 
-  ndstport - NEL NAT dst port
   vrf - NEL NAT ingress vrf id 
-  nsrcip - NEL NAT inside address
-  ndstip - NEL NAT outside address
 
   Extra/special fields
   =====================
