@@ -126,8 +126,8 @@
 // pod:
 // pod:  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
 // pod:  =====================
-#define NFL_T_FLOW_START	"flowstart"	// pod:  ## - NSEL The time that the flow was created
-#define NFL_I_FLOW_START	520
+#define NFL_T_EVENT_TIME	"eventtime"	// pod:  ## - NSEL The time that the flow was created
+#define NFL_I_EVENT_TIME	520
 #define NFL_T_CONN_ID		"connid"	// pod:  ## - NSEL An identifier of a unique flow for the device 
 #define NFL_I_CONN_ID		410
 
@@ -135,8 +135,6 @@
 #define NFL_I_ICMP_CODE		450
 #define NFL_T_ICMP_TYPE		"icmptype"	// pod:  ## - NSEL ICMP type value 
 #define NFL_I_ICMP_TYPE		440
-#define NFL_T_FW_EVENT		"event"	// pod:  ## - NSEL High-level event code
-#define NFL_I_FW_EVENT		500
 #define NFL_T_FW_XEVENT		"xevent"	// pod:  ## - NSEL Extended event code
 #define NFL_I_FW_XEVENT		510
 
@@ -169,10 +167,21 @@
 // pod:
 // pod:  NEL (NetFlow Event Logging) fields
 // pod:  =====================
-#define NFL_T_NAT_EVENT		"nevent"	// pod:  ## - NEL NAT Event
-#define NFL_I_NAT_EVENT		580
 #define NFL_T_INGRESS_VRFID		"vrf"	// pod:  ## - NEL NAT ingress vrf id 
 #define NFL_I_INGRESS_VRFID		460
+// pod:
+// pod:  NEL Port Block Allocation (added 2014-04-19)
+// pod:  =====================
+#define NFL_T_EVENT_FLAG		"eventflag"	// pod:  ## - 
+#define NFL_I_EVENT_FLAG		720	
+#define NFL_T_EGRESS_VRFID		"egressvrfid"// pod:  ## - 
+#define NFL_I_EGRESS_VRFID		730	
+#define NFL_T_BLOCK_START		"blockstart"// pod:  ## - 
+#define NFL_I_BLOCK_START		740	
+#define NFL_T_BLOCK_END			"blockend"// pod:  ## - 
+#define NFL_I_BLOCK_END			750	
+#define NFL_T_BLOCK_STEP		"blockstep"// pod:  ## - 
+#define NFL_I_BLOCK_STEP		760	
 // pod:
 // pod:  Extra/special fields
 // pod:  =====================

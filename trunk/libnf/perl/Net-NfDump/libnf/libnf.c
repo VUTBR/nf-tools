@@ -595,8 +595,8 @@ uint64_t t;
 
 			// NSEL 
 #ifdef NSEL
-			case NFL_I_FLOW_START:
-					sv = uint64_to_SV(rec->flow_start, 
+			case NFL_I_EVENT_TIME:
+					sv = uint64_to_SV(rec->event_time, 
 						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
 					break;
 			case NFL_I_CONN_ID:
@@ -609,10 +609,6 @@ uint64_t t;
 					break;
 			case NFL_I_ICMP_TYPE:
 					sv = uint_to_SV(rec->icmp_type, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_FW_EVENT:
-					sv = uint_to_SV(rec->fw_event, 
 						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
 					break;
 			case NFL_I_FW_XEVENT:
@@ -673,10 +669,6 @@ uint64_t t;
 			// END OF NSEL 
 		
 			// NEL support
-			case NFL_I_NAT_EVENT:
-					sv = uint_to_SV(rec->nat_event, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
 			case NFL_I_INGRESS_VRFID:
 					sv = uint_to_SV(rec->ingress_vrfid, 
 						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
@@ -685,6 +677,29 @@ uint64_t t;
 			// END OF NEL 
 #endif // NEL 
 
+			// EX_PORT_BLOCK_ALLOC - added 2014-04-19
+			case NFL_I_EVENT_FLAG:
+					sv = uint_to_SV(rec->event_flag, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+			case NFL_I_EGRESS_VRFID:
+					sv = uint_to_SV(rec->egress_vrfid, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+			case NFL_I_BLOCK_START:
+					sv = uint_to_SV(rec->block_start, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+			case NFL_I_BLOCK_END:
+					sv = uint_to_SV(rec->block_end, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+			case NFL_I_BLOCK_STEP:
+					sv = uint_to_SV(rec->block_step, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+
+			// extra fileds
 			case NFL_I_CLIENT_NW_DELAY_USEC:
 					sv = uint64_to_SV(rec->client_nw_delay_usec, 
 						bit_array_get(&instance->ext_r, EX_LATENCY) );
@@ -1472,8 +1487,8 @@ uint64_t t;
 
 			// NSEL 
 #ifdef NSEL
-			case NFL_I_FLOW_START:
-					rec->flow_start = SvU64(sv);
+			case NFL_I_EVENT_TIME:
+					rec->event_time = SvU64(sv);
 					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
 					break;
 			case NFL_I_CONN_ID:
@@ -1486,10 +1501,6 @@ uint64_t t;
 					break;
 			case NFL_I_ICMP_TYPE:
 					rec->icmp_type = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_FW_EVENT:
-					rec->fw_event = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
 					break;
 			case NFL_I_FW_XEVENT:
@@ -1584,10 +1595,6 @@ uint64_t t;
 			// END OF NSEL 
 			
 			// NEL support
-			case NFL_I_NAT_EVENT:
-					rec->nat_event = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
 			case NFL_I_INGRESS_VRFID:
 					rec->ingress_vrfid = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
@@ -1596,7 +1603,29 @@ uint64_t t;
 
 			// END OF NEL 
 
+			// EX_PORT_BLOCK_ALLOC added 2014-04-19
+			case NFL_I_EVENT_FLAG:
+					rec->event_flag = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
+			case NFL_I_EGRESS_VRFID:
+					rec->egress_vrfid = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
+			case NFL_I_BLOCK_START:
+					rec->block_start = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
+			case NFL_I_BLOCK_END:
+					rec->block_end = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
+			case NFL_I_BLOCK_STEP:
+					rec->block_step = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
 
+			// extra fields
 			case NFL_I_CLIENT_NW_DELAY_USEC:
 					rec->client_nw_delay_usec = SvU64(sv);
 					bit_array_set(&instance->ext_w, EX_LATENCY, 1);

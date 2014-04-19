@@ -1105,11 +1105,10 @@ sub file_info {
 
   NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
   =====================
-  flowstart - NSEL The time that the flow was created
+  eventtime - NSEL The time that the flow was created
   connid - NSEL An identifier of a unique flow for the device 
   icmpcode - NSEL ICMP code value 
   icmptype - NSEL ICMP type value 
-  event - NSEL High-level event code
   xevent - NSEL Extended event code
   xsrcip - NSEL Mapped source IPv4 address 
   xdstip - NSEL Mapped destination IPv4 address 
@@ -1127,8 +1126,15 @@ sub file_info {
 
   NEL (NetFlow Event Logging) fields
   =====================
-  nevent - NEL NAT Event
   vrf - NEL NAT ingress vrf id 
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+  eventflag - 
+  egressvrfid// - 
+  blockstart// - 
+  blockend// - 
+  blockstep// - 
 
   Extra/special fields
   =====================
