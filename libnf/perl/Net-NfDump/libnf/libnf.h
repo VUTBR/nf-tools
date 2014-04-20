@@ -163,25 +163,26 @@
 #define NFL_I_EGRESS_XACE_ID	492
 #define NFL_T_USERNAME			"username"	// pod:  ## - NSEL username
 #define NFL_I_USERNAME			495
-
 // pod:
 // pod:  NEL (NetFlow Event Logging) fields
 // pod:  =====================
-#define NFL_T_INGRESS_VRFID		"vrf"	// pod:  ## - NEL NAT ingress vrf id 
-#define NFL_I_INGRESS_VRFID		460
+#define NFL_T_INGRESS_VRFID		"ingressvrfid"	// pod:  ## - NEL NAT ingress vrf id 
+#define NFL_I_INGRESS_VRFID		710
+#define NFL_T_EVENT_FLAG		"eventflag"		// pod:  ## -  NAT event flag (always set to 1 by nfdump)
+#define NFL_I_EVENT_FLAG		720	
+#define NFL_T_EGRESS_VRFID		"egressvrfid"	// pod:  ## -  NAT egress VRF ID
+#define NFL_I_EGRESS_VRFID		730	
 // pod:
 // pod:  NEL Port Block Allocation (added 2014-04-19)
 // pod:  =====================
-#define NFL_T_EVENT_FLAG		"eventflag"	// pod:  ## - 
-#define NFL_I_EVENT_FLAG		720	
-#define NFL_T_EGRESS_VRFID		"egressvrfid"// pod:  ## - 
-#define NFL_I_EGRESS_VRFID		730	
-#define NFL_T_BLOCK_START		"blockstart"// pod:  ## - 
+#define NFL_T_BLOCK_START		"blockstart"	// pod:  ## -  NAT pool block start
 #define NFL_I_BLOCK_START		740	
-#define NFL_T_BLOCK_END			"blockend"// pod:  ## - 
+#define NFL_T_BLOCK_END			"blockend"		// pod:  ## -  NAT pool block end 
 #define NFL_I_BLOCK_END			750	
-#define NFL_T_BLOCK_STEP		"blockstep"// pod:  ## - 
+#define NFL_T_BLOCK_STEP		"blockstep"		// pod:  ## -  NAT pool block step
 #define NFL_I_BLOCK_STEP		760	
+#define NFL_T_BLOCK_SIZE		"blocksize"		// pod:  ## -  NAT pool block size
+#define NFL_I_BLOCK_SIZE		770	
 // pod:
 // pod:  Extra/special fields
 // pod:  =====================

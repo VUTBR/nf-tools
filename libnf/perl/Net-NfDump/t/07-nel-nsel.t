@@ -10,18 +10,25 @@ require "t/ds.pl";
 
 $DS{'v4_nel_nsel_txt'} = { 
 	%{$DS{'v4_txt'}},
-	'flowstart' => time() * 1000,
+	'eventtime' => time() * 1000,
 	'connid' => 1000,
 	'icmpcode' => 1,
 	'icmptype' => 2, 
-	'event' => 3,
-	'xevent' => 4, 
+#	'event' => 3,
+	'xevent' => 5, 
 	'xsrcip' => '147.229.3.10',
 	'xdstip' => '147.229.3.11',
 	'xsrcport' => 2222,
 	'xdstport' => 3333,
+# added 2014-04-19
+	'eventflag' => 1,
+	'ingressvrfid' => 7,
+	'egressvrfid' => 2,
+	'blockstart' => 3333,
+	'blockend' => 3334,
+	'blockstep' => 6666,
+	'blocksize' => 6667,
 
-# another BUG 
 	'iacl' => 20,
 	'iace' => 30,
 	'ixace' => 40,
@@ -57,6 +64,12 @@ $flowr = new Net::NfDump(InputFiles => [ "t/v4_nel_nsel_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
 #	diag Dumper($DS{'v4_nel_nsel_txt'});
 #	diag Dumper(flow2txt($row));
+	my $rr = flow2txt($row);
+	foreach (keys %{$rr}) {
+		if ($DS{'v4_nel_nsel_txt'}->{$_} ne $rr->{$_}) {
+			diag sprintf "%s : %s -> %s\n", $_, $DS{'v4_nel_nsel_txt'}->{$_}, $rr->{$_};
+		}
+	}
 	ok( eq_hash( $DS{'v4_nel_nsel_raw'}, $row) );
 	ok( eq_hash( $DS{'v4_nel_nsel_txt'}, flow2txt($row)) );
 }

@@ -673,19 +673,19 @@ uint64_t t;
 					sv = uint_to_SV(rec->ingress_vrfid, 
 						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
 					break;
+			case NFL_I_EVENT_FLAG:
+					sv = uint_to_SV(rec->event_flag, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
+			case NFL_I_EGRESS_VRFID:
+					sv = uint_to_SV(rec->egress_vrfid, 
+						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
+					break;
 
 			// END OF NEL 
 #endif // NEL 
 
 			// EX_PORT_BLOCK_ALLOC - added 2014-04-19
-			case NFL_I_EVENT_FLAG:
-					sv = uint_to_SV(rec->event_flag, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
-			case NFL_I_EGRESS_VRFID:
-					sv = uint_to_SV(rec->egress_vrfid, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
 			case NFL_I_BLOCK_START:
 					sv = uint_to_SV(rec->block_start, 
 						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
@@ -696,6 +696,10 @@ uint64_t t;
 					break;
 			case NFL_I_BLOCK_STEP:
 					sv = uint_to_SV(rec->block_step, 
+						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
+					break;
+			case NFL_I_BLOCK_SIZE:
+					sv = uint_to_SV(rec->block_size, 
 						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
 					break;
 
@@ -1107,8 +1111,8 @@ begin:
 		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 		goto begin;
 
-	} else if ( instance->flow_record->type != CommonRecordType ) {
-		warn("%s Skip unknown record type %i\n", NFL_LOG, instance->flow_record->type);
+	} else if ( instance->flow_record->type != CommonRecordType && instance->flow_record->type != CommonRecordV0Type) {
+		warn("%s Skip unknown record type %d\n", NFL_LOG, instance->flow_record->type);
 		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 		goto begin;
 	}
@@ -1599,19 +1603,19 @@ uint64_t t;
 					rec->ingress_vrfid = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
 					break;
+			case NFL_I_EVENT_FLAG:
+					rec->event_flag = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
+					break;
+			case NFL_I_EGRESS_VRFID:
+					rec->egress_vrfid = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
+					break;
 #endif 
 
 			// END OF NEL 
 
 			// EX_PORT_BLOCK_ALLOC added 2014-04-19
-			case NFL_I_EVENT_FLAG:
-					rec->event_flag = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
-			case NFL_I_EGRESS_VRFID:
-					rec->egress_vrfid = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
 			case NFL_I_BLOCK_START:
 					rec->block_start = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
@@ -1622,6 +1626,10 @@ uint64_t t;
 					break;
 			case NFL_I_BLOCK_STEP:
 					rec->block_step = SvUV(sv);
+					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
+					break;
+			case NFL_I_BLOCK_SIZE:
+					rec->block_size = SvUV(sv);
 					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
 					break;
 
