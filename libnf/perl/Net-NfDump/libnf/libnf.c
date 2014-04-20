@@ -366,7 +366,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 HV *res;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -397,7 +397,7 @@ int i=0;
 uint64_t t;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -819,7 +819,7 @@ int i;
 	while (libnf_instances[handle] != NULL) {
 		handle++;
 		if (handle >= NFL_MAX_INSTANCES - 1) {
-			croak("% no free handles available, max instances %d reached", NFL_LOG, NFL_MAX_INSTANCES);
+			croak("%s no free handles available, max instances %d reached", NFL_LOG, NFL_MAX_INSTANCES);
 			return 0;	
 		}
 	}
@@ -828,7 +828,7 @@ int i;
 	memset(instance, 0, sizeof(libnf_instance_t));
 
 	if (instance == NULL) {
-		croak("% can not allocate memory for instance:", NFL_LOG );
+		croak("%s can not allocate memory for instance:", NFL_LOG );
 		return 0;
 	}
 
@@ -859,7 +859,7 @@ I32 last_field = 0;
 int i;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -906,7 +906,7 @@ I32 numfiles = 0;
 int i;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -960,7 +960,7 @@ int libnf_create_file(int handle, char *filename, int compressed, int anonymized
 libnf_instance_t *instance = libnf_instances[handle];
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -992,7 +992,7 @@ int match;
 uint32_t map_id;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -1179,12 +1179,12 @@ libnf_instance_t *instance = libnf_instances[handle];
 libnf_instance_t *src_instance = libnf_instances[src_handle];
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
 	if (src_instance == NULL ) {
-		croak("%s seource handler %d not initialized", NFL_LOG);
+		croak("%s seource handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -1206,7 +1206,7 @@ int i, res;
 uint64_t t;
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
 
@@ -1685,7 +1685,7 @@ void libnf_finish(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 
 	if (instance == NULL ) {
-		croak("%s handler %d not initialized", NFL_LOG);
+		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return;
 	}
 
