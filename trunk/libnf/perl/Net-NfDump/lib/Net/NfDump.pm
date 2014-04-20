@@ -35,7 +35,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '0.12';
+our $VERSION = '0.13';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()
@@ -1126,15 +1126,16 @@ sub file_info {
 
   NEL (NetFlow Event Logging) fields
   =====================
-  vrf - NEL NAT ingress vrf id 
+  ingressvrfid - NEL NAT ingress vrf id 
+  eventflag -  NAT event flag (always set to 1 by nfdump)
+  egressvrfid -  NAT egress VRF ID
 
   NEL Port Block Allocation (added 2014-04-19)
   =====================
-  eventflag - 
-  egressvrfid// - 
-  blockstart// - 
-  blockend// - 
-  blockstep// - 
+  blockstart -  NAT pool block start
+  blockend -  NAT pool block end 
+  blockstep -  NAT pool block step
+  blocksize -  NAT pool block size
 
   Extra/special fields
   =====================
@@ -1224,19 +1225,35 @@ only 32 integer values are supported, the C<Net::NfDump> uses C<Math::Int64> mod
 The build scripts detect the platform automatically and C<Math::Int64> module is required
 only on platforms where an available perl does not support 64bit integer values. 
 
-=head1 EXAMPLES OF USE 
+=head1 AGGREGATION, STATISTICS AND SORTING
 
-There are several examples in the C<examples> directory. 
+The current version of Net::NfDump do not support aggregation, statistics
+and sorting. This features are planned for future version. However
+tehere are some workarounnds how to use thoose features in Net::NfDump.
 
 =over 
 
 =item * 
 
-C<example1.pl> -  The trivial example showing how the C<Net::NfDump> can be used for 
-reading files. In the example, the progress bar is also used to show the status 
-of processed files. 
+Implement functions as part of perl code. However this approach might lead
+to very low performance. 
 
 =item * 
+
+Preprocess the data with nfdump utility and write output into separate 
+file (in nfdump format, -w option). For exmaple:
+
+  nfdump -R 12 -w out -A dstport "dst net 147.229.0.0/16"
+
+Then read data in Net::NfDump from out. 
+
+=back
+
+
+=head1 EXAMPLES OF USE 
+
+There are several examples in the C<examples> directory. 
+
 
 C<download_asn_db>, C<nf_asn_geo_update> - The set of scripts for updating the information 
 about AS numbers and country codes based on BGP and geolocation database. Every flow 

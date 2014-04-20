@@ -1,5 +1,17 @@
 Revision history for Perl extension Net::NfDump.
 
+0.13 2014-04-20
+	- adjusted to nfdump 1.6.12
+	- support for new record type introdouced by nfdump 1.6.12
+	- transparently reads record types from previous nfdump 
+	- created files are always with the new record type 
+	- !! files created by this version mus be read by nfdump >= 1.6.12
+	- support for new fields (ingress_vrfid, egress_vrfid, event_flag
+	  block_start, block_end, block_step, block_size)
+	- flow_start item changed to event_time 
+	- fw_event removed (use fw_xevent instead) 
+	- doc extended with info about aggregation 
+
 0.11 2013-11-26
 	- adjusted to nfdump 1.6.11
 
