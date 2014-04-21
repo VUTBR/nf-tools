@@ -188,7 +188,7 @@ The architecture is following:
 
 This version of Net::NfDump module is based on B<nfdump-1.6.12> available on L<http://sourceforge.net/projects/nfdump/>. Support for NSEL code is enabled. 
 
-=head1 WARMING FOR VERSION >= 0.13
+=head1 WARNING FOR VERSION >= 0.13
 
 The files created by Net::NfDump version >= 0.13 can be read only with 
 nfdump 1.6.12 and newer. For reading it supports all formats
