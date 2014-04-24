@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::NfDump.
 
+0.14 2014-04-24
+	- examples updated to use last version of Net::IP::LPM
+
 0.13 2014-04-20
 	- adjusted to nfdump 1.6.12
 	- support for new record type introdouced by nfdump 1.6.12

@@ -10,7 +10,7 @@ use Getopt::Std;
 
 # path to ASN database
 my $DBDIR       = "/var/db/flowtools";
-my $ASN_DB      = $DBDIR.'/asns.db';
+my $ASN_DB      = $DBDIR.'/asns.txt';
 my $GEO_DB4     = $DBDIR.'/geo/GeoIP.dat';
 my $GEO_DB6     = $DBDIR.'/geo/GeoIPv6.dat';
 my $FNAME_TMP   = "/tmp/nf_asn_update_$$.tmp";
@@ -20,6 +20,7 @@ my $VERSION		= '0.04';
 
 # gloval variables  handles to databases
 my ($GEO4, $GEO6, $BGP);
+
 
 # lookup in geodb 
 sub geo_lookup_raw {
@@ -81,7 +82,15 @@ my $flow_dst = new Net::NfDump(OutputFile => $FNAME_TMP, Fields => 'srcas,dstas,
 # Open ASN database
 if ($UPDATE_AS) {
 	printf "Opening AS database...\n" if ($DEBUG > 0);
-	$BGP = Net::IP::LPM->new($ASN_DB);
+	$BGP = Net::IP::LPM->new();
+
+	open F1, "< $ASN_DB"; 
+	while (<F1>) {
+		chomp ; 
+		my ($prefix, $as) = split(/ /);
+		$BGP->add($prefix, $as);
+	}
+	close F1;
 }
 
 # Open MAXMIND GEO database
@@ -128,7 +137,7 @@ while (my ($srcip, $dstip) = $flow_src->fetchrow_array()) {
 
 rename($FNAME_TMP, $FNAME);
 # print statistics
-printf "Done. Processed lows=$flows in secs=%d.\n", time() - $time if ($DEBUG > 0);
+printf "Done. Processed flows=$flows in secs=%d.\n", time() - $time if ($DEBUG > 0);
 
 
 
