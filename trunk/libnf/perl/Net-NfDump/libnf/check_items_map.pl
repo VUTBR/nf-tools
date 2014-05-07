@@ -28,7 +28,7 @@ my $MAP_DESCR_FILE = "../nfdump/bin/nfx.c";
 my $MASTER_RECORD_FILE = "../nfdump/bin/nffile.h";
 
 # path to libnf C and H source files
-my $LIBNF_C_FILE = "libnf.c";
+my $LIBNF_C_FILE = "libnf_perl.c";
 
 
 # The perl structure parsed from 
