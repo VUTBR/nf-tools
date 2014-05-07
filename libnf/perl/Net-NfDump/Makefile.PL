@@ -22,7 +22,7 @@ WriteMakefile(
     INC               => '-I.', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
-    MYEXTLIB          => 'libnf/libnf$(LIB_EXT)',
+    MYEXTLIB          => 'libnf/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
     clean             => {FILES => "nfdump/ nfdump t/*.tmp" },
     realclean         => {FILES => "nfdump-*.tar.gz"},

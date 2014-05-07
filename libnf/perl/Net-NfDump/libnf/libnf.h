@@ -210,7 +210,7 @@
 #define NF_OK      1
 
 
-/* function prototypes */
+/* perl - function prototypes */
 SV * libnf_file_info(char *file);
 SV * libnf_instance_info(int handle);
 int libnf_init(void);
