@@ -111,8 +111,10 @@ typedef struct libnf_instance_s {
 	libnf_map_list_t		*map_list;				/* libnf structure that holds maps */
 	int 					max_num_extensions;		/* mamimum number of extensions */
 	libnf_file_list_t		*files;					/* list of files to read */
-	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
-	nffile_t				*nffile_w;				/* filehandle for writing */
+//	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
+//	nffile_t				*nffile_w;				/* filehandle for writing */
+	lnf_nffile_t			*lnf_nffile_r;			/* filehandle for reading */
+	lnf_nffile_t			*lnf_nffile_w;			/* filehandle for wirting */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
@@ -372,8 +374,8 @@ HV *res;
 
 	res = (HV *)sv_2mortal((SV *)newHV());
 
-	if ( instance->current_filename != NULL && instance->nffile_r != NULL ) {
-		int nblocs = instance->nffile_r->file_header->NumBlocks;
+	if ( instance->current_filename != NULL && instance->lnf_nffile_r->nffile != NULL ) {
+		int nblocs = instance->lnf_nffile_r->nffile->file_header->NumBlocks;
 		HV_STORE_PV(res, "current_filename", instance->current_filename);
 		HV_STORE_NV(res, "current_processed_blocks", instance->current_processed_blocks);
 		HV_STORE_NV(res, "current_total_blocks", nblocs);
@@ -799,9 +801,10 @@ int map_id = 0;
 		i++;
 	}
 
+
 	//Insert_Extension_Map(&instance->extension_map_list, map); 
 	Insert_Extension_Map(instance->extension_map_list, map); 
-	AppendToBuffer(instance->nffile_w, (void *)map, map->size);
+	AppendToBuffer(instance->lnf_nffile_w->nffile, (void *)map, map->size);
 
 	return map;
 }
@@ -846,7 +849,7 @@ int i;
 	bit_array_init(&instance->ext_r, instance->max_num_extensions + 1);
 	bit_array_init(&instance->ext_w, instance->max_num_extensions + 1);
 
-	instance->nffile_w = NULL;
+	instance->lnf_nffile_w = NULL;
 	instance->master_record_r = NULL;
 
 	return handle;
@@ -939,7 +942,8 @@ int i;
 		pfile->filename = NULL;
 
 	}
-	instance->nffile_r = NULL;
+//	instance->nffile_r = NULL;
+	instance->lnf_nffile_r = NULL;
 
 	/* set filter */
 	if (filter == NULL || strcmp(filter, "") == 0) {
@@ -958,6 +962,7 @@ int i;
 
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident) {
 libnf_instance_t *instance = libnf_instances[handle];
+int flags = 0;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -966,14 +971,18 @@ libnf_instance_t *instance = libnf_instances[handle];
 
 
 	/* the file was already opened */
-	if (instance->nffile_w != NULL) {
+	if (instance->lnf_nffile_w != NULL) {
 		croak("%s file handler was opened before", NFL_LOG);
 		return 0;
 	}
 
 	/* writing file */
-    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
-    if ( !instance->nffile_w ) {
+	flags |= LNF_WRITE;
+	flags |= compressed ? LNF_COMP  : 0x0;
+	flags |= anonymized ? LNF_ANON  : 0x0;
+    instance->lnf_nffile_w = lnf_open_file(filename, flags , ident);
+//    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
+    if ( !instance->lnf_nffile_w ) {
 		warn("%s cannot open file %s", NFL_LOG, filename);
 		return 0;
     }
@@ -1006,8 +1015,8 @@ begin:
 	/* all records in block have been processed, we are going to load nex block */
 
 		// get next data block from file
-		if (instance->nffile_r) {
-			ret = ReadBlock(instance->nffile_r);
+		if (instance->lnf_nffile_r) {
+			ret = ReadBlock(instance->lnf_nffile_r->nffile);
 			instance->processed_blocks++;
 			instance->current_processed_blocks++;
 		} else {	
@@ -1025,14 +1034,16 @@ begin:
 			case NF_EOF: {
 				libnf_file_list_t *next;
 
-				//nffile_t *next = GetNextFile(nffile_r, twin_start, twin_end);
-				CloseFile(instance->nffile_r);
+				//CloseFile(instance->nffile_r);
+				lnf_close_file(instance->lnf_nffile_r);
+				instance->lnf_nffile_r = NULL;
 				if (instance->files->filename == NULL) {	// the end of the list 
 					free(instance->files);
 					instance->files = NULL;		
 					return NULL;
 				}
-				instance->nffile_r = OpenFile((char *)instance->files->filename, instance->nffile_r);
+				//instance->nffile_r = OpenFile((char *)instance->files->filename, instance->nffile_r);
+				instance->lnf_nffile_r = lnf_open_file((char *)instance->files->filename, LNF_READ, NULL);
 				instance->processed_files++;
 				instance->current_processed_blocks = 0;
 
@@ -1046,7 +1057,7 @@ begin:
 				free(instance->files);
 				instance->files = next;
 
-				if ( instance->nffile_r == NULL ) {
+				if ( instance->lnf_nffile_r == NULL ) {
 					croak("%s can not read file %s", NFL_LOG, instance->files->filename);
 					return NULL;
 				}
@@ -1058,7 +1069,8 @@ begin:
 				instance->processed_bytes += ret;
 		}
 
-		switch (instance->nffile_r->block_header->id) {
+		/* block types to be skipped */
+		switch (instance->lnf_nffile_r->nffile->block_header->id) {
 			case Large_BLOCK_Type:
 					goto begin;
 					break;
@@ -1079,24 +1091,20 @@ begin:
 					break;
 		}
 
-		if ( instance->nffile_r->block_header->id == Large_BLOCK_Type ) {
-			goto begin;
-		}
-
-		if ( instance->nffile_r->block_header->id != DATA_BLOCK_TYPE_2 ) {
-			if ( instance->nffile_r->block_header->id == DATA_BLOCK_TYPE_1 ) {
+		if ( instance->lnf_nffile_r->nffile->block_header->id != DATA_BLOCK_TYPE_2 ) {
+			if ( instance->lnf_nffile_r->nffile->block_header->id == DATA_BLOCK_TYPE_1 ) {
 				croak("%s Can't process nfdump 1.5.x block type 1. Block skipped.", NFL_LOG);
 				return NULL;
 			} else {
-				croak("%s Can't process block type %u. Block skipped.", NFL_LOG, instance->nffile_r->block_header->id);
+				croak("%s Can't process block type %u. Block skipped.", NFL_LOG, instance->lnf_nffile_r->nffile->block_header->id);
 				return NULL;
 			}
 			instance->skipped_blocks++;
 			goto begin;
 		}
 
-		instance->flow_record = instance->nffile_r->buff_ptr;
-		instance->blk_record_remains = instance->nffile_r->block_header->NumRecords;
+		instance->flow_record = instance->lnf_nffile_r->nffile->buff_ptr;
+		instance->blk_record_remains = instance->lnf_nffile_r->nffile->block_header->NumRecords;
 
 	} 
 
@@ -1671,9 +1679,10 @@ uint64_t t;
 		printf("WRITE: (%p) \n%s\n", map, s);
 	}
 */
-	UpdateStat(instance->nffile_w->stat_record, rec);
 
-	PackRecord(rec, instance->nffile_w);
+	UpdateStat(instance->lnf_nffile_w->nffile->stat_record, rec);
+
+	PackRecord(rec, instance->lnf_nffile_w->nffile);
 
 	memzero(rec, sizeof(master_record_t));	// clean rec for next row 
 
@@ -1689,21 +1698,27 @@ libnf_instance_t *instance = libnf_instances[handle];
 		return;
 	}
 
-	if (instance->nffile_w) {
+	if (instance->lnf_nffile_w) {
 		// write the last records in buffer
+		/* 
  		if ( instance->nffile_w->block_header->NumRecords ) {
 			if ( WriteBlock(instance->nffile_w) <= 0 ) {
 				fprintf(stderr, "Failed to write output buffer: '%s'" , strerror(errno));
 			}
 		}
+		*/
 //		CloseFile(instance->nffile_w);
-		CloseUpdateFile(instance->nffile_w, NULL );
-		DisposeFile(instance->nffile_w);
+		lnf_close_file(instance->lnf_nffile_w);
+		instance->lnf_nffile_w = NULL;
+//		CloseUpdateFile(instance->nffile_w, NULL );
+//		DisposeFile(instance->nffile_w);
 	}
 
-	if (instance->nffile_r) {	
-		CloseFile(instance->nffile_r);
-		DisposeFile(instance->nffile_r);
+	if (instance->lnf_nffile_r) {	
+		lnf_close_file(instance->lnf_nffile_r);
+		instance->lnf_nffile_r = NULL;
+//		CloseFile(instance->nffile_r);
+//		DisposeFile(instance->nffile_r);
 	}
 
 	//release list of extensions map

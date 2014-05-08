@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <nffile.h>
 
 
 /* multiple use of version for both perl and nfdump so we redefine it */
@@ -221,5 +222,21 @@ SV * libnf_read_row(int handle);
 int libnf_copy_row(int handle, int src_handle);
 int libnf_write_row(int handle, SV * arrayref);
 void libnf_finish(int handle);
+
+
+
+/* C interface */
+
+/* structure representing single nfdump file */
+typedef struct lnf_nffile_s {
+	nffile_t *nffile;				/* ptr to nfdump's nffile structure */
+	int flags;
+#define LNF_READ	0x0		
+#define LNF_WRITE	0x1		/* file is open for writing */
+#define LNF_ANON	0x2		/* set anon flag on the file */
+#define LNF_COMP	0x4		/* the file is compressed */
+
+} lnf_nffile_t;
+
 
 

@@ -19,7 +19,7 @@ WriteMakefile(
 	),
     LIBS              => ['-lresolv'], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
-    INC               => '-I.', # e.g., '-I. -I/usr/include/other'
+    INC               => '-I. -I nfdump/bin', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf/libnf_perl$(LIB_EXT)',
