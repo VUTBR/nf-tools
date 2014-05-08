@@ -3,7 +3,7 @@ use Test::More tests => 16;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
-#open(STDOUT, ">&STDERR");
+open(STDOUT, ">&STDERR");
 
 require "t/ds.pl";
 
@@ -14,13 +14,15 @@ $floww->storerow_hashref( $DS{'v4_raw'} );
 $floww->storerow_hashref( $DS{'v4_raw'} );
 $floww->finish();
 
+
 $flowr = new Net::NfDump(InputFiles => [ "t/v4_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
-#	diag Dumper(row2txt($row));
+#	diag Dumper(flow2txt($row));
 #	diag Dumper($DS{'v4_txt'});
 	ok( eq_hash( $DS{'v4_raw'}, $row) );
 	ok( eq_hash( $DS{'v4_txt'}, flow2txt($row)) );
 }
+
 
 # testing v6
 $floww = new Net::NfDump(OutputFile => "t/v6_rec.tmp" );
