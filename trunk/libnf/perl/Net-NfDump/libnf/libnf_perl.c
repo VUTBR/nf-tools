@@ -113,8 +113,8 @@ typedef struct libnf_instance_s {
 	libnf_file_list_t		*files;					/* list of files to read */
 //	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
 //	nffile_t				*nffile_w;				/* filehandle for writing */
-	lnf_nffile_t			*lnf_nffile_r;			/* filehandle for reading */
-	lnf_nffile_t			*lnf_nffile_w;			/* filehandle for wirting */
+	lnf_file_t				*lnf_nffile_r;			/* filehandle for reading */
+	lnf_file_t				*lnf_nffile_w;			/* filehandle for wirting */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	FilterEngine_data_t		*engine;
 	common_record_t			*flow_record;
@@ -132,7 +132,7 @@ typedef struct libnf_instance_s {
 //	uint32_t				is_anonymized;
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
-	master_record_t			*master_record_r;		/* pointer to last read master record */
+//	master_record_t			*master_record_r;		/* pointer to last read master record */
 	master_record_t			master_record_w;		/* pointer to master record that will be stored */
 	bit_array_t				ext_r;					/* extension bit array for read and write */
 	bit_array_t				ext_w;
@@ -850,7 +850,7 @@ int i;
 	bit_array_init(&instance->ext_w, instance->max_num_extensions + 1);
 
 	instance->lnf_nffile_w = NULL;
-	instance->master_record_r = NULL;
+//	instance->master_record_r = NULL;
 
 	return handle;
 }
@@ -980,7 +980,7 @@ int flags = 0;
 	flags |= LNF_WRITE;
 	flags |= compressed ? LNF_COMP  : 0x0;
 	flags |= anonymized ? LNF_ANON  : 0x0;
-    instance->lnf_nffile_w = lnf_open_file(filename, flags , ident);
+    instance->lnf_nffile_w = lnf_open(filename, flags , ident);
 //    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
     if ( !instance->lnf_nffile_w ) {
 		warn("%s cannot open file %s", NFL_LOG, filename);
@@ -991,7 +991,6 @@ int flags = 0;
 	return 1;
 }
 
-                                  
 /* returns hashref or NULL if we are et the end of the file */
 SV * libnf_read_row(int handle) {
 //master_record_t	*master_record;
@@ -999,6 +998,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
 uint32_t map_id;
+lnf_rec_t lnf_rec;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -1010,32 +1010,26 @@ int	v1_map_done = 0;
 #endif
 
 begin:
-
-	if (instance->blk_record_remains == 0) {
-	/* all records in block have been processed, we are going to load nex block */
-
 		// get next data block from file
 		if (instance->lnf_nffile_r) {
-			ret = ReadBlock(instance->lnf_nffile_r->nffile);
-			instance->processed_blocks++;
-			instance->current_processed_blocks++;
-		} else {	
+			ret = lnf_read(instance->lnf_nffile_r, &lnf_rec);
+		} else {
 			ret = NF_EOF;		/* the firt file in the list */
 		}
 
 		switch (ret) {
-			case NF_CORRUPT:
+			case LNF_ERR_CORRUPT:
 				LogError("Skip corrupt data file '%s'\n",GetCurrentFilename());
 				exit(1);
-			case NF_ERROR:
+			case LNF_ERR_READ:
 				LogError("Read error in file '%s': %s\n",GetCurrentFilename(), strerror(errno) );
 				exit(1);
 				// fall through - get next file in chain
-			case NF_EOF: {
+			case LNF_EOF: {
 				libnf_file_list_t *next;
 
 				//CloseFile(instance->nffile_r);
-				lnf_close_file(instance->lnf_nffile_r);
+				lnf_close(instance->lnf_nffile_r);
 				instance->lnf_nffile_r = NULL;
 				if (instance->files->filename == NULL) {	// the end of the list 
 					free(instance->files);
@@ -1043,9 +1037,8 @@ begin:
 					return NULL;
 				}
 				//instance->nffile_r = OpenFile((char *)instance->files->filename, instance->nffile_r);
-				instance->lnf_nffile_r = lnf_open_file((char *)instance->files->filename, LNF_READ, NULL);
+				instance->lnf_nffile_r = lnf_open((char *)instance->files->filename, LNF_READ, NULL);
 				instance->processed_files++;
-				instance->current_processed_blocks = 0;
 
 				next = instance->files->next;
 
@@ -1053,6 +1046,7 @@ begin:
 				if (instance->current_filename != NULL) {
 					free(instance->current_filename);
 				}
+
 				instance->current_filename = instance->files->filename;
 				free(instance->files);
 				instance->files = next;
@@ -1067,119 +1061,27 @@ begin:
 			default:
 				// successfully read block
 				instance->processed_bytes += ret;
-		}
-
-		/* block types to be skipped */
-		switch (instance->lnf_nffile_r->nffile->block_header->id) {
-			case Large_BLOCK_Type:
-					goto begin;
-					break;
-			case ExporterRecordType:
-					goto begin;
-					break;
-			case SamplerRecordype:
-					goto begin;
-					break;
-			case ExporterInfoRecordType:
-					goto begin;
-					break;
-			case ExporterStatRecordType:
-					goto begin;
-					break;
-			case SamplerInfoRecordype:
-					goto begin;
-					break;
-		}
-
-		if ( instance->lnf_nffile_r->nffile->block_header->id != DATA_BLOCK_TYPE_2 ) {
-			if ( instance->lnf_nffile_r->nffile->block_header->id == DATA_BLOCK_TYPE_1 ) {
-				croak("%s Can't process nfdump 1.5.x block type 1. Block skipped.", NFL_LOG);
-				return NULL;
-			} else {
-				croak("%s Can't process block type %u. Block skipped.", NFL_LOG, instance->lnf_nffile_r->nffile->block_header->id);
-				return NULL;
-			}
-			instance->skipped_blocks++;
-			goto begin;
-		}
-
-		instance->flow_record = instance->lnf_nffile_r->nffile->buff_ptr;
-		instance->blk_record_remains = instance->lnf_nffile_r->nffile->block_header->NumRecords;
-
-	} 
-
-	/* there are some records to process - we are going continue reading next record */
-	instance->blk_record_remains--;
-
-	if ( instance->flow_record->type == ExtensionMapType ) {
-		extension_map_t *map = (extension_map_t *)instance->flow_record;
-		//Insert_Extension_Map(&instance->extension_map_list, map);
-		Insert_Extension_Map(instance->extension_map_list, map);
-
-		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
-		goto begin;
-
-	} else if ( instance->flow_record->type != CommonRecordType && instance->flow_record->type != CommonRecordV0Type) {
-		warn("%s Skip unknown record type %d\n", NFL_LOG, instance->flow_record->type);
-		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
-		goto begin;
 	}
-
-	/* we are sure that record is CommonRecordType */
-
-	map_id = instance->flow_record->ext_map;
-	if ( map_id >= MAX_EXTENSION_MAPS ) {
-		croak("%s Corrupt data file. Extension map id %u too big.\n", NFL_LOG, instance->flow_record->ext_map);
-		return 0;
-	}
-	if ( instance->extension_map_list->slot[map_id] == NULL ) {
-		warn("%s Corrupt data file. Missing extension map %u. Skip record.\n", NFL_LOG, instance->flow_record->ext_map);
-		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
-		goto begin;
-	} 
-
-	instance->processed_records++;
-	instance->master_record_r = &(instance->extension_map_list->slot[map_id]->master_record);
-	instance->engine->nfrecord = (uint64_t *)instance->master_record_r;
-
-	// changed in 1.6.8 - added exporter info 
-//	ExpandRecord_v2( flow_record, extension_map_list.slot[map_id], master_record);
-	ExpandRecord_v2( instance->flow_record, instance->extension_map_list->slot[map_id], NULL, instance->master_record_r);
 
 	// Time based filter
 	// if no time filter is given, the result is always true
-	match  = instance->twin_start && (instance->master_record_r->first < instance->twin_start || 
-						instance->master_record_r->last > instance->twin_end) ? 0 : 1;
+	match  = instance->twin_start && (lnf_rec.master_record->first < instance->twin_start || 
+						lnf_rec.master_record->last > instance->twin_end) ? 0 : 1;
 
 	// filter netflow record with user supplied filter
+	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 
 		match = (*instance->engine->FilterEngine)(instance->engine);
 
 	if ( match == 0 ) { // record failed to pass all filters
-		// increment pointer by number of bytes for netflow record
-		instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
 		goto begin;
 	}
 
-	// update number of flows matching a given map
-	instance->extension_map_list->slot[map_id]->ref_count++;
-
-	// Advance pointer by number of bytes for netflow record
-	instance->flow_record = (common_record_t *)((pointer_addr_t)instance->flow_record + instance->flow_record->size);	
-
-/*
-	{
-		char *s;
-		PrintExtensionMap(instance->extension_map_list.slot[map_id]->map);
-		format_file_block_record(master_record, &s, 0);
-		printf("READ: %s\n", s);
-	}
-*/
-
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_AV(handle, instance->master_record_r, instance->extension_map_list->slot[map_id]->map); 
+	return libnf_master_record_to_AV(handle, lnf_rec.master_record, lnf_rec.extension_map); 
 
 } /* end of _next fnction */
+                                  
 
 /* copy row from the instance defined as the source handle to destination */
 int libnf_copy_row(int handle, int src_handle) {
@@ -1196,7 +1098,7 @@ libnf_instance_t *src_instance = libnf_instances[src_handle];
 		return 0;
 	}
 
-	memcpy(&instance->master_record_w, src_instance->master_record_r, sizeof(master_record_t));
+	memcpy(&instance->master_record_w, src_instance->lnf_nffile_r->master_record, sizeof(master_record_t));
 	bit_array_copy(&instance->ext_w, &src_instance->ext_r);
 
 	return 1;
@@ -1708,14 +1610,14 @@ libnf_instance_t *instance = libnf_instances[handle];
 		}
 		*/
 //		CloseFile(instance->nffile_w);
-		lnf_close_file(instance->lnf_nffile_w);
+		lnf_close(instance->lnf_nffile_w);
 		instance->lnf_nffile_w = NULL;
 //		CloseUpdateFile(instance->nffile_w, NULL );
 //		DisposeFile(instance->nffile_w);
 	}
 
 	if (instance->lnf_nffile_r) {	
-		lnf_close_file(instance->lnf_nffile_r);
+		lnf_close(instance->lnf_nffile_r);
 		instance->lnf_nffile_r = NULL;
 //		CloseFile(instance->nffile_r);
 //		DisposeFile(instance->nffile_r);

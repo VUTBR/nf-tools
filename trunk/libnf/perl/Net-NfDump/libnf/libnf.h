@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nffile.h>
+#include <nfx.h>
 
 
 /* multiple use of version for both perl and nfdump so we redefine it */
@@ -227,16 +228,78 @@ void libnf_finish(int handle);
 
 /* C interface */
 
+/* structure representing single record */
+/* it contains two fields. Nfdump'ps master record */
+/* and bit array representing set of fields that are activated in the master ricord */
+/* master record or bit array SHOULD NEVER be used in the direct form */
+/* the structure of the field might change across versions and there is */
+/* a big probability that any future version wouldn't be compadible */
+typedef struct lnf_rec_s {
+	master_record_t *master_record;
+	extension_map_t *extension_map;
+//	bit_array_t *extensions;
+} lnf_rec_t;
+
+
 /* structure representing single nfdump file */
-typedef struct lnf_nffile_s {
-	nffile_t *nffile;				/* ptr to nfdump's nffile structure */
-	int flags;
+/* every nfdump file which is open for either read or write is identified by this handle */
+typedef struct lnf_file_s {
+	nffile_t 				*nffile;				/* ptr to nfdump's nffile structure */
+	int 					flags;
 #define LNF_READ	0x0		
 #define LNF_WRITE	0x1		/* file is open for writing */
 #define LNF_ANON	0x2		/* set anon flag on the file */
 #define LNF_COMP	0x4		/* the file is compressed */
+#define LNF_WEAKERR	0x8		/* return weak erros $(unknow block, record) */
+	int 					blk_record_remains;		/* records to be processed in the current block */
+	extension_map_list_t 	*extension_map_list;	/* ptr to extmap structure */
+	common_record_t 		*flow_record;			/* ptr to buffer/next record */
+	master_record_t			*master_record;
+	lnf_rec_t				*lnf_rec;				/* temporary */
+	uint64_t                processed_blocks;
+	uint64_t                skipped_blocks;
+	uint64_t                processed_records;
+	uint64_t                current_processed_blocks;
+	uint64_t                processed_bytes;
+} lnf_file_t;
 
-} lnf_nffile_t;
 
+ 
+/* functions 
+lnf_open(hnd, file, flags, ident);
+LNF_MEM
+lnf_close(hnd);
+*/
 
+#define LNF_OK				0x01	/* OK status */
+#define LNF_EOF 			0x00	/* end of file */
 
+#define LNF_ERR_UNKBLOCK	-0x01	/* weak error: unknown block type */
+#define LNF_ERR_UNKREC		-0x02	/* weak error: unknown record type */
+#define LNF_ERR_COMPAT15	-0x04	/* weak error: old blok type suppoerted by nfdump 1.5 */
+#define LNF_ERR_WEAK		-0x0F	/* all weak errors (errors to skip) */
+
+#define LNF_ERR_READ		-0x10	/* read error (IO) */
+#define LNF_ERR_CORRUPT		-0x20	/* coruprted file */
+#define LNF_ERR_EXTMAPB		-0x40	/* too big extension map */
+#define LNF_ERR_EXTMAPM		-0x80	/* missing extension map */
+
+//lnf_read(hnd, rechnd);
+
+/*
+lnf_write(hnd, rechnd);
+
+lnf_rclone(rec2, rec1);
+lnf_dget(rec, FIELD, &data);
+lnf_dset(rec, FIELD, &data);
+
+lnf_finit(fhnd, "filter");
+lnf_fmatch(fhnd, rec);
+lnf_fdestroy(fhnd);
+
+lnf_agrset(ahnd, num fields, fields???);
+structure { int field, bitmask } 
+
+lnf_sortset(ahnd, numfields, bitmask);
+
+*/
