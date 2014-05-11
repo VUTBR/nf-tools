@@ -81,7 +81,6 @@ lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
 	/* open file in either read only or write only mode */
 	if (flags & LNF_WRITE) {
 
-
 		lnf_file->nffile = OpenNewFile(filename, NULL, flags & LNF_COMP, 
 								flags & LNF_ANON, ident);
 
@@ -142,7 +141,6 @@ int	v1_map_done = 0;
 #endif
 
 begin:
-
 
 	if (lnf_file->blk_record_remains == 0) {
 	/* all records in block have been processed, we are going to load nex block */

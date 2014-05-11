@@ -980,6 +980,7 @@ int flags = 0;
 	flags |= LNF_WRITE;
 	flags |= compressed ? LNF_COMP  : 0x0;
 	flags |= anonymized ? LNF_ANON  : 0x0;
+	lnf_file_t *xx1;
     instance->lnf_nffile_w = lnf_open(filename, flags , ident);
 //    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
     if ( !instance->lnf_nffile_w ) {
@@ -1564,6 +1565,7 @@ uint64_t t;
 
 		i++;
 	}
+
 
 	map = libnf_lookup_map(instance, &instance->ext_w);
 
