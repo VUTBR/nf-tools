@@ -303,3 +303,6 @@ structure { int field, bitmask }
 lnf_sortset(ahnd, numfields, bitmask);
 
 */
+
+lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident);
+void lnf_close(lnf_file_t *lnf_file);
