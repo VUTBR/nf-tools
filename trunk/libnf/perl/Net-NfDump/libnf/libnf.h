@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <nffile.h>
 #include <nfx.h>
+#include "bit_array.h"
 
 
 /* multiple use of version for both perl and nfdump so we redefine it */
@@ -235,10 +236,17 @@ void libnf_finish(int handle);
 /* the structure of the field might change across versions and there is */
 /* a big probability that any future version wouldn't be compadible */
 typedef struct lnf_rec_s {
-	master_record_t *master_record;
-	extension_map_t *extension_map;
-//	bit_array_t *extensions;
+	master_record_t *master_record;		/* reference to master record */
+	bit_array_t *extensions_arr;		/* list of extensions available in the record */
 } lnf_rec_t;
+
+
+/* list of maps used in file taht we create */
+typedef struct lnf_map_list_s {
+	bit_array_t				 bit_array;
+	extension_map_t			*map;
+	struct lnf_map_list_s	*next;
+} lnf_map_list_t;
 
 
 /* structure representing single nfdump file */
@@ -253,9 +261,12 @@ typedef struct lnf_file_s {
 #define LNF_WEAKERR	0x8		/* return weak erros $(unknow block, record) */
 	int 					blk_record_remains;		/* records to be processed in the current block */
 	extension_map_list_t 	*extension_map_list;	/* ptr to extmap structure */
+	lnf_map_list_t			*lnf_map_list;			/* internal list of maps (used by lnf) */
+	int						max_num_extensions;		/* the max number of extensions */
 	common_record_t 		*flow_record;			/* ptr to buffer/next record */
 	master_record_t			*master_record;
 	lnf_rec_t				*lnf_rec;				/* temporary */
+	bit_array_t				extensions_arr;			/* structure initialised at the beginging to store bitt array of extensions from last record */
 	uint64_t                processed_blocks;
 	uint64_t                skipped_blocks;
 	uint64_t                processed_records;
@@ -283,6 +294,7 @@ lnf_close(hnd);
 #define LNF_ERR_CORRUPT		-0x20	/* coruprted file */
 #define LNF_ERR_EXTMAPB		-0x40	/* too big extension map */
 #define LNF_ERR_EXTMAPM		-0x80	/* missing extension map */
+#define LNF_ERR_WRITE		-0xF0	/* missing extension map */
 
 //lnf_read(hnd, rechnd);
 
