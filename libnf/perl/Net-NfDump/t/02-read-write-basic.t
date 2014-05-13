@@ -23,6 +23,8 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 	ok( eq_hash( $DS{'v4_txt'}, flow2txt($row)) );
 }
 
+#exit 1;
+
 # testing v6
 $floww = new Net::NfDump(OutputFile => "t/v6_rec.tmp" );
 $floww->storerow_hashref( $DS{'v6_raw'} );

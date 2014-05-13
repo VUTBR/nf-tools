@@ -6,7 +6,6 @@
 #include "XSUB.h"
 
 #include "libnf.h"
-#include "bit_array.h"
 
 #define MATH_INT64_NATIVE_IF_AVAILABLE 1
 #include "../perl_math_int64.h"
@@ -391,9 +390,12 @@ HV *res;
 
 /* converts master_record to perl structures (hashref) */
 /* TAG for check_items_map.pl: libnf_master_record_to_SV */
-SV * libnf_master_record_to_AV(int handle, master_record_t *rec, extension_map_t *map) {
+//SV * libnf_master_record_to_AV(int handle, master_record_t *rec, extension_map_t *map) {
+SV * libnf_master_record_to_AV(int handle, lnf_rec_t *lnf_record) {
 libnf_instance_t *instance = libnf_instances[handle];
 AV *res_array;
+master_record_t *rec = lnf_record->master_record;
+extension_map_t *map = rec->map_ref;
 //bit_array_t ext;
 int i=0;
 uint64_t t;
@@ -402,8 +404,10 @@ uint64_t t;
 		croak("%s handler %d not initialized", NFL_LOG, handle);
 		return 0;
 	}
-
+	
 	// processing map 
+	/*
+
 	bit_array_clear(&instance->ext_r);
 
 	i = 0;
@@ -411,6 +415,10 @@ uint64_t t;
 		bit_array_set(&instance->ext_r, map->ex_id[i], 1);
 		i++;
 	}
+	*/
+
+
+	bit_array_copy(&instance->ext_r, lnf_record->extensions_arr);
 
 	res_array = (AV *)sv_2mortal((SV *)newAV());
 
@@ -1079,7 +1087,8 @@ begin:
 	}
 
 	/* the record seems OK. We prepare hash reference with items */
-	return libnf_master_record_to_AV(handle, lnf_rec.master_record, lnf_rec.extension_map); 
+	//return libnf_master_record_to_AV(handle, lnf_rec.master_record, lnf_rec.master_record->map_ref); 
+	return libnf_master_record_to_AV(handle, &lnf_rec); 
 
 } /* end of _next fnction */
                                   
@@ -1566,32 +1575,20 @@ uint64_t t;
 		i++;
 	}
 
+	// rec + array
+	{ 
+		lnf_rec_t lnf_rec;
 
-	map = libnf_lookup_map(instance, &instance->ext_w);
+		lnf_rec.master_record = rec;
+		lnf_rec.extensions_arr = &instance->ext_w;
+		lnf_write(instance->lnf_nffile_w, &lnf_rec);
+	}
 
-	rec->map_ref = map;
-	rec->ext_map = map->map_id;
-	rec->type = CommonRecordType;
 
 	bit_array_clear(&instance->ext_w);
-/*
-	{
-		char *s;
-		PrintExtensionMap(map);
-		VerifyExtensionMap(map);
-		format_file_block_record(&rec, &s, 0);
-		printf("WRITE: (%p) \n%s\n", map, s);
-	}
-*/
-
-	UpdateStat(instance->lnf_nffile_w->nffile->stat_record, rec);
-
-	PackRecord(rec, instance->lnf_nffile_w->nffile);
-
 	memzero(rec, sizeof(master_record_t));	// clean rec for next row 
 
 	return 1;
-
 }
 
 void libnf_finish(int handle) {
@@ -1603,26 +1600,13 @@ libnf_instance_t *instance = libnf_instances[handle];
 	}
 
 	if (instance->lnf_nffile_w) {
-		// write the last records in buffer
-		/* 
- 		if ( instance->nffile_w->block_header->NumRecords ) {
-			if ( WriteBlock(instance->nffile_w) <= 0 ) {
-				fprintf(stderr, "Failed to write output buffer: '%s'" , strerror(errno));
-			}
-		}
-		*/
-//		CloseFile(instance->nffile_w);
 		lnf_close(instance->lnf_nffile_w);
 		instance->lnf_nffile_w = NULL;
-//		CloseUpdateFile(instance->nffile_w, NULL );
-//		DisposeFile(instance->nffile_w);
 	}
 
 	if (instance->lnf_nffile_r) {	
 		lnf_close(instance->lnf_nffile_r);
 		instance->lnf_nffile_r = NULL;
-//		CloseFile(instance->nffile_r);
-//		DisposeFile(instance->nffile_r);
 	}
 
 	//release list of extensions map
@@ -1631,8 +1615,10 @@ libnf_instance_t *instance = libnf_instances[handle];
 	bit_array_release(&instance->ext_r);
 	bit_array_release(&instance->ext_w);
 
+/*
 	PackExtensionMapList(instance->extension_map_list);
 	FreeExtensionMaps(instance->extension_map_list);
+*/
 	free(instance); 
 	libnf_instances[handle] = NULL;
 	//return stat_record;

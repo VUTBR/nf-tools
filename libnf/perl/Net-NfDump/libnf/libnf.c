@@ -64,11 +64,16 @@
 #include "nfdump_inline.c"
 #include "nffile_inline.c"
 
+/* Global Variables */
+extern extension_descriptor_t extension_descriptor[];
+
+#define FLOW_RECORD_NEXT(x) x = (common_record_t *)((pointer_addr_t)x + x->size)
+
 
 /* open existing nfdump file and prepare for reading records */
 /* only simple wrapper to nfdump function */
 lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
-
+	int i;
 	lnf_file_t *lnf_file;
 
 	lnf_file = malloc(sizeof(lnf_file_t));
@@ -98,6 +103,15 @@ lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
 	lnf_file->blk_record_remains = 0;
 	lnf_file->extension_map_list = InitExtensionMaps(NEEDS_EXTENSION_LIST);
 
+	lnf_file->lnf_map_list = NULL;
+
+	i = 1;
+	lnf_file->max_num_extensions = 0;
+	while ( extension_descriptor[i++].id )
+		lnf_file->max_num_extensions++;
+
+	bit_array_init(&lnf_file->extensions_arr, lnf_file->max_num_extensions + 1);	
+
 	return lnf_file;
 }
 
@@ -124,17 +138,21 @@ void lnf_close(lnf_file_t *lnf_file) {
 
 	DisposeFile(lnf_file->nffile);
 
+	PackExtensionMapList(lnf_file->extension_map_list);
+	FreeExtensionMaps(lnf_file->extension_map_list);
+
 	free(lnf_file);
 }
 
 /* return next record in file */
-/* return pointer to record data structure */
-/* returns NULL if some error ocurs */
+/* status of read and fill pre-prepared structure lnf_rec */
 int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec) {
 
 //master_record_t	*master_record;
 int ret;
 uint32_t map_id;
+extension_map_t *map;
+int i;
 
 #ifdef COMPAT15
 int	v1_map_done = 0;
@@ -198,18 +216,16 @@ begin:
 		case ExporterInfoRecordType:
 		case ExporterStatRecordType:
 		case SamplerInfoRecordype:
-				lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
+				/* just skip */
+				FLOW_RECORD_NEXT(lnf_file->flow_record);	
 				goto begin;
 				break;
-		case ExtensionMapType: {
-		
-				extension_map_t *map = (extension_map_t *)lnf_file->flow_record;
+		case ExtensionMapType: 
+				map = (extension_map_t *)lnf_file->flow_record;
 				//Insert_Extension_Map(&instance->extension_map_list, map);
 				Insert_Extension_Map(lnf_file->extension_map_list, map);
-
-				lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
+				FLOW_RECORD_NEXT(lnf_file->flow_record);	
 				goto begin;
-				}
 				break;
 			
 		case CommonRecordV0Type:
@@ -218,7 +234,7 @@ begin:
 				break;
 
 		default:
-				lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
+				FLOW_RECORD_NEXT(lnf_file->flow_record);	
 				return LNF_ERR_UNKREC;
 
 	}
@@ -226,18 +242,18 @@ begin:
 	/* we are sure that record is CommonRecordType */
 	map_id = lnf_file->flow_record->ext_map;
 	if ( map_id >= MAX_EXTENSION_MAPS ) {
-		lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
+		FLOW_RECORD_NEXT(lnf_file->flow_record);	
 		return LNF_ERR_EXTMAPB;
 	}
 	if ( lnf_file->extension_map_list->slot[map_id] == NULL ) {
-		lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
+		FLOW_RECORD_NEXT(lnf_file->flow_record);	
 		return LNF_ERR_EXTMAPM;
 	} 
 
 	lnf_file->processed_records++;
 
 	lnf_file->master_record = &(lnf_file->extension_map_list->slot[map_id]->master_record);
-	lnf_rec->extension_map = lnf_file->extension_map_list->slot[map_id]->map;
+//	lnf_rec->extension_map = lnf_file->extension_map_list->slot[map_id]->map;
 	lnf_rec->master_record = lnf_file->master_record;
 //	lnf_file->engine->nfrecord = (uint64_t *)lnf_file->master_record_r;
 
@@ -248,9 +264,8 @@ begin:
 	// update number of flows matching a given map
 	lnf_file->extension_map_list->slot[map_id]->ref_count++;
 
-	// Advance pointer by number of bytes for netflow record
-	lnf_file->flow_record = (common_record_t *)((pointer_addr_t)lnf_file->flow_record + lnf_file->flow_record->size);	
-
+	// Move pointer by number of bytes for netflow record
+	FLOW_RECORD_NEXT(lnf_file->flow_record);	
 /*
 	{
 		char *s;
@@ -259,6 +274,18 @@ begin:
 		printf("READ: %s\n", s);
 	}
 */
+
+	// processing map 
+	bit_array_clear(&lnf_file->extensions_arr);
+
+	i = 0;
+	while (lnf_rec->master_record->map_ref->ex_id[i]) {
+		bit_array_set(&lnf_file->extensions_arr, lnf_rec->master_record->map_ref->ex_id[i], 1);
+		i++;
+	}
+
+	lnf_rec->extensions_arr = &(lnf_file->extensions_arr);
+
 	/* the record seems OK. We prepare hash reference with items */
 	lnf_file->lnf_rec = lnf_rec; /* XXX temporary */
 
@@ -266,4 +293,106 @@ begin:
 
 } /* end of _readfnction */
 
+
+extension_map_t * lnf_lookup_map(lnf_file_t *lnf_file, bit_array_t *ext ) {
+extension_map_t *map; 
+lnf_map_list_t *map_list;
+int i = 0;
+int is_set = 0;
+int id = 0;
+int map_id = 0;
+
+	// find whether the template already exist 
+	map_id = 0;
+
+	map_list = lnf_file->lnf_map_list; 
+	if (map_list == NULL) {
+		// first map 
+		map_list =  malloc(sizeof(lnf_map_list_t));
+		lnf_file->lnf_map_list = map_list;
+	} else {
+		if (bit_array_cmp(&(map_list->bit_array), ext) == 0) {
+			return map_list->map;
+		}
+		map_id++;
+		while (map_list->next != NULL ) {
+			if (bit_array_cmp(&(map_list->bit_array), ext) == 0) {
+				return map_list->map;
+			} else {
+				map_id++;
+				map_list = map_list->next;
+			}
+		}
+		map_list->next = malloc(sizeof(lnf_map_list_t));
+		map_list = map_list->next;
+	}
+	
+	// allocate memory potentially for all extensions 
+	map = malloc(sizeof(extension_map_t) + (lnf_file->max_num_extensions + 1) * sizeof(uint16_t));
+
+	map_list->map = map;
+	map_list->next = NULL;
+
+	bit_array_init(&map_list->bit_array, lnf_file->max_num_extensions + 1);
+	bit_array_copy(&map_list->bit_array, ext);
+
+	map->type   = ExtensionMapType;
+	map->map_id = map_id; 
+			
+	// set extension map according the bits set in ext structure 
+	id = 0;
+	i = 0;
+	while ( (is_set = bit_array_get(ext, id)) != -1 ) {
+//		fprintf(stderr, "i: %d, bit %d, val: %d\n", i, id, is_set);
+		if (is_set) 
+			map->ex_id[i++]  = id;
+		id++;
+	}
+	map->ex_id[i++] = 0;
+
+	// determine size and align 32bits
+	map->size = sizeof(extension_map_t) + ( i - 1 ) * sizeof(uint16_t);
+	if (( map->size & 0x3 ) != 0 ) {
+		map->size += (4 - ( map->size & 0x3 ));
+	}
+
+	map->extension_size = 0;
+	i=0;
+	while (map->ex_id[i]) {
+		int id = map->ex_id[i];
+		map->extension_size += extension_descriptor[id].size;
+		i++;
+	}
+
+	//Insert_Extension_Map(&instance->extension_map_list, map); 
+	Insert_Extension_Map(lnf_file->extension_map_list, map); 
+	AppendToBuffer(lnf_file->nffile, (void *)map, map->size);
+
+	return map;
+}
+
+
+
+/* return next record in file */
+/* status of read and fill pre-prepared structure lnf_rec */
+int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec) {
+extension_map_t *map;
+
+	/* lookup and add map into file it it is nescessary */
+	map = lnf_lookup_map(lnf_file, lnf_rec->extensions_arr);
+
+	if (map == NULL) {
+		return LNF_ERR_WRITE;
+	}
+
+	lnf_rec->master_record->map_ref = map;
+	lnf_rec->master_record->ext_map = map->map_id;
+	lnf_rec->master_record->type = CommonRecordType;
+
+	UpdateStat(lnf_file->nffile->stat_record, lnf_rec->master_record);
+
+	PackRecord(lnf_rec->master_record, lnf_file->nffile);
+
+	return LNF_OK;
+}
 

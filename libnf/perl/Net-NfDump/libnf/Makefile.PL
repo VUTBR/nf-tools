@@ -9,6 +9,7 @@ WriteMakefile(
 	C => [ 
 		'libnf_perl.c',
 		'libnf.c',
+		'bit_array.c',
 		'../nfdump/bin/nffile.c', 
 		'../nfdump/bin/grammar.c', 
 		'../nfdump/bin/nfx.c', 
@@ -47,7 +48,7 @@ all :: static
 pure_all :: static
 static :: libnf$(LIB_EXT)
 
-libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h 
+libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.c
 		$(CP) *.o ../nfdump/bin/
 		./check_items_map.pl 
 		./h2pod.pl < libnf.h > libnf.h.pod
