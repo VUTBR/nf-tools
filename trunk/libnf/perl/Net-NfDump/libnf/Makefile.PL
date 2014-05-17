@@ -48,13 +48,13 @@ all :: static
 pure_all :: static
 static :: libnf$(LIB_EXT)
 
-libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.c
+libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.h libnf_perl.c
 		$(CP) *.o ../nfdump/bin/
 		./check_items_map.pl 
-		./h2pod.pl < libnf.h > libnf.h.pod
-		./h2fields.pl < libnf.h > ../lib/Net/NfDump/Fields.pm 
+		./h2pod.pl < libnf_perl.h > libnf_perl.h.pod
+		./h2fields.pl < libnf_perl.h > ../lib/Net/NfDump/Fields.pm 
 		$(CP) ../lib/Net/NfDump.pm ../lib/Net/NfDump.pm.bkp
-		cat ../lib/Net/NfDump.pm.bkp libnf.h.pod | ./mergechapter.pl > ../lib/Net/NfDump.pm
+		cat ../lib/Net/NfDump.pm.bkp libnf_perl.h.pod | ./mergechapter.pl > ../lib/Net/NfDump.pm
 		$(RM_F) ../lib/Net/NfDump.pm.bkp
 		$(AR) cr libnf_perl$(LIB_EXT) $(O_FILES) 
 		$(RANLIB) libnf_perl$(LIB_EXT)

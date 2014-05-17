@@ -6,6 +6,7 @@
 #include "XSUB.h"
 
 #include "libnf.h"
+#include "libnf_perl.h"
 
 #define MATH_INT64_NATIVE_IF_AVAILABLE 1
 #include "../perl_math_int64.h"
@@ -1157,9 +1158,12 @@ uint64_t t;
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
+					
 					t = SvU64(sv);
 					rec->first = t / 1000LL;
 					rec->msec_first = t - rec->first * 1000LL;
+					
+				//	lnf_item_set(mr, LNF_FLD_FIRST, SvU64(sv));
 					break;
 			case NFL_I_LAST: 	
 					t = SvU64(sv);

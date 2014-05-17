@@ -20,183 +20,91 @@
 /* string prefix for error and warning outputs */
 #define NFL_LOG			"Net::NfDump: "
 
+/* type of fields */
+/* note: if the fields type allows two kind of data type  */
+/* for example UINT32 and UINT64 libnf always uses the biggest one */
+#define LNF_UINT8			0x08
+#define LNF_UINT16			0x16
+#define LNF_UINT32			0x32
+#define LNF_UINT64			0x64
+#define LNF_ADDR 			0xA1	/* 128 bit addr */
+#define LNF_MAC				0xA2
+#define LNF_STRING			0xAA	/* null terminated string */
+#define LNF_MPLS			0xAB	/* mpls labels */
+#define LNF_BASIC_RECORD	0xB1
 
-#define NFL_ZERO_FIELD		000
-/* names of attribudes used in result/input hash */
-// pod:=head1 SUPPORTED ITEMS 
-// pod:
-// pod:  Time items
-// pod:  =====================
-#define NFL_T_FIRST	 		"first"		// pod:  ## - Timestamp of the first packet seen (in miliseconds)
-#define NFL_I_FIRST	 		10
-#define NFL_T_LAST	 		"last"		// pod:  ## - Timestamp of the last packet seen (in miliseconds)
-#define NFL_I_LAST	 		30	
-#define NFL_T_RECEIVED		"received"	// pod:  ## - Timestamp regarding when the packet was received by collector 
-#define NFL_I_RECEIVED		50	
-// pod:
-// pod:  Statistical items
-// pod:  =====================
-#define NFL_T_DOCTETS		"bytes"		// pod:  ## - The number of bytes 
-#define NFL_I_DOCTETS		60
-#define NFL_T_DPKTS			"pkts"		// pod:  ## - The number of packets 
-#define NFL_I_DPKTS			70
-#define NFL_T_OUT_BYTES		"outbytes"	// pod:  ## - The number of output bytes 
-#define NFL_I_OUT_BYTES		80
-#define NFL_T_OUT_PKTS		"outpkts"	// pod:  ## - The number of output packets 
-#define NFL_I_OUT_PKTS		90
-#define NFL_T_AGGR_FLOWS	"flows"		// pod:  ## - The number of flows (aggregated) 
-#define NFL_I_AGGR_FLOWS	100
-// pod:
-// pod:  Layer 4 information
-// pod:  =====================
-#define NFL_T_SRCPORT 		"srcport"	// pod:  ## - Source port 
-#define NFL_I_SRCPORT 		110	
-#define NFL_T_DSTPORT 		"dstport"	// pod:  ## - Destination port 
-#define NFL_I_DSTPORT 		120
-#define NFL_T_TCP_FLAGS		"tcpflags"	// pod:  ## - TCP flags  
-#define NFL_I_TCP_FLAGS		130
-// pod:
-// pod:  Layer 3 information
-// pod:  =====================
-#define NFL_T_SRCADDR 		"srcip"		// pod:  ## - Source IP address 
-#define NFL_I_SRCADDR 		140
-#define NFL_T_DSTADDR		"dstip"		// pod:  ## - Destination IP address 
-#define NFL_I_DSTADDR		150
-#define NFL_T_IP_NEXTHOP	"nexthop"	// pod:  ## - IP next hop 
-#define NFL_I_IP_NEXTHOP	160
-#define NFL_T_SRC_MASK		"srcmask"	// pod:  ## - Source mask 
-#define NFL_I_SRC_MASK		170
-#define NFL_T_DST_MASK		"dstmask"	// pod:  ## - Destination mask 
-#define NFL_I_DST_MASK		180
-#define NFL_T_TOS			"tos"		// pod:  ## - Source type of service 
-#define NFL_I_TOS			190
-#define NFL_T_DST_TOS		"dsttos"	// pod:  ## - Destination type of service 
-#define NFL_I_DST_TOS		200
 
-#define NFL_T_SRCAS			"srcas"		// pod:  ## - Source AS number 
-#define NFL_I_SRCAS			210	
-#define NFL_T_DSTAS			"dstas"		// pod:  ## - Destination AS number 
-#define NFL_I_DSTAS			220
-#define NFL_T_BGPNEXTADJACENTAS		"nextas"	// pod:  ## - BGP Next AS 
-#define NFL_I_BGPNEXTADJACENTAS		230
-#define NFL_T_BGPPREVADJACENTAS		"prevas"	// pod:  ## - BGP Previous AS 
-#define NFL_I_BGPPREVADJACENTAS		240
-#define NFL_T_BGP_NEXTHOP	"bgpnexthop"		// pod:  ## - BGP next hop 
-#define NFL_I_BGP_NEXTHOP	250
+#define LNF_MASK_TYPE  		0x000000FF
+#define LNF_GET_TYPE(x) 	(x & LNF_MASK_TYPE)
 
-#define NFL_T_PROT		 	"proto"		// pod:  ## - IP protocol  
-#define NFL_I_PROT		 	260
-// pod:
-// pod:  Layer 2 information
-// pod:  =====================
-#define NFL_T_SRC_VLAN		"srcvlan"	// pod:  ## - Source vlan label 
-#define NFL_I_SRC_VLAN		270
-#define NFL_T_DST_VLAN		"dstvlan"	// pod:  ## - Destination vlan label 
-#define NFL_I_DST_VLAN		280
-#define NFL_T_IN_SRC_MAC	"insrcmac"	// pod:  ## - In source MAC address 
-#define NFL_I_IN_SRC_MAC	290
-#define NFL_T_OUT_SRC_MAC	"outsrcmac"	// pod:  ## - Out destination MAC address 
-#define NFL_I_OUT_SRC_MAC	300
-#define NFL_T_IN_DST_MAC	"indstmac"	// pod:  ## - In destination MAC address 
-#define NFL_I_IN_DST_MAC	310
-#define NFL_T_OUT_DST_MAC	"outdstmac"	// pod:  ## - Out source MAC address 
-#define NFL_I_OUT_DST_MAC	320
-// pod:
-// pod:  MPLS information
-// pod:  =====================
-#define NFL_T_MPLS_LABEL	"mpls"		// pod:  ## - MPLS labels 
-#define NFL_I_MPLS_LABEL	330
-// pod:
-// pod:  Layer 1 information
-// pod:  =====================
-#define NFL_T_INPUT			"inif"		// pod:  ## - SNMP input interface number 
-#define NFL_I_INPUT			340
-#define NFL_T_OUTPUT		"outif"		// pod:  ## - SNMP output interface number 
-#define NFL_I_OUTPUT		350
-#define NFL_T_DIR			"dir"		// pod:  ## - Flow directions ingress/egress 
-#define NFL_I_DIR			360
-#define NFL_T_FWD_STATUS	"fwd"		// pod:  ## - Forwarding status 
-#define NFL_I_FWD_STATUS	370
-// pod:
-// pod:  Exporter information
-// pod:  =====================
-#define NFL_T_IP_ROUTER		"router"	// pod:  ## - Exporting router IP 
-#define NFL_I_IP_ROUTER		380
-#define NFL_T_ENGINE_TYPE	"systype"	// pod:  ## - Type of exporter 
-#define NFL_I_ENGINE_TYPE	390
-#define NFL_T_ENGINE_ID		"sysid"		// pod:  ## - Internal SysID of exporter 
-#define NFL_I_ENGINE_ID		400
-// pod:
-// pod:  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
-// pod:  =====================
-#define NFL_T_EVENT_TIME	"eventtime"	// pod:  ## - NSEL The time that the flow was created
-#define NFL_I_EVENT_TIME	520
-#define NFL_T_CONN_ID		"connid"	// pod:  ## - NSEL An identifier of a unique flow for the device 
-#define NFL_I_CONN_ID		410
+/* top two bytes of field identifies data type LNF_UINT8, ... */
 
-#define NFL_T_ICMP_CODE		"icmpcode"	// pod:  ## - NSEL ICMP code value 
-#define NFL_I_ICMP_CODE		450
-#define NFL_T_ICMP_TYPE		"icmptype"	// pod:  ## - NSEL ICMP type value 
-#define NFL_I_ICMP_TYPE		440
-#define NFL_T_FW_XEVENT		"xevent"	// pod:  ## - NSEL Extended event code
-#define NFL_I_FW_XEVENT		510
+#define NFL_FLD_ZERO		0x00
+#define LNF_FLD_FIRST		0x010064
+#define LNF_FLD_LAST		0x020064
+#define LNF_FLD_RECEIVED	0x030064
+#define LNF_FLD_DOCTETS		0x040064
+#define LNF_FLD_DPKTS		0x050064
+#define LNF_FLD_OUT_BYTES	0x060064
+#define LNF_FLD_OUT_PKTS	0x070064
+#define LNF_AGGR_FLOWS		0x080064
+#define LNF_FLD_SRCPORT 	0x090016
+#define LNF_FLD_DSTPORT		0x0a0016
+#define LNF_FLD_TCP_FLAGS	0x0b0008
+#define LNF_FLD_SRCADDR 	0x0c00a1
+#define LNF_FLD_DSTADDR		0x0d00a1
+#define LNF_FLD_IP_NEXTHOP	0x0e00a1
+#define LNF_FLD_SRC_MASK	0x0f0008
+#define LNF_FLD_DST_MASK	0x100008
+#define LNF_FLD_TOS			0x110008
+#define LNF_FLD_DST_TOS		0x130008
+#define LNF_FLD_SRCAS		0x140032
+#define LNF_FLD_DSTAS		0x150032
+#define LNF_FLD_BGPNEXTADJACENTAS	0x160032
+#define LNF_FLD_BGPPREVADJACENTAS	0x170032
+#define LNF_FLD_BGP_NEXTHOP		0x1800a1
+#define LNF_FLD_PROT	 	0x190008
+#define LNF_FLD_SRC_VLAN	0x200016
+#define LNF_FLD_DST_VLAN	0x210016
+#define LNF_FLD_IN_SRC_MAC	0x2200a2
+#define LNF_FLD_OUT_SRC_MAC	0x2300a2
+#define LNF_FLD_IN_DST_MAC	0x2400a2
+#define LNF_FLD_OUT_DST_MAC	0x2500a2
+#define LNF_FLD_MPLS_LABEL	0x2600ab
+#define LNF_FLD_INPUT		0x270016
+#define LNF_FLD_OUTPUT		0x280017
+#define LNF_FLD_DIR			0x290008
+#define LNF_FLD_FWD_STATUS	0x300008
+#define LNF_FLD_IP_ROUTER	0x3100a1
+#define LNF_FLD_ENGINE_TYPE	0x320008
+#define LNF_FLD_ENGINE_ID	0x330008
+#define LNF_FLD_EVENT_TIME	0x340064
+#define LNF_FLD_CONN_ID		0x350032
+#define LNF_FLD_ICMP_CODE	0x360008
+#define LNF_FLD_ICMP_TYPE	0x370008
+#define LNF_FLD_FW_XEVENT	0x380016
+#define LNF_FLD_XLATE_SRC_IP	0x3900a1
+#define LNF_FLD_XLATE_DST_IP	0x4000a1
+#define LNF_FLD_XLATE_SRC_PORT	0x410016
+#define LNF_FLD_XLATE_DST_PORT	0x420016
+#define LNF_FLD_INGRESS_ACL_ID	0x43
+#define LNF_FLD_INGRESS_ACE_ID	0x44
+#define LNF_FLD_INGRESS_XACE_ID	0x45
+#define LNF_FLD_EGRESS_ACL_ID	0x46
+#define LNF_FLD_EGRESS_ACE_ID	0x47
+#define LNF_FLD_EGRESS_XACE_ID	0x48
+#define LNF_FLD_USERNAME		0x49
+#define LNF_FLD_INGRESS_VRFID	0x50
+#define LNF_FLD_EVENT_FLAG		0x51
+#define LNF_FLD_EGRESS_VRFID	0x52
+#define LNF_FLD_BLOCK_START		0x530016
+#define LNF_FLD_BLOCK_END		0x540016
+#define LNF_FLD_BLOCK_STEP		0x550016
+#define LFN_FLD_BLOCK_SIZE		0x560016
+#define LNF_FLD_CLIENT_NW_DELAY_USEC	0x570064
+#define LNF_FLD_SERVER_NW_DELAY_USEC	0x580064
+#define LNF_FLD_APPL_LATENCY_USEC		0x590064
 
-#define NFL_T_XLATE_SRC_IP		"xsrcip"	// pod:  ## - NSEL Mapped source IPv4 address 
-#define NFL_I_XLATE_SRC_IP		560
-#define NFL_T_XLATE_DST_IP		"xdstip"	// pod:  ## - NSEL Mapped destination IPv4 address 
-#define NFL_I_XLATE_DST_IP		570
-#define NFL_T_XLATE_SRC_PORT	"xsrcport"	// pod:  ## - NSEL Mapped source port 
-#define NFL_I_XLATE_SRC_PORT	530
-#define NFL_T_XLATE_DST_PORT	"xdstport"	// pod:  ## - NSEL Mapped destination port 
-#define NFL_I_XLATE_DST_PORT	540
-
-// pod: NSEL The input ACL that permitted or denied the flow
-#define NFL_T_INGRESS_ACL_ID	"iacl"	// pod:  ## - Hash value or ID of the ACL name
-#define NFL_I_INGRESS_ACL_ID	480
-#define NFL_T_INGRESS_ACE_ID	"iace"	// pod:  ## - Hash value or ID of the ACL name 
-#define NFL_I_INGRESS_ACE_ID	481
-#define NFL_T_INGRESS_XACE_ID	"ixace"	// pod:  ## - Hash value or ID of an extended ACE configuration 
-#define NFL_I_INGRESS_XACE_ID	482
-// pod: NSEL The output ACL that permitted or denied a flow  
-#define NFL_T_EGRESS_ACL_ID		"eacl"	// pod:  ## - Hash value or ID of the ACL name
-#define NFL_I_EGRESS_ACL_ID		490
-#define NFL_T_EGRESS_ACE_ID		"eace"	// pod:  ## - Hash value or ID of the ACL name
-#define NFL_I_EGRESS_ACE_ID		491
-#define NFL_T_EGRESS_XACE_ID	"exace"	// pod:  ## - Hash value or ID of an extended ACE configuration
-#define NFL_I_EGRESS_XACE_ID	492
-#define NFL_T_USERNAME			"username"	// pod:  ## - NSEL username
-#define NFL_I_USERNAME			495
-// pod:
-// pod:  NEL (NetFlow Event Logging) fields
-// pod:  =====================
-#define NFL_T_INGRESS_VRFID		"ingressvrfid"	// pod:  ## - NEL NAT ingress vrf id 
-#define NFL_I_INGRESS_VRFID		710
-#define NFL_T_EVENT_FLAG		"eventflag"		// pod:  ## -  NAT event flag (always set to 1 by nfdump)
-#define NFL_I_EVENT_FLAG		720	
-#define NFL_T_EGRESS_VRFID		"egressvrfid"	// pod:  ## -  NAT egress VRF ID
-#define NFL_I_EGRESS_VRFID		730	
-// pod:
-// pod:  NEL Port Block Allocation (added 2014-04-19)
-// pod:  =====================
-#define NFL_T_BLOCK_START		"blockstart"	// pod:  ## -  NAT pool block start
-#define NFL_I_BLOCK_START		740	
-#define NFL_T_BLOCK_END			"blockend"		// pod:  ## -  NAT pool block end 
-#define NFL_I_BLOCK_END			750	
-#define NFL_T_BLOCK_STEP		"blockstep"		// pod:  ## -  NAT pool block step
-#define NFL_I_BLOCK_STEP		760	
-#define NFL_T_BLOCK_SIZE		"blocksize"		// pod:  ## -  NAT pool block size
-#define NFL_I_BLOCK_SIZE		770	
-// pod:
-// pod:  Extra/special fields
-// pod:  =====================
-#define NFL_T_CLIENT_NW_DELAY_USEC	"cl"	// pod:  ## - nprobe latency client_nw_delay_usec 
-#define NFL_I_CLIENT_NW_DELAY_USEC  620	
-#define NFL_T_SERVER_NW_DELAY_USEC	"sl"	// pod:  ## - nprobe latency server_nw_delay_usec
-#define NFL_I_SERVER_NW_DELAY_USEC	630
-#define NFL_T_APPL_LATENCY_USEC		"al"	// pod:  ## - nprobe latency appl_latency_usec
-#define NFL_I_APPL_LATENCY_USEC		640
-// pod:
-//
 
 
 /* the maximim number of fields requested from the client */
@@ -205,7 +113,6 @@
 /* the maxumim naumber of instances (objects) that can be used in code */
 #define NFL_MAX_INSTANCES 512
 
-
 /* return eroror codes */
 #define NFL_NO_FREE_INSTANCES -1;
 
@@ -213,21 +120,15 @@
 #define NF_OK      1
 
 
-/* perl - function prototypes */
-SV * libnf_file_info(char *file);
-SV * libnf_instance_info(int handle);
-int libnf_init(void);
-int libnf_set_fields(int handle, SV *fields);
-int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
-int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
-SV * libnf_read_row(int handle);
-int libnf_copy_row(int handle, int src_handle);
-int libnf_write_row(int handle, SV * arrayref);
-void libnf_finish(int handle);
-
-
-
 /* C interface */
+
+/* list of maps used in file taht we create */
+typedef struct lnf_map_list_s {
+	bit_array_t				 bit_array;
+	extension_map_t			*map;
+	struct lnf_map_list_s	*next;
+} lnf_map_list_t;
+
 
 /* structure representing single record */
 /* it contains two fields. Nfdump'ps master record */
@@ -239,14 +140,6 @@ typedef struct lnf_rec_s {
 	master_record_t *master_record;		/* reference to master record */
 	bit_array_t *extensions_arr;		/* list of extensions available in the record */
 } lnf_rec_t;
-
-
-/* list of maps used in file taht we create */
-typedef struct lnf_map_list_s {
-	bit_array_t				 bit_array;
-	extension_map_t			*map;
-	struct lnf_map_list_s	*next;
-} lnf_map_list_t;
 
 
 /* structure representing single nfdump file */
@@ -282,19 +175,21 @@ LNF_MEM
 lnf_close(hnd);
 */
 
-#define LNF_OK				0x01	/* OK status */
-#define LNF_EOF 			0x00	/* end of file */
+#define LNF_OK				0x0001	/* OK status */
+#define LNF_EOF 			0x0000	/* end of file */
 
-#define LNF_ERR_UNKBLOCK	-0x01	/* weak error: unknown block type */
-#define LNF_ERR_UNKREC		-0x02	/* weak error: unknown record type */
-#define LNF_ERR_COMPAT15	-0x04	/* weak error: old blok type suppoerted by nfdump 1.5 */
-#define LNF_ERR_WEAK		-0x0F	/* all weak errors (errors to skip) */
+#define LNF_ERR_UNKBLOCK	-0x0001	/* weak error: unknown block type */
+#define LNF_ERR_UNKREC		-0x0002	/* weak error: unknown record type */
+#define LNF_ERR_COMPAT15	-0x0004	/* weak error: old blok type suppoerted by nfdump 1.5 */
+#define LNF_ERR_WEAK		-0x000F	/* all weak errors (errors to skip) */
 
-#define LNF_ERR_READ		-0x10	/* read error (IO) */
-#define LNF_ERR_CORRUPT		-0x20	/* coruprted file */
-#define LNF_ERR_EXTMAPB		-0x40	/* too big extension map */
-#define LNF_ERR_EXTMAPM		-0x80	/* missing extension map */
-#define LNF_ERR_WRITE		-0xF0	/* missing extension map */
+#define LNF_ERR_READ		-0x0010	/* read error (IO) */
+#define LNF_ERR_CORRUPT		-0x0020	/* coruprted file */
+#define LNF_ERR_EXTMAPB		-0x0040	/* too big extension map */
+#define LNF_ERR_EXTMAPM		-0x0080	/* missing extension map */
+#define LNF_ERR_WRITE		-0x00F0	/* missing extension map */
+
+#define LNF_ERR_NOTSET		-0x0100	/* item is not set  */
 
 //lnf_read(hnd, rechnd);
 
@@ -318,3 +213,13 @@ lnf_sortset(ahnd, numfields, bitmask);
 
 lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident);
 void lnf_close(lnf_file_t *lnf_file);
+int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
+int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
+
+/*
+int lnf_item_init(lnf_rec_t *rec);
+int lnf_item_get(lnf_rec_t *rec, int field, void ** ptr); 
+int lnf_item_set(lnf_rec_t *rec, int field, void * ptr); 
+int lnf_item_datat(int field);
+*/
+
