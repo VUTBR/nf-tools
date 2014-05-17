@@ -1313,3 +1313,795 @@ If you are satisfied with using C<Net::NfDump>, please, send us a postcard, pref
 
 __END__
 
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
+  =====================
+
+  Statistical items
+  =====================
+
+  Layer 4 information
+  =====================
+
+  Layer 3 information
+  =====================
+
+  Layer 2 information
+  =====================
+
+  MPLS information
+  =====================
+
+  Layer 1 information
+  =====================
+
+  Exporter information
+  =====================
+
+  NSEL fields, see: http://www.cisco.com/en/US/docs/security/asa/asa81/netflow/netflow.html
+  =====================
+ NSEL The input ACL that permitted or denied the flow
+ NSEL The output ACL that permitted or denied a flow  
+
+  NEL (NetFlow Event Logging) fields
+  =====================
+
+  NEL Port Block Allocation (added 2014-04-19)
+  =====================
+
+  Extra/special fields
+  =====================
