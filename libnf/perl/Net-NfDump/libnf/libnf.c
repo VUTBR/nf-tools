@@ -91,7 +91,7 @@ lnf_fields_t lnf_fields[] = {
 	LNF_FLD_DPKTS,		"pkts",		"The number of packets",
 	LNF_FLD_OUT_BYTES,	"outbytes",	"The number of output bytes",
 	LNF_FLD_OUT_PKTS,	"outpkts",	"The number of output packets",
-	LNF_AGGR_FLOWS,		"flows",	"The number of flows (aggregated)",
+	LNF_FLD_AGGR_FLOWS,	"flows",	"The number of flows (aggregated)",
 // pod:
 // pod:  Layer 4 information
 // pod:  =====================
@@ -173,14 +173,14 @@ lnf_fields_t lnf_fields[] = {
 // pod:  =====================
 	LNF_FLD_BLOCK_END,			"blockend",			"NAT pool block end",
 	LNF_FLD_BLOCK_STEP,			"blockstep",		"NAT pool block step",
-	LFN_FLD_BLOCK_SIZE,			"blocksize",		"NAT pool block size",
+	LNF_FLD_BLOCK_SIZE,			"blocksize",		"NAT pool block size",
 // pod:
 // pod:  Extra/special fields
 // pod:  =====================
 	LNF_FLD_CLIENT_NW_DELAY_USEC,		"cl",	"nprobe latency client_nw_delay_usec",
 	LNF_FLD_SERVER_NW_DELAY_USEC,		"sl",	"nprobe latency server_nw_delay_usec",
 	LNF_FLD_APPL_LATENCY_USEC,			"al",	"nprobe latency appl_latency_usec",
-	NFL_FLD_ZERO,						"__last_item_in_list__",	""
+	LNF_FLD_ZERO,						"__last_item_in_list__",	""
 };
 
 
@@ -515,18 +515,63 @@ extension_map_t *map;
 	return LNF_OK;
 }
 
+/* returns LN_OK or LNF_ERR_UKNFLD */
 int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
+	bit_array_t *e = rec->extensions_arr;
 
 	switch (field) {
-		case LNF_FLD_FIRST: {
-/*
-			m->first = (uint64_t)*p / 1000LL;
-			m->msec_first = (uint64_t)*p - m->first * 1000LL;	
+
+		case LNF_FLD_FIRST: 
+			m->first = *((uint64_t *)p) / 1000LL;
+			m->msec_first = *((uint64_t *)p) - m->first * 1000LL;	
 			return LNF_OK;
-*/
-		}
+		case LNF_FLD_LAST: 
+			m->last = *((uint64_t *)p) / 1000LL;
+			m->msec_last = *((uint64_t *)p) - m->last * 1000LL;	
+			return LNF_OK;
+
+		case LNF_FLD_RECEIVED:
+			m->received = *((uint64_t *)p);
+			bit_array_set(e, EX_RECEIVED, 1);
+			return LNF_OK;
+
+		case LNF_FLD_DPKTS:
+			m->dPkts = *((uint64_t *)p);
+			return LNF_OK;
+		case LNF_FLD_DOCTETS:
+			m->dOctets = *((uint64_t *)p);
+			return LNF_OK;
+
+		// EX_OUT_PKG_4 not used 
+		case LNF_FLD_OUT_PKTS:
+			m->out_pkts = *((uint64_t *)p);
+			bit_array_set(e, EX_OUT_PKG_8, 1);
+			return LNF_OK;
+		// EX_OUT_BYTES_4 not used
+		case LNF_FLD_OUT_BYTES:
+			m->out_bytes = *((uint64_t *)p);
+			bit_array_set(e, EX_OUT_BYTES_8, 1);
+			return LNF_OK;
+		// EX_AGGR_FLOWS_4 not used 
+		case LNF_FLD_AGGR_FLOWS:
+			m->aggr_flows = *((uint64_t *)p);
+			bit_array_set(e, EX_AGGR_FLOWS_8, 1);
+			return LNF_OK;
+
+		case LNF_FLD_SRCPORT:
+			m->srcport = *((uint16_t *)p);
+			return LNF_OK;
+		case LNF_FLD_DSTPORT:
+			m->dstport = *((uint16_t *)p);
+			return LNF_OK;
+		case LNF_FLD_TCP_FLAGS:
+			m->tcp_flags = *((uint8_t *)p);
+			return LNF_OK;
+		
 	}
+
+	return LNF_ERR_UKNFLD;
 }
 
