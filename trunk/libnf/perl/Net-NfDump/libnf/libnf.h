@@ -226,3 +226,8 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * ptr);
 int lnf_item_datat(int field);
 */
 
+#ifndef IN6_IS_ADDR_V4COMPAT
+#define IN6_IS_ADDR_V4COMPAT(a) \
+   ((((uint32_t *) (a))[0] == 0) && (((uint32_t *) (a))[1] == 0) && \
+   (((uint32_t *) (a))[2] == 0) && (ntohl (((uint32_t *) (a))[3]) > 1))
+#endif
