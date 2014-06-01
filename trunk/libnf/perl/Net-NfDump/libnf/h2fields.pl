@@ -25,15 +25,15 @@ while (<STDIN>) {
 printf "# generated with h2fields.pl\n";
 printf "package Net::NfDump::Fields;\n";
 printf "our %%NFL_FIELDS_INT = (\n";
-foreach ( sort { $H{$a}->{'I'} <=> $H{$b}->{'I'} }  keys %H ) {
-	printf "\t%d => \'%s\',\n", $H{$_}->{'I'}, $H{$_}->{'T'};
+foreach ( sort { $H{$a}->{'I'} cmp $H{$b}->{'I'} }  keys %H ) {
+	printf "\t%s => \'%s\',\n", $H{$_}->{'I'}, $H{$_}->{'T'};
 
 }
 printf ");\n\n";
 
 printf "our %%NFL_FIELDS_TXT = (\n";
-foreach ( sort { $H{$a}->{'I'} <=> $H{$b}->{'I'} }  keys %H ) {
-	printf "\t\'%s\' => %d,\n", $H{$_}->{'T'}, $H{$_}->{'I'};
+foreach ( sort { $H{$a}->{'I'} cmp $H{$b}->{'I'} }  keys %H ) {
+	printf "\t\'%s\' => %s,\n", $H{$_}->{'T'}, $H{$_}->{'I'};
 
 }
 printf ");\n\n";

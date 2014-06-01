@@ -50,7 +50,7 @@ static :: libnf$(LIB_EXT)
 
 libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.h libnf_perl.c
 		$(CP) *.o ../nfdump/bin/
-		./check_items_map.pl 
+#		./check_items_map.pl 
 		./h2pod.pl < libnf_perl.h > libnf_perl.h.pod
 		./h2fields.pl < libnf_perl.h > ../lib/Net/NfDump/Fields.pm 
 		$(CP) ../lib/Net/NfDump.pm ../lib/Net/NfDump.pm.bkp

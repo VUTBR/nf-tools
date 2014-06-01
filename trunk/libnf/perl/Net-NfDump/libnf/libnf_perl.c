@@ -1124,7 +1124,10 @@ extension_map_t *map;
 //bit_array_t ext;
 int last_field;
 int i, res;
-uint64_t t;
+uint64_t t64;
+uint32_t t32;
+int field;
+lnf_rec_t lnf_rec;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -1146,6 +1149,11 @@ uint64_t t;
 
 	rec = &instance->master_record_w;
 
+	// rec + array
+	lnf_rec.master_record = rec;
+	lnf_rec.extensions_arr = &instance->ext_w;
+
+
 	i = 0;
 	while ( instance->field_list[i] ) {
 
@@ -1156,58 +1164,40 @@ uint64_t t;
 			continue;
 		}
 
-		switch ( instance->field_list[i] ) { 
-			case NFL_I_FIRST: 	
-					
-					t = SvU64(sv);
-					rec->first = t / 1000LL;
-					rec->msec_first = t - rec->first * 1000LL;
-					
-				//	lnf_item_set(mr, LNF_FLD_FIRST, SvU64(sv));
-					break;
-			case NFL_I_LAST: 	
-					t = SvU64(sv);
-					rec->last = t / 1000LL;
-					rec->msec_last = t - rec->last * 1000LL;
-					break;
+		field = instance->field_list[i];
 
-			case NFL_I_RECEIVED:
-					rec->received = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_RECEIVED, 1);
-					break;
-
-			case NFL_I_DPKTS:
-					rec->dPkts = SvU64(sv);
-					break;
-			case NFL_I_DOCTETS:
-					rec->dOctets = SvU64(sv);
-					break;
-
+		switch ( field ) { 
+			case LNF_FLD_FIRST:
+			case LNF_FLD_LAST:
+			case LNF_FLD_RECEIVED:
+			case LNF_FLD_DPKTS:
+			case LNF_FLD_DOCTETS:
 			// EX_OUT_PKG_4 not used 
-			case NFL_I_OUT_PKTS:
-					rec->out_pkts = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_OUT_PKG_8, 1);
-					break;
+			case LNF_FLD_OUT_PKTS:
 			// EX_OUT_BYTES_4 not used 
-			case NFL_I_OUT_BYTES:
-					rec->out_bytes = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_OUT_BYTES_8, 1);
-					break;
+			case LNF_FLD_OUT_BYTES:
 			// EX_AGGR_FLOWS_4 not used 
-			case NFL_I_AGGR_FLOWS:
-					rec->aggr_flows = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_AGGR_FLOWS_8, 1);
-					break;
-
+			case LNF_FLD_AGGR_FLOWS:
 			case NFL_I_SRCPORT:
-					rec->srcport = SvUV(sv);
-					break;
 			case NFL_I_DSTPORT:
-					rec->dstport = SvUV(sv);
-					break;
 			case NFL_I_TCP_FLAGS: 	
-					rec->tcp_flags = SvUV(sv);
+
+			switch (LNF_GET_TYPE(field)) {
+				case LNF_UINT8:
+				case LNF_UINT16:
+				case LNF_UINT32:
+					t32 = SvUV(sv);
+					lnf_item_set(&lnf_rec, field, (void *)&t32);
 					break;
+				case LNF_UINT64:
+					t64 = SvU64(sv);
+					lnf_item_set(&lnf_rec, field, (void *)&t64);
+					break;
+				default:
+					fprintf(stderr, "XXX: Unknown type: %x", field);
+			}
+			
+			break;
 
 			// Required extension 1 - IP addresses 
 			// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
@@ -1579,15 +1569,7 @@ uint64_t t;
 		i++;
 	}
 
-	// rec + array
-	{ 
-		lnf_rec_t lnf_rec;
-
-		lnf_rec.master_record = rec;
-		lnf_rec.extensions_arr = &instance->ext_w;
-		lnf_write(instance->lnf_nffile_w, &lnf_rec);
-	}
-
+	lnf_write(instance->lnf_nffile_w, &lnf_rec);
 
 	bit_array_clear(&instance->ext_w);
 	memzero(rec, sizeof(master_record_t));	// clean rec for next row 
