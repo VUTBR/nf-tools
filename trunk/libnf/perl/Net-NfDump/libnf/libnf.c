@@ -576,7 +576,7 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 		// however the structures are compatible so we will pretend 
 		// that v6.srcaddr and v6.dst addr points to same structure 
 		case LNF_FLD_SRCADDR: {
-			ip_addr_t *d = &m->v6.srcaddr;
+			ip_addr_t *d = (ip_addr_t *)&m->v6.srcaddr;
 	
 			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
 			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
@@ -589,7 +589,7 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 			return LNF_OK;
 		}
 		case LNF_FLD_DSTADDR: {
-			ip_addr_t *d = &m->v6.dstaddr;
+			ip_addr_t *d = (ip_addr_t *)&m->v6.dstaddr;
 	
 			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
 			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
@@ -757,7 +757,153 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 			m->engine_id = *((uint8_t *)p);
 			bit_array_set(e, EX_ROUTER_ID, 1);
 			return LNF_OK;
+#ifdef NSEL
+	
+		case LNF_FLD_EVENT_TIME:
+			m->event_time = *((uint64_t *)p);
+			bit_array_set(e, EX_NSEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_CONN_ID:
+			m->conn_id = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_ICMP_CODE:
+			m->icmp_code = *((uint8_t *)p);
+			bit_array_set(e, EX_NSEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_ICMP_TYPE:
+			m->icmp_type = *((uint8_t *)p);
+			bit_array_set(e, EX_NSEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_FW_XEVENT:
+			m->fw_xevent = *((uint16_t *)p);
+			bit_array_set(e, EX_NSEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_XLATE_SRC_IP: {
+			ip_addr_t *d = &m->xlate_src_ip;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
 
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				bit_array_set(e,  EX_NSEL_XLATE_IP_v4, 1);
+			} else {
+				bit_array_set(e,  EX_NSEL_XLATE_IP_v6, 1);
+			}
+			return LNF_OK;
+		}
+		case LNF_FLD_XLATE_DST_IP: {
+			ip_addr_t *d = &m->xlate_dst_ip;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				bit_array_set(e,  EX_NSEL_XLATE_IP_v4, 1);
+			} else {
+				bit_array_set(e,  EX_NSEL_XLATE_IP_v6, 1);
+			}
+			return LNF_OK;
+		}
+		case LNF_FLD_XLATE_SRC_PORT:
+			m->xlate_src_port = *((uint16_t *)p);
+			bit_array_set(e, EX_NSEL_XLATE_PORTS, 1);
+			return LNF_OK;
+		case LNF_FLD_XLATE_DST_PORT:
+			m->xlate_dst_port = *((uint16_t *)p);
+			bit_array_set(e, EX_NSEL_XLATE_PORTS, 1);
+			return LNF_OK;
+
+		case LNF_FLD_INGRESS_ACL_ID:
+			m->ingress_acl_id[0] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+		case LNF_FLD_INGRESS_ACE_ID:
+			m->ingress_acl_id[1] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+		case LNF_FLD_INGRESS_XACE_ID:
+			m->ingress_acl_id[2] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+		case LNF_FLD_EGRESS_ACL_ID:
+			m->egress_acl_id[0] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+		case LNF_FLD_EGRESS_ACE_ID:
+			m->egress_acl_id[1] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+		case LNF_FLD_EGRESS_XACE_ID:
+			m->egress_acl_id[2] = *((uint32_t *)p);
+			bit_array_set(e, EX_NSEL_ACL, 1);
+			return LNF_OK;
+
+		case LNF_FLD_USERNAME: {
+
+			int len;
+			
+			len = strlen((char *)p);
+			if ( len > sizeof(m->username) -  1 ) {
+				len = sizeof(m->username) - 1;
+			}
+
+			memcpy(m->username, p, len );
+			m->username[len] = '\0';
+		
+			if ( len < sizeof(((struct tpl_ext_42_s *)0)->username) - 1 ) {	
+				bit_array_set(e, EX_NSEL_USER, 1);
+			} else {
+				bit_array_set(e, EX_NSEL_USER_MAX, 1);
+			}
+			return LNF_OK;
+		}
+
+		case LNF_FLD_INGRESS_VRFID:
+			m->ingress_vrfid = *((uint32_t *)p);
+			bit_array_set(e, EX_NEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_EVENT_FLAG:
+			m->event_flag = *((uint8_t *)p);
+			bit_array_set(e, EX_NEL_COMMON, 1);
+			return LNF_OK;
+		case LNF_FLD_EGRESS_VRFID:
+			m->egress_vrfid = *((uint32_t *)p);
+			bit_array_set(e, EX_NEL_COMMON, 1);
+			return LNF_OK;
+#endif
+
+		// EX_PORT_BLOCK_ALLOC added 2014-04-19
+		case LNF_FLD_BLOCK_START:
+			m->block_start = *((uint16_t *)p);
+			bit_array_set(e, EX_PORT_BLOCK_ALLOC, 1);
+			return LNF_OK;
+		case LNF_FLD_BLOCK_END:
+			m->block_end = *((uint16_t *)p);
+			bit_array_set(e, EX_PORT_BLOCK_ALLOC, 1);
+			return LNF_OK;
+		case LNF_FLD_BLOCK_STEP:
+			m->block_step = *((uint16_t *)p);
+			bit_array_set(e, EX_PORT_BLOCK_ALLOC, 1);
+			return LNF_OK;
+		case LNF_FLD_BLOCK_SIZE:
+			m->block_size = *((uint16_t *)p);
+			bit_array_set(e, EX_PORT_BLOCK_ALLOC, 1);
+			return LNF_OK;
+
+		// extra fields
+		case LNF_FLD_CLIENT_NW_DELAY_USEC:
+			m->client_nw_delay_usec = *((uint64_t *)p);
+			bit_array_set(e, EX_LATENCY, 1);
+			return LNF_OK;
+		case LNF_FLD_SERVER_NW_DELAY_USEC:
+			m->server_nw_delay_usec = *((uint64_t *)p);
+			bit_array_set(e, EX_LATENCY, 1);
+			return LNF_OK;
+		case LNF_FLD_APPL_LATENCY_USEC:
+			m->appl_latency_usec = *((uint64_t *)p);
+			bit_array_set(e, EX_LATENCY, 1);
+			return LNF_OK;
 	}
 
 	return LNF_ERR_UKNFLD;

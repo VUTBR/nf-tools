@@ -1126,7 +1126,7 @@ int last_field;
 int i, res;
 uint64_t t64;
 uint32_t t32;
-struct in6_addr tip;
+lnf_ip_t tip;
 
 int field;
 lnf_rec_t lnf_rec;
@@ -1168,279 +1168,85 @@ lnf_rec_t lnf_rec;
 
 		field = instance->field_list[i];
 
-		switch ( field ) { 
-			case LNF_FLD_FIRST:
-			case LNF_FLD_LAST:
-			case LNF_FLD_RECEIVED:
-			case LNF_FLD_DPKTS:
-			case LNF_FLD_DOCTETS:
-			// EX_OUT_PKG_4 not used 
-			case LNF_FLD_OUT_PKTS:
-			// EX_OUT_BYTES_4 not used 
-			case LNF_FLD_OUT_BYTES:
-			// EX_AGGR_FLOWS_4 not used 
-			case LNF_FLD_AGGR_FLOWS:
-			case NFL_I_SRCPORT:
-			case NFL_I_DSTPORT:
-			case NFL_I_TCP_FLAGS: 	
-			case NFL_I_SRCADDR: 
-			case NFL_I_DSTADDR:
-			case NFL_I_IP_NEXTHOP:
-			case NFL_I_SRC_MASK:
-			case NFL_I_DST_MASK:
-			case NFL_I_TOS:
-			case NFL_I_DST_TOS:
-			// EX_AS_2 not used 
-			case NFL_I_SRCAS:
-			case NFL_I_DSTAS:
-			case NFL_I_BGPNEXTADJACENTAS:
-			case NFL_I_BGPPREVADJACENTAS:
-			case NFL_I_BGP_NEXTHOP:
-			case NFL_I_PROT: 	
-			case NFL_I_SRC_VLAN:
-			case NFL_I_DST_VLAN:
-			case NFL_I_IN_SRC_MAC:
-			case NFL_I_OUT_DST_MAC:
-			case NFL_I_OUT_SRC_MAC:
-			case NFL_I_IN_DST_MAC:
-			case NFL_I_MPLS_LABEL:
-			// EX_IO_SNMP_2 not used 
-			case NFL_I_INPUT:
-			case NFL_I_OUTPUT:
-			case NFL_I_DIR:
-			case NFL_I_FWD_STATUS:
-			case NFL_I_ENGINE_TYPE:
-			case NFL_I_ENGINE_ID:
-			case NFL_I_IP_ROUTER:
 
-			switch (LNF_GET_TYPE(field)) {
-				case LNF_UINT8:
-				case LNF_UINT16:
-				case LNF_UINT32:
-					t32 = SvUV(sv);
-					lnf_item_set(&lnf_rec, field, (void *)&t32);
-					break;
-				case LNF_UINT64:
-					t64 = SvU64(sv);
-					lnf_item_set(&lnf_rec, field, (void *)&t64);
-					break;
-				case LNF_ADDR: {
-					char *s;
-					STRLEN len;
+		switch (LNF_GET_TYPE(field)) {
+			case LNF_UINT8:
+			case LNF_UINT16:
+			case LNF_UINT32:
+				t32 = SvUV(sv);
+				lnf_item_set(&lnf_rec, field, (void *)&t32);
+				break;
+			case LNF_UINT64:
+				t64 = SvU64(sv);
+				lnf_item_set(&lnf_rec, field, (void *)&t64);
+				break;
+			case LNF_ADDR: {
+				char *s;
+				STRLEN len;
 
-				    s = SvPV(sv, len);
+			    s = SvPV(sv, len);
 
-				    if ( len == sizeof(tip.s6_addr32[3]) )  {
-				        memset(&tip, 0x0, sizeof(tip));
-				        memcpy(&tip.s6_addr32[3], s, sizeof(tip.s6_addr32[3]));
-					} else if (len == sizeof(tip) ) {
-				        memcpy(&tip, s, sizeof(tip));
-					} else {
-						warn("%s invalid IP address value for %d", NFL_LOG, field);
-						return 0;
-					}
-
-					lnf_item_set(&lnf_rec, field, (void *)&tip);
-					break;
-				}
-				case LNF_MAC: {
-					char *s;
-					STRLEN len;
-
-					s = SvPV(sv, len);
-
-					if ( len != sizeof(lnf_mac_t) ) {
-						warn("%s invalid MAC address value for %d", NFL_LOG, field);
-						return 0;
-					}
-
-					lnf_item_set(&lnf_rec, field, (void *)s);
-					break;
+			    if ( len == sizeof(tip.s6_addr32[3]) )  {
+			        memset(&tip, 0x0, sizeof(tip));
+			        memcpy(&tip.s6_addr32[3], s, sizeof(tip.s6_addr32[3]));
+				} else if (len == sizeof(tip) ) {
+			        memcpy(&tip, s, sizeof(tip));
+				} else {
+					warn("%s invalid IP address value for %d", NFL_LOG, field);
+					return 0;
 				}
 
-				case LNF_MPLS: {
-					char *s;
-					STRLEN len;
-
-					s = SvPV(sv, len);
-
-					if ( len != sizeof(lnf_mpls_t) ) {
-						warn("%s invalid MPLS stack value for %d", NFL_LOG, field);
-						return 0;
-					}
-
-					lnf_item_set(&lnf_rec, field, (void *)s);
-					break;
-				}
-
-				default:
-					fprintf(stderr, "XXX: Unknown type: %x", field);
+				lnf_item_set(&lnf_rec, field, (void *)&tip);
+				break;
 			}
-			
-			break;
+			case LNF_MAC: {
+				char *s;
+				STRLEN len;
 
+				s = SvPV(sv, len);
 
-			// NSEL 
-#ifdef NSEL
-			case NFL_I_EVENT_TIME:
-					rec->event_time = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_CONN_ID:
-					rec->conn_id = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_ICMP_CODE:
-					rec->icmp_code = SvUV(sv); 
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_ICMP_TYPE:
-					rec->icmp_type = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_FW_XEVENT:
-					rec->fw_xevent = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_COMMON, 1);
-					break;
-			case NFL_I_XLATE_SRC_IP:
-					res = SV_to_ip_addr((ip_addr_t *)&rec->xlate_src_ip, sv);
-					switch (res) {
-						case AF_INET:
-							rec->xlate_flags = 0;
-							bit_array_set(&instance->ext_w, EX_NSEL_XLATE_IP_v4, 1);
-							break;
-					case AF_INET6:
-							rec->xlate_flags = 1;
-							bit_array_set(&instance->ext_w, EX_NSEL_XLATE_IP_v6, 1);
-							break;
-					default: 
-						warn("%s invalid value for %s", NFL_LOG, NFL_T_XLATE_SRC_IP);
-						bit_array_clear(&instance->ext_w);
-						return 0;
-					}
-					break;
-			case NFL_I_XLATE_DST_IP:
-					res = SV_to_ip_addr((ip_addr_t *)&rec->xlate_dst_ip, sv);
-					switch (res) {
-						case AF_INET:
-							rec->xlate_flags = 0;
-							bit_array_set(&instance->ext_w, EX_NSEL_XLATE_IP_v4, 1);
-							break;
-					case AF_INET6:
-							rec->xlate_flags = 1;
-							bit_array_set(&instance->ext_w, EX_NSEL_XLATE_IP_v6, 1);
-							break;
-					default: 
-						warn("%s invalid value for %s", NFL_LOG, NFL_T_XLATE_DST_IP);
-						bit_array_clear(&instance->ext_w);
-						return 0;
-					}
-					break;
-			case NFL_I_XLATE_SRC_PORT:
-					rec->xlate_src_port = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_XLATE_PORTS, 1);
-					break;
-			case NFL_I_XLATE_DST_PORT:
-					rec->xlate_dst_port = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_XLATE_PORTS, 1);
-					break;
-			case NFL_I_INGRESS_ACL_ID:
-					rec->ingress_acl_id[0] = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_INGRESS_ACE_ID:
-					rec->ingress_acl_id[1] = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_INGRESS_XACE_ID:
-					rec->ingress_acl_id[2] = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_EGRESS_ACL_ID:
-					rec->egress_acl_id[0] = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_EGRESS_ACE_ID:
-					rec->egress_acl_id[1] = SvUV(sv); 
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_EGRESS_XACE_ID:
-					rec->egress_acl_id[2] = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NSEL_ACL, 1);
-					break;
-			case NFL_I_USERNAME: {
-						STRLEN len;
-						char *s;
+				if ( len != sizeof(lnf_mac_t) ) {
+					warn("%s invalid MAC address value for %d", NFL_LOG, field);
+					return 0;
+				}
 
-						s = SvPV(sv, len);
+				lnf_item_set(&lnf_rec, field, (void *)s);
+				break;
+			}
 
-						if ( len > sizeof(rec->username) -  1 ) {
-							len = sizeof(rec->username) - 1;
-						}
+			case LNF_MPLS: {
+				char *s;
+				STRLEN len;
 
-						memcpy(rec->username, s, len );
-						rec->username[len] = '\0';		// to be sure 
-						if ( len < sizeof(((struct tpl_ext_42_s *)0)->username) - 1 ) {
-	 						bit_array_set(&instance->ext_w, EX_NSEL_USER, 1);
-						} else {
-		 					bit_array_set(&instance->ext_w, EX_NSEL_USER_MAX, 1);
-						}
-					}
-					break;
-			// END OF NSEL 
-			
-			// NEL support
-			case NFL_I_INGRESS_VRFID:
-					rec->ingress_vrfid = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-			case NFL_I_EVENT_FLAG:
-					rec->event_flag = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-			case NFL_I_EGRESS_VRFID:
-					rec->egress_vrfid = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_NEL_COMMON, 1);
-					break;
-#endif 
+				s = SvPV(sv, len);
 
-			// END OF NEL 
+				if ( len != sizeof(lnf_mpls_t) ) {
+					warn("%s invalid MPLS stack value for %d", NFL_LOG, field);
+					return 0;
+				}
 
-			// EX_PORT_BLOCK_ALLOC added 2014-04-19
-			case NFL_I_BLOCK_START:
-					rec->block_start = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
-			case NFL_I_BLOCK_END:
-					rec->block_end = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
-			case NFL_I_BLOCK_STEP:
-					rec->block_step = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
-			case NFL_I_BLOCK_SIZE:
-					rec->block_size = SvUV(sv);
-					bit_array_set(&instance->ext_w, EX_PORT_BLOCK_ALLOC, 1);
-					break;
+				lnf_item_set(&lnf_rec, field, (void *)s);
+				break;
+			}
 
-			// extra fields
-			case NFL_I_CLIENT_NW_DELAY_USEC:
-					rec->client_nw_delay_usec = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_LATENCY, 1);
-					break;
-			case NFL_I_SERVER_NW_DELAY_USEC:
-					rec->server_nw_delay_usec = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_LATENCY, 1);
-					break;
-			case NFL_I_APPL_LATENCY_USEC:
-					rec->appl_latency_usec = SvU64(sv);
-					bit_array_set(&instance->ext_w, EX_LATENCY, 1);
-					break;
+			case LNF_STRING: {
+				char buf[1024];
+				STRLEN len;
+				char *s;
+
+				s = SvPV(sv, len);	
+				if (len > sizeof(buf) - 1) {
+					len = sizeof(buf) - 1;
+				}
+				memcpy(buf, s, len);
+				buf[len] = '\0';
+
+				lnf_item_set(&lnf_rec, field, (void *)buf);
+				break;
+			}
 
 			default:
-					croak("%s Unknown ID (%d) in %s !!", NFL_LOG, instance->field_list[i], __FUNCTION__);
-					break;
+				croak("%s Unknown ID (%d) in %s !!", NFL_LOG, field, __FUNCTION__);
 		}
 
 		i++;
