@@ -20,6 +20,13 @@
 /* string prefix for error and warning outputs */
 #define NFL_LOG				"Net::NfDump: "
 
+/* uncommon types used by libnf */
+/* IP address, MAC address, MPLS stack */
+typedef struct in6_addr lnf_ip_t;
+typedef struct lnf_mac { uint8_t data[6]; }  lnf_mac_t;
+typedef struct lnf_mpls { uint32_t data[10]; } lnf_mpls_t;
+
+
 /* type of fields */
 /* note: if the fields type allows two kind of data type  */
 /* for example UINT32 and UINT64 libnf always uses the biggest one */
@@ -27,7 +34,7 @@
 #define LNF_UINT16			0x16
 #define LNF_UINT32			0x32
 #define LNF_UINT64			0x64
-#define LNF_ADDR 			0xA1	/* 128 bit addr */
+#define LNF_ADDR 			0xA1	/* 128 bit addr (struct in6_addr/network order) */
 #define LNF_MAC				0xA2
 #define LNF_STRING			0xAA	/* null terminated string */
 #define LNF_MPLS			0xAB	/* mpls labels */
@@ -225,6 +232,7 @@ int lnf_item_get(lnf_rec_t *rec, int field, void ** ptr);
 int lnf_item_set(lnf_rec_t *rec, int field, void * ptr); 
 int lnf_item_datat(int field);
 */
+
 
 #ifndef IN6_IS_ADDR_V4COMPAT
 #define IN6_IS_ADDR_V4COMPAT(a) \

@@ -520,6 +520,7 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
 	bit_array_t *e = rec->extensions_arr;
+	int i;
 
 	switch (field) {
 
@@ -569,7 +570,194 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 		case LNF_FLD_TCP_FLAGS:
 			m->tcp_flags = *((uint8_t *)p);
 			return LNF_OK;
+
+		// Required extension 1 - IP addresses 
+		// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
+		// however the structures are compatible so we will pretend 
+		// that v6.srcaddr and v6.dst addr points to same structure 
+		case LNF_FLD_SRCADDR: {
+			ip_addr_t *d = &m->v6.srcaddr;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				ClearFlag(m->flags, FLAG_IPV6_ADDR);
+			} else {
+				SetFlag(m->flags, FLAG_IPV6_ADDR);
+			}
+			return LNF_OK;
+		}
+		case LNF_FLD_DSTADDR: {
+			ip_addr_t *d = &m->v6.dstaddr;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				ClearFlag(m->flags, FLAG_IPV6_ADDR);
+			} else {
+				SetFlag(m->flags, FLAG_IPV6_ADDR);
+			}
+			return LNF_OK;
+		}
+
+		case LNF_FLD_IP_NEXTHOP: {
+			ip_addr_t *d = &m->ip_nexthop;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				ClearFlag(m->flags, FLAG_IPV6_NH);
+				bit_array_set(e, EX_NEXT_HOP_v4, 1);
+			} else {
+				SetFlag(m->flags, FLAG_IPV6_NH);
+				bit_array_set(e, EX_NEXT_HOP_v6, 1);
+			}
+			return LNF_OK;
+		}
+
+		case LNF_FLD_SRC_MASK:
+			m->src_mask = *((uint8_t *)p);
+			bit_array_set(e, EX_MULIPLE, 1);
+			return LNF_OK;
+		case LNF_FLD_DST_MASK:
+			m->dst_mask = *((uint8_t *)p);
+			bit_array_set(e, EX_MULIPLE, 1);
+			return LNF_OK;
+		case LNF_FLD_TOS:
+			m->tos = *((uint8_t *)p);
+			return LNF_OK;
+		case LNF_FLD_DST_TOS:
+			m->dst_tos = *((uint8_t *)p);
+			bit_array_set(e, EX_MULIPLE, 1);
+			return LNF_OK;
+
+		case LNF_FLD_SRCAS:
+			m->srcas = *((uint32_t *)p);
+			bit_array_set(e, EX_AS_4, 1);
+			return LNF_OK;
+		case LNF_FLD_DSTAS:
+			m->dstas = *((uint32_t *)p);
+			bit_array_set(e, EX_AS_4, 1);
+			return LNF_OK;
+
+		case LNF_FLD_BGPNEXTADJACENTAS:
+			m->bgpNextAdjacentAS = *((uint32_t *)p);
+			bit_array_set(e, EX_BGPADJ, 1);
+			return LNF_OK;
+		case LNF_FLD_BGPPREVADJACENTAS:
+			m->bgpPrevAdjacentAS = *((uint32_t *)p);
+			bit_array_set(e, EX_BGPADJ, 1);
+			return LNF_OK;
+
+		case LNF_FLD_BGP_NEXTHOP: {
+			ip_addr_t *d = &m->bgp_nexthop;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				ClearFlag(m->flags, FLAG_IPV6_NHB);
+				bit_array_set(e, EX_NEXT_HOP_BGP_v4, 1);
+			} else {
+				SetFlag(m->flags, FLAG_IPV6_NHB);
+				bit_array_set(e, EX_NEXT_HOP_BGP_v6, 1);
+			}
+			return LNF_OK;
+		}
 		
+		case LNF_FLD_PROT:
+			m->prot = *((uint8_t *)p);
+			return LNF_OK;
+
+		case LNF_FLD_SRC_VLAN:
+			m->src_vlan = *((uint32_t *)p);
+			bit_array_set(e, EX_VLAN, 1);
+			return LNF_OK;
+		case LNF_FLD_DST_VLAN:
+			m->dst_vlan = *((uint32_t *)p);
+			bit_array_set(e, EX_VLAN, 1);
+			return LNF_OK;
+
+		case LNF_FLD_IN_SRC_MAC: 
+			m->in_src_mac = 0x0;
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)(&m->in_src_mac))[5 - i] = ((uint8_t *)p)[i];
+		    } 
+			bit_array_set(e, EX_MAC_1, 1);
+			return LNF_OK;
+		case LNF_FLD_OUT_DST_MAC: 
+			m->out_dst_mac = 0x0;
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)(&m->out_dst_mac))[5 - i] = ((uint8_t *)p)[i];
+		    } 
+			bit_array_set(e, EX_MAC_1, 1);
+			return LNF_OK;
+		case LNF_FLD_OUT_SRC_MAC: 
+			m->out_src_mac = 0x0;
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)(&m->out_src_mac))[5 - i] = ((uint8_t *)p)[i];
+		    } 
+			bit_array_set(e, EX_MAC_2, 1);
+			return LNF_OK;
+		case LNF_FLD_IN_DST_MAC: 
+			m->in_dst_mac = 0x0;
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)(&m->in_dst_mac))[5 - i] = ((uint8_t *)p)[i];
+		    } 
+			bit_array_set(e, EX_MAC_2, 1);
+			return LNF_OK;
+
+		case LNF_FLD_MPLS_LABEL: 
+			memcpy(m->mpls_label, p, sizeof(lnf_mpls_t));
+			bit_array_set(e, EX_MPLS, 1);
+			return LNF_OK;
+		
+		case LNF_FLD_INPUT:
+			m->input = *((uint32_t *)p);
+			bit_array_set(e, EX_IO_SNMP_4, 1);
+			return LNF_OK;
+		case LNF_FLD_OUTPUT:
+			m->output = *((uint32_t *)p);
+			bit_array_set(e, EX_IO_SNMP_4, 1);
+			return LNF_OK;
+
+		case LNF_FLD_DIR:
+			m->dir = *((uint32_t *)p);
+			bit_array_set(e, EX_MULIPLE, 1);
+			return LNF_OK;
+
+		case LNF_FLD_FWD_STATUS:
+			m->fwd_status = *((uint32_t *)p);
+			return LNF_OK;
+
+		case LNF_FLD_IP_ROUTER: {
+			ip_addr_t *d = &m->ip_router;
+	
+			d->v6[0] = ntohll( ((ip_addr_t *)p)->v6[0] );
+			d->v6[1] = ntohll( ((ip_addr_t *)p)->v6[1] );
+
+			if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)p)) {
+				ClearFlag(m->flags, FLAG_IPV6_EXP);
+				bit_array_set(e,  EX_ROUTER_IP_v4, 1);
+			} else {
+				SetFlag(m->flags, FLAG_IPV6_EXP);
+				bit_array_set(e,  EX_ROUTER_IP_v6, 1);
+			}
+			return LNF_OK;
+		}
+
+		case LNF_FLD_ENGINE_TYPE:
+			m->engine_type = *((uint8_t *)p);
+			bit_array_set(e, EX_ROUTER_ID, 1);
+			return LNF_OK;
+		case LNF_FLD_ENGINE_ID:
+			m->engine_id = *((uint8_t *)p);
+			bit_array_set(e, EX_ROUTER_ID, 1);
+			return LNF_OK;
+
 	}
 
 	return LNF_ERR_UKNFLD;
