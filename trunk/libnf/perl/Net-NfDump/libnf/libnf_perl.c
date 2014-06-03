@@ -1186,9 +1186,9 @@ lnf_rec_t lnf_rec;
 
 			    s = SvPV(sv, len);
 
-			    if ( len == sizeof(tip.s6_addr32[3]) )  {
+			    if ( len == sizeof(tip.data[3]) )  {
 			        memset(&tip, 0x0, sizeof(tip));
-			        memcpy(&tip.s6_addr32[3], s, sizeof(tip.s6_addr32[3]));
+			        memcpy(&tip.data[3], s, sizeof(tip.data[3]));
 				} else if (len == sizeof(tip) ) {
 			        memcpy(&tip, s, sizeof(tip));
 				} else {
