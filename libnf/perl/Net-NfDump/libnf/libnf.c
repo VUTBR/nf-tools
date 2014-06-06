@@ -909,3 +909,61 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 	return LNF_ERR_UKNFLD;
 }
 
+/* returns LN_OK or LNF_ERR_UKNFLD */
+int lnf_item_get(lnf_rec_t *rec, int field, void * p) {
+
+	master_record_t *m = rec->master_record;
+	bit_array_t *e = rec->extensions_arr;
+	int i;
+
+	switch (field) {
+
+		case LNF_FLD_FIRST: 
+			*((uint64_t *)p) = m->first * 1000LL + m->msec_first;
+			return LNF_OK;
+		case LNF_FLD_LAST: 
+			*((uint64_t *)p) = m->last * 1000LL + m->msec_last;
+			return LNF_OK;
+/*			m->last = *((uint64_t *)p) / 1000LL;
+			m->msec_last = *((uint64_t *)p) - m->last * 1000LL;	
+*/
+		case LNF_FLD_RECEIVED: 
+			*((uint64_t *)p) = m->received;
+			return bit_array_get(e, EX_RECEIVED) ? LNF_OK : LNF_ERR_NOTSET;
+			
+		case LNF_FLD_DPKTS:
+			*((uint64_t *)p) = m->dPkts;
+			return LNF_OK;
+		case LNF_FLD_DOCTETS:
+			*((uint64_t *)p) = m->dOctets;
+			return LNF_OK;
+
+		// EX_OUT_PKG_4 not used 
+		case LNF_FLD_OUT_PKTS:
+			*((uint64_t *)p) = m->out_pkts;
+			return bit_array_get(e, EX_OUT_PKG_8) ||  bit_array_get(e, EX_OUT_PKG_4)  ? LNF_OK : LNF_ERR_NOTSET;
+		// EX_OUT_BYTES_4 not used
+		case LNF_FLD_OUT_BYTES:
+			*((uint64_t *)p) = m->out_bytes;
+			return bit_array_get(e, EX_OUT_BYTES_8) || bit_array_get(e, EX_OUT_BYTES_4) ? LNF_OK : LNF_ERR_NOTSET;
+		// EX_AGGR_FLOWS_4 not used 
+		case LNF_FLD_AGGR_FLOWS:
+			*((uint64_t *)p) = m->aggr_flows;
+			return bit_array_get(e, EX_AGGR_FLOWS_8) || bit_array_get(e, EX_AGGR_FLOWS_4) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_SRCPORT:
+			*((uint16_t *)p) = m->srcport;
+			return LNF_OK;
+		case LNF_FLD_DSTPORT:
+			*((uint16_t *)p) = m->dstport;
+			return LNF_OK;
+		case LNF_FLD_TCP_FLAGS:
+			*((uint16_t *)p) = m->tcp_flags;
+			return LNF_OK;
+	}
+
+
+
+	return LNF_ERR_UKNFLD;
+
+}
