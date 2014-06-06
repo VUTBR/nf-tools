@@ -392,14 +392,15 @@ HV *res;
 /* converts master_record to perl structures (hashref) */
 /* TAG for check_items_map.pl: libnf_master_record_to_SV */
 //SV * libnf_master_record_to_AV(int handle, master_record_t *rec, extension_map_t *map) {
-SV * libnf_master_record_to_AV(int handle, lnf_rec_t *lnf_record) {
+SV * libnf_master_record_to_AV(int handle, lnf_rec_t *lnf_rec) {
 libnf_instance_t *instance = libnf_instances[handle];
 AV *res_array;
-master_record_t *rec = lnf_record->master_record;
-extension_map_t *map = rec->map_ref;
+master_record_t *rec = lnf_rec->master_record;
+//extension_map_t *map = rec->map_ref;
 //bit_array_t ext;
 int i=0;
 uint64_t t;
+int ret;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -419,61 +420,50 @@ uint64_t t;
 	*/
 
 
-	bit_array_copy(&instance->ext_r, lnf_record->extensions_arr);
+	bit_array_copy(&instance->ext_r, lnf_rec->extensions_arr);
 
 	res_array = (AV *)sv_2mortal((SV *)newAV());
+
 
 	i = 0;
 	while ( instance->field_list[i] ) {
 		SV * sv;
+		int field = instance->field_list[i];
 
 		switch ( instance->field_list[i] ) { 
 			case NFL_I_FIRST: 	
-					t = rec->first * 1000LL + rec->msec_first;
-					sv = uint64_to_SV(t, 1);
-					break;
 			case NFL_I_LAST: 	
-					t = rec->last * 1000LL + rec->msec_last;
-					sv = uint64_to_SV(t, 1);
-					break;
-
 			case NFL_I_RECEIVED:
-					sv = uint64_to_SV(rec->received, 
-						bit_array_get(&instance->ext_r, EX_RECEIVED) );
-					break;
-
 			case NFL_I_DPKTS:
-					sv = uint64_to_SV(rec->dPkts, 1);
-					break;
 			case NFL_I_DOCTETS:
-					sv = uint64_to_SV(rec->dOctets, 1);
-					break;
-
 			case NFL_I_OUT_PKTS:
-					sv = uint64_to_SV(rec->out_pkts, 
-						bit_array_get(&instance->ext_r, EX_OUT_PKG_4) ||
-						bit_array_get(&instance->ext_r, EX_OUT_PKG_8) );
-					break;
 			case NFL_I_OUT_BYTES:
-					sv = uint64_to_SV(rec->out_bytes, 
-						bit_array_get(&instance->ext_r, EX_OUT_BYTES_4) ||
-						bit_array_get(&instance->ext_r, EX_OUT_BYTES_8) );
-					break;
 			case NFL_I_AGGR_FLOWS:
-					sv = uint64_to_SV(rec->aggr_flows, 
-						bit_array_get(&instance->ext_r, EX_AGGR_FLOWS_4) ||
-						bit_array_get(&instance->ext_r, EX_AGGR_FLOWS_8) );
-					break;
-
 			case NFL_I_SRCPORT:
-					sv = uint_to_SV(rec->srcport, 1);
-					break;
 			case NFL_I_DSTPORT:
-					sv = uint_to_SV(rec->dstport, 1);
-					break;
 			case NFL_I_TCP_FLAGS: 	
-					sv = uint_to_SV(rec->tcp_flags, 1);
-					break;
+
+
+		switch (LNF_GET_TYPE(field)) {
+			case LNF_UINT8:
+			case LNF_UINT16:
+			case LNF_UINT32: {
+                uint64_t t32 = 0;
+                ret = lnf_item_get(lnf_rec, field, (void *)&t32);
+				sv = uint_to_SV(t32, ret == LNF_OK);
+                break;
+            }
+            case LNF_UINT64: {
+                uint64_t t64 = 0;
+                ret = lnf_item_get(lnf_rec, field, (void *)&t64);
+				sv = uint64_to_SV(t64, ret == LNF_OK);
+                break;
+			}
+
+		} /* switch */
+
+			break;
+
 
 			// Required extension 1 - IP addresses 
 			// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
@@ -989,7 +979,7 @@ int flags = 0;
 	flags |= LNF_WRITE;
 	flags |= compressed ? LNF_COMP  : 0x0;
 	flags |= anonymized ? LNF_ANON  : 0x0;
-	lnf_file_t *xx1;
+
     instance->lnf_nffile_w = lnf_open(filename, flags , ident);
 //    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
     if ( !instance->lnf_nffile_w ) {
@@ -1007,7 +997,7 @@ SV * libnf_read_row(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
-uint32_t map_id;
+//uint32_t map_id;
 lnf_rec_t lnf_rec;
 
 	if (instance == NULL ) {
@@ -1120,15 +1110,14 @@ libnf_instance_t *src_instance = libnf_instances[src_handle];
 int libnf_write_row(int handle, SV * arrayref) {
 master_record_t *rec;
 libnf_instance_t *instance = libnf_instances[handle];
-extension_map_t *map;
+//extension_map_t *map;
 //bit_array_t ext;
 int last_field;
-int i, res;
-uint64_t t64;
-uint32_t t32;
+int i;
+//res;
 lnf_ip_t tip;
 
-int field;
+int field, ret;
 lnf_rec_t lnf_rec;
 
 	if (instance == NULL ) {
@@ -1172,14 +1161,16 @@ lnf_rec_t lnf_rec;
 		switch (LNF_GET_TYPE(field)) {
 			case LNF_UINT8:
 			case LNF_UINT16:
-			case LNF_UINT32:
-				t32 = SvUV(sv);
-				lnf_item_set(&lnf_rec, field, (void *)&t32);
+			case LNF_UINT32: {
+				uint32_t t32 = SvUV(sv);
+				ret = lnf_item_set(&lnf_rec, field, (void *)&t32);
 				break;
-			case LNF_UINT64:
-				t64 = SvU64(sv);
-				lnf_item_set(&lnf_rec, field, (void *)&t64);
+			}
+			case LNF_UINT64: {
+				uint64_t t64 = SvU64(sv);
+				ret = lnf_item_set(&lnf_rec, field, (void *)&t64);
 				break;
+			}
 			case LNF_ADDR: {
 				char *s;
 				STRLEN len;
@@ -1196,7 +1187,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				lnf_item_set(&lnf_rec, field, (void *)&tip);
+				ret = lnf_item_set(&lnf_rec, field, (void *)&tip);
 				break;
 			}
 			case LNF_MAC: {
@@ -1210,7 +1201,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				lnf_item_set(&lnf_rec, field, (void *)s);
+				ret = lnf_item_set(&lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -1225,7 +1216,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				lnf_item_set(&lnf_rec, field, (void *)s);
+				ret = lnf_item_set(&lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -1241,14 +1232,16 @@ lnf_rec_t lnf_rec;
 				memcpy(buf, s, len);
 				buf[len] = '\0';
 
-				lnf_item_set(&lnf_rec, field, (void *)buf);
+				ret = lnf_item_set(&lnf_rec, field, (void *)buf);
 				break;
 			}
 
 			default:
 				croak("%s Unknown ID (%d) in %s !!", NFL_LOG, field, __FUNCTION__);
 		}
-
+		if (ret != LNF_OK) {
+			croak("%s Error when processing field %d, error code: %d !!", NFL_LOG, field, ret);
+		}
 		i++;
 	}
 

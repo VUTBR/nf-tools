@@ -226,6 +226,7 @@ int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 
 int lnf_item_set(lnf_rec_t *rec, int field, void * p);
+int lnf_item_get(lnf_rec_t *rec, int field, void * p);
 
 /*
 int lnf_item_init(lnf_rec_t *rec);
