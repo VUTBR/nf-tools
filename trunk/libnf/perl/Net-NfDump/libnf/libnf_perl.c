@@ -407,42 +407,14 @@ int ret;
 		return 0;
 	}
 	
-	// processing map 
-	/*
-
-	bit_array_clear(&instance->ext_r);
-
-	i = 0;
-    while (map->ex_id[i]) {
-		bit_array_set(&instance->ext_r, map->ex_id[i], 1);
-		i++;
-	}
-	*/
-
-
 	bit_array_copy(&instance->ext_r, lnf_rec->extensions_arr);
 
 	res_array = (AV *)sv_2mortal((SV *)newAV());
-
 
 	i = 0;
 	while ( instance->field_list[i] ) {
 		SV * sv;
 		int field = instance->field_list[i];
-
-		switch ( instance->field_list[i] ) { 
-			case NFL_I_FIRST: 	
-			case NFL_I_LAST: 	
-			case NFL_I_RECEIVED:
-			case NFL_I_DPKTS:
-			case NFL_I_DOCTETS:
-			case NFL_I_OUT_PKTS:
-			case NFL_I_OUT_BYTES:
-			case NFL_I_AGGR_FLOWS:
-			case NFL_I_SRCPORT:
-			case NFL_I_DSTPORT:
-			case NFL_I_TCP_FLAGS: 	
-
 
 		switch (LNF_GET_TYPE(field)) {
 			case LNF_UINT8:
@@ -459,269 +431,59 @@ int ret;
 				sv = uint64_to_SV(t64, ret == LNF_OK);
                 break;
 			}
+			case LNF_ADDR: {
+				STRLEN len;
+				lnf_ip_t tip;
 
-		} /* switch */
+                ret = lnf_item_get(lnf_rec, field, (void *)&tip);
 
-			break;
-
-
-			// Required extension 1 - IP addresses 
-			// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
-			// however the structures are compatible so we will pretend 
-			// that v6.srcaddr and v6.dst addr points to same structure 
-			case NFL_I_SRCADDR:
-					sv = ip_addr_to_SV((ip_addr_t *)&rec->v6.srcaddr, 
-						rec->flags & FLAG_IPV6_ADDR, 1);
-					break;
-			case NFL_I_DSTADDR:
-					sv = ip_addr_to_SV((ip_addr_t *)&rec->v6.dstaddr, 
-						rec->flags & FLAG_IPV6_ADDR, 1);
-					break;
-			case NFL_I_IP_NEXTHOP:
-					sv = ip_addr_to_SV(&rec->ip_nexthop, rec->flags & FLAG_IPV6_NH,
-						bit_array_get(&instance->ext_r, EX_NEXT_HOP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NEXT_HOP_v6) );
-					break;
-			case NFL_I_SRC_MASK:
-					sv = uint_to_SV(rec->src_mask, 
-						bit_array_get(&instance->ext_r, EX_MULIPLE) );
-					break;
-			case NFL_I_DST_MASK:
-					sv = uint_to_SV(rec->dst_mask, 
-						bit_array_get(&instance->ext_r, EX_MULIPLE) );
-					break;
-
-			case NFL_I_TOS:
-					sv = uint_to_SV(rec->tos, 1);
-					break;
-			case NFL_I_DST_TOS:
-					sv = uint_to_SV(rec->dst_tos, 
-						bit_array_get(&instance->ext_r, EX_MULIPLE) );
-					break;
-
-			case NFL_I_SRCAS:
-					sv = uint_to_SV(rec->srcas, 
-						bit_array_get(&instance->ext_r, EX_AS_2) ||
-						bit_array_get(&instance->ext_r, EX_AS_4) );
-					break;
-			case NFL_I_DSTAS:
-					sv = uint_to_SV(rec->dstas, 
-						bit_array_get(&instance->ext_r, EX_AS_2) ||
-						bit_array_get(&instance->ext_r, EX_AS_4) );
-					break;
-
-			case NFL_I_BGPNEXTADJACENTAS:
-					sv = uint_to_SV(rec->bgpNextAdjacentAS, 
-						bit_array_get(&instance->ext_r, EX_BGPADJ) );
-					break;
-			case NFL_I_BGPPREVADJACENTAS:
-					sv = uint_to_SV(rec->bgpPrevAdjacentAS, 
-						bit_array_get(&instance->ext_r, EX_BGPADJ) );
-					break;
-			case NFL_I_BGP_NEXTHOP:
-					sv = ip_addr_to_SV(&rec->bgp_nexthop, rec->flags & FLAG_IPV6_NHB,
-						bit_array_get(&instance->ext_r, EX_NEXT_HOP_BGP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NEXT_HOP_BGP_v6) );
-					break;
-
-			case NFL_I_PROT: 	
-					sv = uint_to_SV(rec->prot, 1);
-					break;
-
-			case NFL_I_SRC_VLAN:
-					sv = uint_to_SV(rec->src_vlan, 
-						bit_array_get(&instance->ext_r, EX_VLAN) );
-					break;
-			case NFL_I_DST_VLAN:
-					sv = uint_to_SV(rec->dst_vlan, 
-						bit_array_get(&instance->ext_r, EX_VLAN) );
-					break;
-
-			case NFL_I_IN_SRC_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->in_src_mac,
-						bit_array_get(&instance->ext_r, EX_MAC_1) );
-					break;
-			case NFL_I_OUT_DST_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->out_dst_mac,
-						bit_array_get(&instance->ext_r, EX_MAC_1) );
-					break;
-			case NFL_I_OUT_SRC_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->out_src_mac,
-						bit_array_get(&instance->ext_r, EX_MAC_2) );
-					break;
-			case NFL_I_IN_DST_MAC:
-					sv = mac_to_SV((u_int8_t *)&rec->in_dst_mac,
-						bit_array_get(&instance->ext_r, EX_MAC_2) );
-					break;
- 
-			case NFL_I_MPLS_LABEL:
-					sv = mpls_to_SV((char *)&rec->mpls_label, 
-						bit_array_get(&instance->ext_r, EX_MPLS) );
-					break;
-
-			case NFL_I_INPUT:
-					sv = uint_to_SV(rec->input, 
-						bit_array_get(&instance->ext_r, EX_IO_SNMP_2) ||
-						bit_array_get(&instance->ext_r, EX_IO_SNMP_4) );
-					break;
-			case NFL_I_OUTPUT:
-					sv = uint_to_SV(rec->output, 
-						bit_array_get(&instance->ext_r, EX_IO_SNMP_2) ||
-						bit_array_get(&instance->ext_r, EX_IO_SNMP_4) );
-
-					break;
-			case NFL_I_DIR:
-					sv = uint_to_SV(rec->dir, 
-						bit_array_get(&instance->ext_r, EX_MULIPLE) );
-					break;
-
-			case NFL_I_FWD_STATUS:
-					sv = uint_to_SV(rec->fwd_status, 1);
-					break;
-
-
-			case NFL_I_IP_ROUTER:
-					sv = ip_addr_to_SV(&rec->ip_router, rec->flags & FLAG_IPV6_EXP,
-						bit_array_get(&instance->ext_r, EX_ROUTER_IP_v4) ||
-						bit_array_get(&instance->ext_r, EX_ROUTER_IP_v6) );
-					break;
-			case NFL_I_ENGINE_TYPE:
-					sv = uint_to_SV(rec->engine_type, 
-						bit_array_get(&instance->ext_r, EX_ROUTER_ID) );
-					break;
-			case NFL_I_ENGINE_ID:
-					sv = uint_to_SV(rec->engine_id, 
-						bit_array_get(&instance->ext_r, EX_ROUTER_ID) );
-					break;
-
-			// NSEL 
-#ifdef NSEL
-			case NFL_I_EVENT_TIME:
-					sv = uint64_to_SV(rec->event_time, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_CONN_ID:
-					sv = uint_to_SV(rec->conn_id, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_ICMP_CODE:
-					sv = uint_to_SV(rec->icmp_code, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_ICMP_TYPE:
-					sv = uint_to_SV(rec->icmp_type, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_FW_XEVENT:
-					sv = uint_to_SV(rec->fw_xevent, 
-						bit_array_get(&instance->ext_r, EX_NSEL_COMMON) );
-					break;
-			case NFL_I_XLATE_SRC_IP:
-					sv = ip_addr_to_SV(&rec->xlate_src_ip, rec->xlate_flags,
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
-					break;
-			case NFL_I_XLATE_DST_IP:
-					sv = ip_addr_to_SV(&rec->xlate_dst_ip, rec->xlate_flags,
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v4) ||
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_IP_v6) );
-					break;
-			case NFL_I_XLATE_SRC_PORT:
-					sv = uint_to_SV(rec->xlate_src_port, 
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_PORTS) );
-					break;
-			case NFL_I_XLATE_DST_PORT:
-					sv = uint_to_SV(rec->xlate_dst_port, 
-						bit_array_get(&instance->ext_r, EX_NSEL_XLATE_PORTS) );
-					break;
-			case NFL_I_INGRESS_ACL_ID:
-					sv = uint_to_SV(rec->ingress_acl_id[0], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_INGRESS_ACE_ID:
-					sv = uint_to_SV(rec->ingress_acl_id[1], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_INGRESS_XACE_ID:
-					sv = uint_to_SV(rec->ingress_acl_id[2], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_EGRESS_ACL_ID:
-					sv = uint_to_SV(rec->egress_acl_id[0], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_EGRESS_ACE_ID:
-					sv = uint_to_SV(rec->egress_acl_id[1], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_EGRESS_XACE_ID:
-					sv = uint_to_SV(rec->egress_acl_id[2], 
-						bit_array_get(&instance->ext_r, EX_NSEL_ACL) );
-					break;
-			case NFL_I_USERNAME:
-					if ( bit_array_get(&instance->ext_r, EX_NSEL_USER) ||
-	 					 bit_array_get(&instance->ext_r, EX_NSEL_USER_MAX ) )  {
-						sv = newSVpvn(rec->username, strlen(rec->username));
+				if (ret != LNF_OK) {
+					sv = newSV(0);
+				} else {
+					if (IN6_IS_ADDR_V4COMPAT((struct in6_addr *)&tip)) {
+						sv = newSVpvn((char *)&tip.data[3], sizeof(tip.data[3]));
 					} else {
-						sv =  newSV(0);
+						sv = newSVpvn((char *)&tip, sizeof(tip));
 					}
-					break;
+				}
+				break;
+			}
+			case LNF_MAC: {
+				lnf_mac_t tmac;
 
-			// END OF NSEL 
-		
-			// NEL support
-			case NFL_I_INGRESS_VRFID:
-					sv = uint_to_SV(rec->ingress_vrfid, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
-			case NFL_I_EVENT_FLAG:
-					sv = uint_to_SV(rec->event_flag, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
-			case NFL_I_EGRESS_VRFID:
-					sv = uint_to_SV(rec->egress_vrfid, 
-						bit_array_get(&instance->ext_r, EX_NEL_COMMON) );
-					break;
+                ret = lnf_item_get(lnf_rec, field, (void *)&tmac);
+				if (ret != LNF_OK) {
+					sv = newSV(0);
+				} else {
+					sv = newSVpvn((char *)&tmac, sizeof(tmac));
+				}
+				break;
+			}
+			case LNF_MPLS: {
+				lnf_mpls_t tmpls;
 
-			// END OF NEL 
-#endif // NEL 
+                ret = lnf_item_get(lnf_rec, field, (void *)&tmpls);
+				if (ret != LNF_OK) {
+					sv = newSV(0);
+				} else {
+					sv = newSVpvn((char *)&tmpls, sizeof(lnf_mpls_t));
+				}
+				break;
+			}
+			case LNF_STRING: {
+				char buf[LNF_MAX_STRING];
 
-			// EX_PORT_BLOCK_ALLOC - added 2014-04-19
-			case NFL_I_BLOCK_START:
-					sv = uint_to_SV(rec->block_start, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
-			case NFL_I_BLOCK_END:
-					sv = uint_to_SV(rec->block_end, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
-			case NFL_I_BLOCK_STEP:
-					sv = uint_to_SV(rec->block_step, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
-			case NFL_I_BLOCK_SIZE:
-					sv = uint_to_SV(rec->block_size, 
-						bit_array_get(&instance->ext_r, EX_PORT_BLOCK_ALLOC) );
-					break;
-
-			// extra fileds
-			case NFL_I_CLIENT_NW_DELAY_USEC:
-					sv = uint64_to_SV(rec->client_nw_delay_usec, 
-						bit_array_get(&instance->ext_r, EX_LATENCY) );
-					break;
-			case NFL_I_SERVER_NW_DELAY_USEC:
-					sv = uint64_to_SV(rec->server_nw_delay_usec, 
-						bit_array_get(&instance->ext_r, EX_LATENCY) );
-					break;
-			case NFL_I_APPL_LATENCY_USEC:
-					sv = uint64_to_SV(rec->appl_latency_usec, 
-						bit_array_get(&instance->ext_r, EX_LATENCY) );
-					break;
-
-			default:
-					croak("%s Unknown ID in %s !!", NFL_LOG, __FUNCTION__);
-					break;
-		}
+                ret = lnf_item_get(lnf_rec, field, (void *)&buf);
+				if (ret != LNF_OK) {
+					sv = newSV(0);
+				} else {
+					sv = newSVpvn(buf, strlen(buf));
+				}
+				break;
+			}
+			default: 
+				croak("%s Unknown field (id %d) in %s !!", NFL_LOG, field, __FUNCTION__);
+		} /* case */
 
 		i++;
 		av_push(res_array, sv);	
@@ -1221,7 +983,7 @@ lnf_rec_t lnf_rec;
 			}
 
 			case LNF_STRING: {
-				char buf[1024];
+				char buf[LNF_MAX_STRING];
 				STRLEN len;
 				char *s;
 
