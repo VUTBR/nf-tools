@@ -960,9 +960,244 @@ int lnf_item_get(lnf_rec_t *rec, int field, void * p) {
 		case LNF_FLD_TCP_FLAGS:
 			*((uint16_t *)p) = m->tcp_flags;
 			return LNF_OK;
+
+		// Required extension 1 - IP addresses 
+		// NOTE: srcaddr and dst addr do not uses ip_addr_t union/structure 
+		// however the structures are compatible so we will pretend 
+		// that v6.srcaddr and v6.dst addr points to same structure 
+		case LNF_FLD_SRCADDR: {
+			ip_addr_t *d = (ip_addr_t *)&m->v6.srcaddr;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return LNF_OK;
+		}
+		case LNF_FLD_DSTADDR: {
+			ip_addr_t *d = (ip_addr_t *)&m->v6.dstaddr;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return LNF_OK;
+		}
+
+		case LNF_FLD_IP_NEXTHOP: {
+			ip_addr_t *d = (ip_addr_t *)&m->ip_nexthop;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return bit_array_get(e, EX_NEXT_HOP_v4) || bit_array_get(e, EX_NEXT_HOP_v6) ? LNF_OK : LNF_ERR_NOTSET;
+			return LNF_OK;
+		}
+
+		case LNF_FLD_SRC_MASK:
+			*((uint8_t *)p) = m->src_mask;
+			return bit_array_get(e, EX_MULIPLE) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_DST_MASK:
+			 *((uint8_t *)p) = m->dst_mask;
+			return bit_array_get(e, EX_MULIPLE) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_TOS:
+			*((uint8_t *)p) = m->tos;
+			return LNF_OK;
+		case LNF_FLD_DST_TOS:
+			*((uint8_t *)p) = m->dst_tos;
+			return bit_array_get(e, EX_MULIPLE) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_SRCAS:
+			*((uint32_t *)p) = m->srcas;
+			return bit_array_get(e, EX_AS_2) || bit_array_get(e, EX_AS_4) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_DSTAS:
+			*((uint32_t *)p) = m->dstas;
+			return bit_array_get(e, EX_AS_2) || bit_array_get(e, EX_AS_4) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_BGPNEXTADJACENTAS:
+			*((uint32_t *)p) = m->bgpNextAdjacentAS;
+			return bit_array_get(e, EX_BGPADJ) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_BGPPREVADJACENTAS:
+			*((uint32_t *)p) = m->bgpPrevAdjacentAS;
+			return bit_array_get(e, EX_BGPADJ) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_BGP_NEXTHOP: {
+			ip_addr_t *d = (ip_addr_t *)&m->bgp_nexthop;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return bit_array_get(e, EX_NEXT_HOP_BGP_v4) || bit_array_get(e, EX_NEXT_HOP_BGP_v6) ? LNF_OK : LNF_ERR_NOTSET;
+			return LNF_OK;
+		}
+
+		case LNF_FLD_PROT: 
+			*((uint8_t *)p) = m->prot;
+			return LNF_OK;
+
+		case LNF_FLD_SRC_VLAN:
+			*((uint32_t *)p) = m->src_vlan;
+			return bit_array_get(e, EX_VLAN) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_DST_VLAN:
+			*((uint32_t *)p) = m->dst_vlan;
+			return bit_array_get(e, EX_VLAN) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_IN_SRC_MAC: 
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)p)[5 - i] = ((uint8_t *)(&m->in_src_mac))[i];
+		    } 
+			return bit_array_get(e, EX_MAC_1) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_OUT_DST_MAC: 
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)p)[5 - i] = ((uint8_t *)(&m->out_dst_mac))[i];
+		    } 
+			return bit_array_get(e, EX_MAC_1) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_OUT_SRC_MAC: 
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)p)[5 - i] = ((uint8_t *)(&m->out_src_mac))[i];
+		    } 
+			return bit_array_get(e, EX_MAC_2) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_IN_DST_MAC: 
+			for (i = 0; i < 6; i++) {
+				((uint8_t *)p)[5 - i] = ((uint8_t *)(&m->in_dst_mac))[i];
+		    } 
+			return bit_array_get(e, EX_MAC_2) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_MPLS_LABEL: 
+			memcpy(p, m->mpls_label, sizeof(lnf_mpls_t));
+			return bit_array_get(e, EX_MPLS) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_INPUT:
+			*((uint32_t *)p) = m->input;
+			return bit_array_get(e, EX_IO_SNMP_2)  || bit_array_get(e, EX_IO_SNMP_4) ? LNF_OK : LNF_ERR_NOTSET;
+			return LNF_OK;
+		case LNF_FLD_OUTPUT:
+			*((uint32_t *)p) =  m->output;
+			return bit_array_get(e, EX_IO_SNMP_2)  || bit_array_get(e, EX_IO_SNMP_4) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_DIR:
+			*((uint32_t *)p) =  m->dir;
+			return bit_array_get(e, EX_MULIPLE) ? LNF_OK : LNF_ERR_NOTSET;
+			return LNF_OK;
+
+		case LNF_FLD_FWD_STATUS:
+			*((uint32_t *)p) = m->fwd_status;
+			return LNF_OK;
+
+		case LNF_FLD_IP_ROUTER: {
+			ip_addr_t *d = (ip_addr_t *)&m->ip_router;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return bit_array_get(e, EX_ROUTER_IP_v4) || bit_array_get(e, EX_ROUTER_IP_v6) ? LNF_OK : LNF_ERR_NOTSET;
+		}
+
+		case LNF_FLD_ENGINE_TYPE:
+			*((uint8_t *)p) = m->engine_type;
+			return bit_array_get(e, EX_ROUTER_ID) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_ENGINE_ID:
+			*((uint8_t *)p) = m->engine_id;
+			return bit_array_get(e, EX_ROUTER_ID) ? LNF_OK : LNF_ERR_NOTSET;
+
+#ifdef NSEL
+	
+		case LNF_FLD_EVENT_TIME:
+			*((uint64_t *)p) = m->event_time;
+			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_CONN_ID:
+			*((uint32_t *)p) = m->conn_id;
+			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_ICMP_CODE:
+			*((uint8_t *)p) = m->icmp_code;
+			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_ICMP_TYPE:
+			*((uint8_t *)p) = m->icmp_type;
+			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_FW_XEVENT:
+			*((uint16_t *)p) = m->fw_xevent;
+			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_XLATE_SRC_IP: {
+			ip_addr_t *d = (ip_addr_t *)&m->xlate_src_ip;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return bit_array_get(e, EX_NSEL_XLATE_IP_v4) || bit_array_get(e, EX_NSEL_XLATE_IP_v6) ? LNF_OK : LNF_ERR_NOTSET;
+		}
+		case LNF_FLD_XLATE_DST_IP: {
+			ip_addr_t *d = (ip_addr_t *)&m->xlate_dst_ip;
+	
+			((ip_addr_t *)p)->v6[0] = htonll(d->v6[0]);
+			((ip_addr_t *)p)->v6[1] = htonll(d->v6[1]);
+
+			return bit_array_get(e, EX_NSEL_XLATE_IP_v4) || bit_array_get(e, EX_NSEL_XLATE_IP_v6) ? LNF_OK : LNF_ERR_NOTSET;
+		}
+		case LNF_FLD_XLATE_SRC_PORT:
+			*((uint16_t *)p) = m->xlate_src_port;
+			return bit_array_get(e, EX_NSEL_XLATE_PORTS) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_XLATE_DST_PORT:
+			*((uint16_t *)p) = m->xlate_dst_port;
+			return bit_array_get(e, EX_NSEL_XLATE_PORTS) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_INGRESS_ACL_ID:
+			*((uint32_t *)p) = m->ingress_acl_id[0];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+			bit_array_set(e, EX_NSEL_ACL, 1);
+		case LNF_FLD_INGRESS_ACE_ID:
+			*((uint32_t *)p) = m->ingress_acl_id[1];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_INGRESS_XACE_ID:
+			*((uint32_t *)p) = m->ingress_acl_id[2];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_EGRESS_ACL_ID:
+			*((uint32_t *)p) = m->egress_acl_id[0];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_EGRESS_ACE_ID:
+			*((uint32_t *)p) = m->egress_acl_id[1];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_EGRESS_XACE_ID:
+			*((uint32_t *)p) = m->egress_acl_id[2];
+			return bit_array_get(e, EX_NSEL_ACL) ? LNF_OK : LNF_ERR_NOTSET;
+
+		case LNF_FLD_USERNAME: {
+			memcpy(p, m->username, strlen(m->username) + 1);
+			return bit_array_get(e, EX_NSEL_USER) || bit_array_get(e, EX_NSEL_USER_MAX) ? LNF_OK : LNF_ERR_NOTSET;
+		}
+
+		case LNF_FLD_INGRESS_VRFID:
+			*((uint32_t *)p) = m->ingress_vrfid;
+			return bit_array_get(e, EX_NEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_EVENT_FLAG:
+			*((uint8_t *)p) = m->event_flag;
+			return bit_array_get(e, EX_NEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_EGRESS_VRFID:
+			*((uint32_t *)p) = m->egress_vrfid;
+			return bit_array_get(e, EX_NEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+#endif
+		// EX_PORT_BLOCK_ALLOC added 2014-04-19
+		case LNF_FLD_BLOCK_START:
+			*((uint16_t *)p) = m->block_start;
+			return bit_array_get(e, EX_PORT_BLOCK_ALLOC) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_BLOCK_END:
+			*((uint16_t *)p) = m->block_end;
+			return bit_array_get(e, EX_PORT_BLOCK_ALLOC) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_BLOCK_STEP:
+			*((uint16_t *)p) = m->block_step;
+			return bit_array_get(e, EX_PORT_BLOCK_ALLOC) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_BLOCK_SIZE:
+			*((uint16_t *)p) = m->block_size;
+			return bit_array_get(e, EX_PORT_BLOCK_ALLOC) ? LNF_OK : LNF_ERR_NOTSET;
+
+		// extra fields
+		case LNF_FLD_CLIENT_NW_DELAY_USEC:
+			*((uint64_t *)p) = m->client_nw_delay_usec;
+			return bit_array_get(e, EX_LATENCY) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_SERVER_NW_DELAY_USEC:
+			*((uint64_t *)p) = m->server_nw_delay_usec;
+			return bit_array_get(e, EX_LATENCY) ? LNF_OK : LNF_ERR_NOTSET;
+		case LNF_FLD_APPL_LATENCY_USEC:
+			*((uint64_t *)p) = m->appl_latency_usec;
+			return bit_array_get(e, EX_LATENCY) ? LNF_OK : LNF_ERR_NOTSET;
 	}
-
-
 
 	return LNF_ERR_UKNFLD;
 

@@ -27,6 +27,7 @@ typedef struct lnf_ip { uint32_t data[4]; } lnf_ip_t;
 typedef struct lnf_mac { uint8_t data[6]; }  lnf_mac_t;
 typedef struct lnf_mpls { uint32_t data[10]; } lnf_mpls_t;
 
+#define LNF_MAX_STRING		512
 
 /* type of fields */
 /* note: if the fields type allows two kind of data type  */
