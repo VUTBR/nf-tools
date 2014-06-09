@@ -516,7 +516,7 @@ extension_map_t *map;
 }
 
 /* returns LN_OK or LNF_ERR_UKNFLD */
-int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
+int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
 	bit_array_t *e = rec->extensions_arr;
@@ -910,7 +910,7 @@ int lnf_item_set(lnf_rec_t *rec, int field, void * p) {
 }
 
 /* returns LN_OK or LNF_ERR_UKNFLD */
-int lnf_item_get(lnf_rec_t *rec, int field, void * p) {
+int lnf_rec_fget(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
 	bit_array_t *e = rec->extensions_arr;
@@ -1202,3 +1202,32 @@ int lnf_item_get(lnf_rec_t *rec, int field, void * p) {
 	return LNF_ERR_UKNFLD;
 
 }
+
+/* initialize filter */
+/* returns LNF_OK or LNF_ERR_FILTER */
+int lnf_filter_init(lnf_filter_t *filter, char *expr) {
+
+	filter->engine = CompileFilter(expr);
+	
+	if ( !filter->engine ) {
+		return LNF_ERR_FILTER;
+	}
+	
+	return LNF_OK;
+}
+
+/* matches the record agains filter */
+/* returns 1 - record was matched, 0 - record wasn't matched */
+int lnf_filter_match(lnf_filter_t *filter, lnf_rec_t *rec) {
+
+	filter->engine->nfrecord = (uint64_t *)rec->master_record;
+
+	return  (*filter->engine->FilterEngine)(filter->engine);
+}
+
+void lnf_filter_free(lnf_filter_t *filter) {
+
+	/* TODO nfdump do not have code to release filter :-( */
+}
+
+
