@@ -116,7 +116,8 @@ typedef struct libnf_instance_s {
 	lnf_file_t				*lnf_nffile_r;			/* filehandle for reading */
 	lnf_file_t				*lnf_nffile_w;			/* filehandle for wirting */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
-	FilterEngine_data_t		*engine;
+	//FilterEngine_data_t		*engine;
+	lnf_filter_t			filter;
 	common_record_t			*flow_record;
 	int						*field_list;
 	int						field_last;
@@ -421,13 +422,13 @@ int ret;
 			case LNF_UINT16:
 			case LNF_UINT32: {
                 uint64_t t32 = 0;
-                ret = lnf_item_get(lnf_rec, field, (void *)&t32);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&t32);
 				sv = uint_to_SV(t32, ret == LNF_OK);
                 break;
             }
             case LNF_UINT64: {
                 uint64_t t64 = 0;
-                ret = lnf_item_get(lnf_rec, field, (void *)&t64);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&t64);
 				sv = uint64_to_SV(t64, ret == LNF_OK);
                 break;
 			}
@@ -435,7 +436,7 @@ int ret;
 				STRLEN len;
 				lnf_ip_t tip;
 
-                ret = lnf_item_get(lnf_rec, field, (void *)&tip);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&tip);
 
 				if (ret != LNF_OK) {
 					sv = newSV(0);
@@ -451,7 +452,7 @@ int ret;
 			case LNF_MAC: {
 				lnf_mac_t tmac;
 
-                ret = lnf_item_get(lnf_rec, field, (void *)&tmac);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&tmac);
 				if (ret != LNF_OK) {
 					sv = newSV(0);
 				} else {
@@ -462,7 +463,7 @@ int ret;
 			case LNF_MPLS: {
 				lnf_mpls_t tmpls;
 
-                ret = lnf_item_get(lnf_rec, field, (void *)&tmpls);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&tmpls);
 				if (ret != LNF_OK) {
 					sv = newSV(0);
 				} else {
@@ -473,7 +474,7 @@ int ret;
 			case LNF_STRING: {
 				char buf[LNF_MAX_STRING];
 
-                ret = lnf_item_get(lnf_rec, field, (void *)&buf);
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&buf);
 				if (ret != LNF_OK) {
 					sv = newSV(0);
 				} else {
@@ -711,11 +712,17 @@ int i;
 		filter = "any";
 	}
 
+	if ( lnf_filter_init(&instance->filter, filter) != LNF_OK ) {
+		croak("%s can not setup filter (%s)", NFL_LOG, filter);
+		return 0;
+	}
+/*
 	instance->engine = CompileFilter(filter);
 	if ( !instance->engine ) {
 		croak("%s can not setup filter (%s)", NFL_LOG, filter);
 		return 0;
 	}
+*/
 	
 	return 1;
 }
@@ -831,9 +838,10 @@ begin:
 						lnf_rec.master_record->last > instance->twin_end) ? 0 : 1;
 
 	// filter netflow record with user supplied filter
-	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
+//	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 
-		match = (*instance->engine->FilterEngine)(instance->engine);
+		match = lnf_filter_match(&instance->filter, &lnf_rec); 
+//		match = (*instance->engine->FilterEngine)(instance->engine);
 
 	if ( match == 0 ) { // record failed to pass all filters
 		goto begin;
@@ -925,12 +933,12 @@ lnf_rec_t lnf_rec;
 			case LNF_UINT16:
 			case LNF_UINT32: {
 				uint32_t t32 = SvUV(sv);
-				ret = lnf_item_set(&lnf_rec, field, (void *)&t32);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)&t32);
 				break;
 			}
 			case LNF_UINT64: {
 				uint64_t t64 = SvU64(sv);
-				ret = lnf_item_set(&lnf_rec, field, (void *)&t64);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)&t64);
 				break;
 			}
 			case LNF_ADDR: {
@@ -949,7 +957,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_item_set(&lnf_rec, field, (void *)&tip);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)&tip);
 				break;
 			}
 			case LNF_MAC: {
@@ -963,7 +971,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_item_set(&lnf_rec, field, (void *)s);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -978,7 +986,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_item_set(&lnf_rec, field, (void *)s);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -994,7 +1002,7 @@ lnf_rec_t lnf_rec;
 				memcpy(buf, s, len);
 				buf[len] = '\0';
 
-				ret = lnf_item_set(&lnf_rec, field, (void *)buf);
+				ret = lnf_rec_fset(&lnf_rec, field, (void *)buf);
 				break;
 			}
 

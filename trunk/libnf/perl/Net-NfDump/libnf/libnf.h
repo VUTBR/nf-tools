@@ -8,6 +8,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <nffile.h>
+#include <rbtree.h>
+#include <nftree.h>
 #include <nfx.h>
 #include "bit_array.h"
 
@@ -139,6 +141,12 @@ typedef struct lnf_map_list_s {
 } lnf_map_list_t;
 
 
+/* structure representing a filter */
+typedef struct lnf_filter_s {
+	FilterEngine_data_t	*engine;
+} lnf_filter_t;
+
+
 /* structure representing single record */
 /* it contains two fields. Nfdump'ps master record */
 /* and bit array representing set of fields that are activated in the master ricord */
@@ -200,6 +208,7 @@ lnf_close(hnd);
 
 #define LNF_ERR_NOTSET		-0x0100	/* item is not set  */
 #define LNF_ERR_UKNFLD		-0x0200	/* inknown field  */
+#define LNF_ERR_FILTER		-0x0400	/* cannot compile filter  */
 
 //lnf_read(hnd, rechnd);
 
@@ -226,15 +235,19 @@ void lnf_close(lnf_file_t *lnf_file);
 int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 
-int lnf_item_set(lnf_rec_t *rec, int field, void * p);
-int lnf_item_get(lnf_rec_t *rec, int field, void * p);
-
 /*
-int lnf_item_init(lnf_rec_t *rec);
-int lnf_item_get(lnf_rec_t *rec, int field, void ** ptr); 
-int lnf_item_set(lnf_rec_t *rec, int field, void * ptr); 
-int lnf_item_datat(int field);
+int lnf_rec_init(lnf_rec_t *rec);
+int lnf_rec_free(lnf_rec_t *rec);
 */
+
+int lnf_rec_fset(lnf_rec_t *rec, int field, void * p);
+int lnf_rec_fget(lnf_rec_t *rec, int field, void * p);
+
+
+/* filter operations */
+int	lnf_filter_init(lnf_filter_t *filter, char *expr);
+int	lnf_filter_match(lnf_filter_t *filter, lnf_rec_t *rec);
+void lnf_filter_free(lnf_filter_t *filter);
 
 
 #ifndef IN6_IS_ADDR_V4COMPAT
