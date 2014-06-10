@@ -1,14 +1,14 @@
 
 #define NEED_PACKRECORD 1 
 
-#include "EXTERN.h"
-#include "perl.h"
-#include "XSUB.h"
+//#include "EXTERN.h"
+//#include "perl.h"
+//#include "XSUB.h"
 
 //#include "bit_array.h"
 
-#define MATH_INT64_NATIVE_IF_AVAILABLE 1
-#include "../perl_math_int64.h"
+//#define MATH_INT64_NATIVE_IF_AVAILABLE 1
+//#include "../perl_math_int64.h"
 
 #include "config.h"
 
@@ -71,15 +71,8 @@ extern extension_descriptor_t extension_descriptor[];
 
 #define FLOW_RECORD_NEXT(x) x = (common_record_t *)((pointer_addr_t)x + x->size)
 
-
-typedef struct lnf_fields_f {
-	int index;			/* numerical index of field */
-	char *name;			/* field name */
-	char *fld_descr;	/* short description */
-} lnf_fields_t;
-
-
-lnf_fields_t lnf_fields[] = {
+/* text description of the fields */
+lnf_field_t lnf_fields[] = {
 // pod:  =====================
 	LNF_FLD_FIRST, 		"first",	"Timestamp of the first packet seen (in miliseconds)",
 	LNF_FLD_LAST,		"last",		"Timestamp of the last packet seen (in miliseconds)",
@@ -187,14 +180,14 @@ lnf_fields_t lnf_fields[] = {
 
 /* open existing nfdump file and prepare for reading records */
 /* only simple wrapper to nfdump function */
-lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
+int lnf_open(lnf_file_t **lnf_filep, char * filename, unsigned int flags, char * ident) {
 	int i;
 	lnf_file_t *lnf_file;
 
 	lnf_file = malloc(sizeof(lnf_file_t));
 	
 	if (lnf_file == NULL) {
-		return NULL;
+		return LNF_ERR_NOMEM;
 	}
 
 	lnf_file->flags = flags;
@@ -207,7 +200,8 @@ lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
 	}
 
 	if (lnf_file->nffile == NULL) {
-		return NULL;
+		free(lnf_file);
+		return LNF_ERR_OTHER;;
 	}
 
 	lnf_file->blk_record_remains = 0;
@@ -221,12 +215,10 @@ lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
 	while ( extension_descriptor[i++].id )
 		lnf_file->max_num_extensions++;
 
-/*
-	bit_array_init(&lnf_file->extensions_arr, lnf_file->max_num_extensions + 1);	
 
-*/
+	*lnf_filep = lnf_file;
 
-	return lnf_file;
+	return LNF_OK;
 }
 
 /* close file handler and release related structures */
@@ -601,6 +593,7 @@ void lnf_rec_free(lnf_rec_t *rec) {
 
 
 /* returns LN_OK or LNF_ERR_UKNFLD */
+/* TAG for check_items_map.pl: lnf_rec_fset */
 int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
@@ -719,6 +712,7 @@ int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 			bit_array_set(e, EX_MULIPLE, 1);
 			return LNF_OK;
 
+		// EX_AS_2 - no used
 		case LNF_FLD_SRCAS:
 			m->srcas = *((uint32_t *)p);
 			bit_array_set(e, EX_AS_4, 1);
@@ -799,7 +793,8 @@ int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 			memcpy(m->mpls_label, p, sizeof(lnf_mpls_t));
 			bit_array_set(e, EX_MPLS, 1);
 			return LNF_OK;
-		
+	
+		// EX_IO_SNMP_2 not used 	
 		case LNF_FLD_INPUT:
 			m->input = *((uint32_t *)p);
 			bit_array_set(e, EX_IO_SNMP_4, 1);
@@ -864,6 +859,8 @@ int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 			m->fw_xevent = *((uint16_t *)p);
 			bit_array_set(e, EX_NSEL_COMMON, 1);
 			return LNF_OK;
+
+		// m->xlate_flags not used
 		case LNF_FLD_XLATE_SRC_IP: {
 			ip_addr_t *d = &m->xlate_src_ip;
 	
@@ -995,6 +992,7 @@ int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {
 }
 
 /* returns LN_OK or LNF_ERR_UKNFLD */
+/* TAG for check_items_map.pl: lnf_rec_fget */
 int lnf_rec_fget(lnf_rec_t *rec, int field, void * p) {
 
 	master_record_t *m = rec->master_record;
@@ -1200,6 +1198,8 @@ int lnf_rec_fget(lnf_rec_t *rec, int field, void * p) {
 		case LNF_FLD_FW_XEVENT:
 			*((uint16_t *)p) = m->fw_xevent;
 			return bit_array_get(e, EX_NSEL_COMMON) ? LNF_OK : LNF_ERR_NOTSET;
+
+		 // m->xlate_flags not used
 		case LNF_FLD_XLATE_SRC_IP: {
 			ip_addr_t *d = (ip_addr_t *)&m->xlate_src_ip;
 	
@@ -1290,13 +1290,24 @@ int lnf_rec_fget(lnf_rec_t *rec, int field, void * p) {
 
 /* initialize filter */
 /* returns LNF_OK or LNF_ERR_FILTER */
-int lnf_filter_init(lnf_filter_t *filter, char *expr) {
+int lnf_filter_init(lnf_filter_t **filterp, char *expr) {
+
+	lnf_filter_t *filter;	
+
+	filter = malloc(sizeof(lnf_filter_t));
+
+	if (filter == NULL) {
+		return LNF_ERR_NOMEM;
+	}	
 
 	filter->engine = CompileFilter(expr);
 	
 	if ( !filter->engine ) {
+		free(filter);
 		return LNF_ERR_FILTER;
 	}
+
+	*filterp = filter;
 	
 	return LNF_OK;
 }
