@@ -233,11 +233,13 @@ lnf_sortset(ahnd, numfields, bitmask);
 
 */
 
+
 /* file operations */
 lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident);
 int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 void lnf_close(lnf_file_t *lnf_file);
+
 
 /* record operations */
 int lnf_rec_init(lnf_rec_t **rec);
