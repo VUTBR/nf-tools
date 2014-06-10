@@ -215,12 +215,16 @@ lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident) {
 
 	lnf_file->lnf_map_list = NULL;
 
+
 	i = 1;
 	lnf_file->max_num_extensions = 0;
 	while ( extension_descriptor[i++].id )
 		lnf_file->max_num_extensions++;
 
+/*
 	bit_array_init(&lnf_file->extensions_arr, lnf_file->max_num_extensions + 1);	
+
+*/
 
 	return lnf_file;
 }
@@ -362,10 +366,8 @@ begin:
 
 	lnf_file->processed_records++;
 
-	lnf_file->master_record = &(lnf_file->extension_map_list->slot[map_id]->master_record);
-//	lnf_rec->extension_map = lnf_file->extension_map_list->slot[map_id]->map;
-	lnf_rec->master_record = lnf_file->master_record;
-//	lnf_file->engine->nfrecord = (uint64_t *)lnf_file->master_record_r;
+//	lnf_file->master_record = &(lnf_file->extension_map_list->slot[map_id]->master_record);
+//	lnf_rec->master_record = lnf_file->master_record;
 
 	// changed in 1.6.8 - added exporter info 
 //	ExpandRecord_v2( flow_record, extension_map_list.slot[map_id], master_record);
@@ -386,18 +388,19 @@ begin:
 */
 
 	// processing map 
-	bit_array_clear(&lnf_file->extensions_arr);
+	//bit_array_clear(&lnf_file->extensions_arr);
+	bit_array_clear(lnf_rec->extensions_arr);
 
 	i = 0;
 	while (lnf_rec->master_record->map_ref->ex_id[i]) {
-		bit_array_set(&lnf_file->extensions_arr, lnf_rec->master_record->map_ref->ex_id[i], 1);
+		bit_array_set(lnf_rec->extensions_arr, lnf_rec->master_record->map_ref->ex_id[i], 1);
 		i++;
 	}
 
-	lnf_rec->extensions_arr = &(lnf_file->extensions_arr);
+//	lnf_rec->extensions_arr = &(lnf_file->extensions_arr);
 
 	/* the record seems OK. We prepare hash reference with items */
-	lnf_file->lnf_rec = lnf_rec; /* XXX temporary */
+//	lnf_file->lnf_rec = lnf_rec; /* XXX temporary */
 
 	return LNF_OK;
 
@@ -512,8 +515,90 @@ extension_map_t *map;
 
 	PackRecord(lnf_rec->master_record, lnf_file->nffile);
 
+
 	return LNF_OK;
 }
+
+/* initialise empty record */
+int lnf_rec_init(lnf_rec_t **recp) {
+
+	lnf_rec_t *rec;
+	int i, numext;
+
+	rec = malloc(sizeof(lnf_rec_t)); 
+
+	if (rec == NULL) {
+		return LNF_ERR_NOMEM;
+	}
+
+	rec->master_record = malloc(sizeof(master_record_t));
+
+	if (rec->master_record == NULL) {
+		free(rec);
+		return LNF_ERR_NOMEM;
+	}
+
+	rec->extensions_arr = malloc(sizeof(bit_array_t));
+
+	if (rec->extensions_arr == NULL) {
+		free(rec->master_record);
+		free(rec);
+		return LNF_ERR_NOMEM;
+	}
+
+	i = 1;
+	numext = 0;
+	while ( extension_descriptor[i++].id ) {
+		numext++;
+	}
+
+	if (!bit_array_init(rec->extensions_arr, numext + 1)) {
+		free(rec->extensions_arr);
+		free(rec->master_record);
+		free(rec);
+		return LNF_ERR_NOMEM;
+	}
+
+	lnf_rec_clear(rec);
+
+	*recp = rec; 
+
+	return LNF_OK;
+}
+
+/* clear record */
+void lnf_rec_clear(lnf_rec_t *rec) {
+
+	if (rec != NULL) {
+		bit_array_clear(rec->extensions_arr);
+		memset(rec->master_record, 0x0, sizeof(master_record_t));
+	}
+}
+
+/* copy record */
+int lnf_rec_copy(lnf_rec_t *dst, lnf_rec_t *src) {
+
+	if (dst == NULL || src == NULL) {
+		return LNF_ERR_OTHER;
+	}
+
+	memcpy(dst->master_record, src->master_record, sizeof(master_record_t));
+	if ( bit_array_copy(dst->extensions_arr, src->extensions_arr)) {
+		return LNF_OK;
+	} else {
+		return LNF_ERR_OTHER;
+	}
+}
+
+/* free record */
+void lnf_rec_free(lnf_rec_t *rec) {
+
+	bit_array_release(rec->extensions_arr);
+	free(rec->master_record);
+	free(rec->extensions_arr);
+	free(rec);
+}
+
 
 /* returns LN_OK or LNF_ERR_UKNFLD */
 int lnf_rec_fset(lnf_rec_t *rec, int field, void * p) {

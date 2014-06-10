@@ -2,7 +2,7 @@
 use Test::More tests => 1;
 use Net::NfDump qw ':all';
 use Data::Dumper;
-#open(STDOUT, ">&STDERR");
+open(STDOUT, ">&STDERR");
 our %DS;
 
 require "t/ds.pl";
@@ -16,10 +16,11 @@ my $recs = 300000;
 my %tests = ( 'v4_basic_raw' => 'basic items', 'v4_raw' => 'all items' );
 
 while (my ($key, $val) = each %tests ) {
-	my $rec = $DS{$key} ;
+	my $rec = $DS{$key};
 	my $flow = new Net::NfDump(OutputFile => "t/flow_$key.tmp" );
 	my $tm1 = time();
 	for (my $x = 0 ; $x < $recs; $x++) {
+#		printf STDERR "\n\nTEST XXX2 $x:\n";
 		$flow->storerow_hashref( $rec );
 	}
 	$flow->finish();

@@ -107,9 +107,9 @@ typedef struct libnf_map_list_s {
 /* structure that bears all data related to one instance */
 typedef struct libnf_instance_s {
 	//extension_map_list_t 	extension_map_list;		/* nfdup structure containig extmap */
-	extension_map_list_t 	*extension_map_list;		/* nfdup structure containig extmap */
-	libnf_map_list_t		*map_list;				/* libnf structure that holds maps */
-	int 					max_num_extensions;		/* mamimum number of extensions */
+//	extension_map_list_t 	*extension_map_list;		/* nfdup structure containig extmap */
+//	libnf_map_list_t		*map_list;				/* libnf structure that holds maps */
+//	int 					max_num_extensions;		/* mamimum number of extensions */
 	libnf_file_list_t		*files;					/* list of files to read */
 //	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
 //	nffile_t				*nffile_w;				/* filehandle for writing */
@@ -118,7 +118,7 @@ typedef struct libnf_instance_s {
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	//FilterEngine_data_t		*engine;
 	lnf_filter_t			filter;
-	common_record_t			*flow_record;
+//	common_record_t			*flow_record;
 	int						*field_list;
 	int						field_last;
 //	stat_record_t			stat_record;
@@ -134,9 +134,7 @@ typedef struct libnf_instance_s {
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
 //	master_record_t			*master_record_r;		/* pointer to last read master record */
-	master_record_t			master_record_w;		/* pointer to master record that will be stored */
-	bit_array_t				ext_r;					/* extension bit array for read and write */
-	bit_array_t				ext_w;
+	lnf_rec_t				*lnf_rec;
 } libnf_instance_t;
 
 
@@ -396,11 +394,7 @@ HV *res;
 SV * libnf_master_record_to_AV(int handle, lnf_rec_t *lnf_rec) {
 libnf_instance_t *instance = libnf_instances[handle];
 AV *res_array;
-master_record_t *rec = lnf_rec->master_record;
-//extension_map_t *map = rec->map_ref;
-//bit_array_t ext;
 int i=0;
-uint64_t t;
 int ret;
 
 	if (instance == NULL ) {
@@ -408,8 +402,6 @@ int ret;
 		return 0;
 	}
 	
-	bit_array_copy(&instance->ext_r, lnf_rec->extensions_arr);
-
 	res_array = (AV *)sv_2mortal((SV *)newAV());
 
 	i = 0;
@@ -433,7 +425,6 @@ int ret;
                 break;
 			}
 			case LNF_ADDR: {
-				STRLEN len;
 				lnf_ip_t tip;
 
                 ret = lnf_rec_fget(lnf_rec, field, (void *)&tip);
@@ -494,91 +485,10 @@ int ret;
 	return newRV((SV *)res_array);
 }
 
-extension_map_t * libnf_lookup_map( libnf_instance_t *instance, bit_array_t *ext ) {
-extension_map_t *map; 
-libnf_map_list_t *map_list;
-int i = 0;
-int is_set = 0;
-int id = 0;
-int map_id = 0;
-
-	// find whether the template already exist 
-	map_id = 0;
-	map_list = instance->map_list; 
-	if (map_list == NULL) {
-		// first map 
-		map_list =  malloc(sizeof(libnf_map_list_t));
-		instance->map_list = map_list;
-	} else {
-		if (bit_array_cmp(&(map_list->bit_array), ext) == 0) {
-			return map_list->map;
-		}
-		map_id++;
-		while (map_list->next != NULL ) {
-			if (bit_array_cmp(&(map_list->bit_array), ext) == 0) {
-				return map_list->map;
-			} else {
-				map_id++;
-				map_list = map_list->next;
-			}
-		}
-		map_list->next = malloc(sizeof(libnf_map_list_t));
-		map_list = map_list->next;
-	}
-	
-	// allocate memory potentially for all extensions 
-	map = malloc(sizeof(extension_map_t) + (instance->max_num_extensions + 1) * sizeof(uint16_t));
-
-	map_list->map = map;
-	map_list->next = NULL;
-
-	bit_array_init(&map_list->bit_array, instance->max_num_extensions + 1);
-	bit_array_copy(&map_list->bit_array, ext);
-
-	map->type   = ExtensionMapType;
-	map->map_id = map_id; 
-			
-	// set extension map according the bits set in ext structure 
-	id = 0;
-	i = 0;
-	while ( (is_set = bit_array_get(ext, id)) != -1 ) {
-//		fprintf(stderr, "i: %d, bit %d, val: %d\n", i, id, is_set);
-		if (is_set) 
-			map->ex_id[i++]  = id;
-		id++;
-	}
-	map->ex_id[i++] = 0;
-
-	// determine size and align 32bits
-	map->size = sizeof(extension_map_t) + ( i - 1 ) * sizeof(uint16_t);
-	if (( map->size & 0x3 ) != 0 ) {
-		map->size += (4 - ( map->size & 0x3 ));
-	}
-
-	map->extension_size = 0;
-	i=0;
-	while (map->ex_id[i]) {
-		int id = map->ex_id[i];
-		map->extension_size += extension_descriptor[id].size;
-		i++;
-	}
-
-
-	//Insert_Extension_Map(&instance->extension_map_list, map); 
-	Insert_Extension_Map(instance->extension_map_list, map); 
-	AppendToBuffer(instance->lnf_nffile_w->nffile, (void *)map, map->size);
-
-	return map;
-}
-
-
-
 
 int libnf_init(void) {
 int handle = 1;
 libnf_instance_t *instance;
-//char *filter = NULL;
-int i;
 
 	/* find the first free handler and assign to array of open handlers/instances */
 	while (libnf_instances[handle] != NULL) {
@@ -597,22 +507,13 @@ int i;
 		return 0;
 	}
 
-	instance->map_list = NULL;
-
 	libnf_instances[handle] = instance;
 
 //	InitExtensionMaps(&(instance->extension_map_list));
-	instance->extension_map_list = InitExtensionMaps(NEEDS_EXTENSION_LIST);
-	i = 1;
-	instance->max_num_extensions = 0;
-	while ( extension_descriptor[i++].id )
-		instance->max_num_extensions++;
+//	instance->extension_map_list = InitExtensionMaps(NEEDS_EXTENSION_LIST);
 
-	bit_array_init(&instance->ext_r, instance->max_num_extensions + 1);
-	bit_array_init(&instance->ext_w, instance->max_num_extensions + 1);
-
-	instance->lnf_nffile_w = NULL;
-//	instance->master_record_r = NULL;
+	/* initialise empty record */	
+	lnf_rec_init(&instance->lnf_rec);
 
 	return handle;
 }
@@ -756,7 +657,6 @@ int flags = 0;
 		return 0;
     }
 
-	memzero(&instance->master_record_w, sizeof(master_record_t));	// clean rec for write row 
 	return 1;
 }
 
@@ -767,7 +667,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
 //uint32_t map_id;
-lnf_rec_t lnf_rec;
+lnf_rec_t *lnf_rec;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -778,10 +678,12 @@ lnf_rec_t lnf_rec;
 int	v1_map_done = 0;
 #endif
 
+	lnf_rec = instance->lnf_rec;
+
 begin:
 		// get next data block from file
 		if (instance->lnf_nffile_r) {
-			ret = lnf_read(instance->lnf_nffile_r, &lnf_rec);
+			ret = lnf_read(instance->lnf_nffile_r, lnf_rec);
 		} else {
 			ret = NF_EOF;		/* the firt file in the list */
 		}
@@ -834,13 +736,13 @@ begin:
 
 	// Time based filter
 	// if no time filter is given, the result is always true
-	match  = instance->twin_start && (lnf_rec.master_record->first < instance->twin_start || 
-						lnf_rec.master_record->last > instance->twin_end) ? 0 : 1;
+	match  = instance->twin_start && (lnf_rec->master_record->first < instance->twin_start || 
+						lnf_rec->master_record->last > instance->twin_end) ? 0 : 1;
 
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 
-		match = lnf_filter_match(&instance->filter, &lnf_rec); 
+		match = lnf_filter_match(&instance->filter, lnf_rec); 
 //		match = (*instance->engine->FilterEngine)(instance->engine);
 
 	if ( match == 0 ) { // record failed to pass all filters
@@ -849,7 +751,7 @@ begin:
 
 	/* the record seems OK. We prepare hash reference with items */
 	//return libnf_master_record_to_AV(handle, lnf_rec.master_record, lnf_rec.master_record->map_ref); 
-	return libnf_master_record_to_AV(handle, &lnf_rec); 
+	return libnf_master_record_to_AV(handle, lnf_rec); 
 
 } /* end of _next fnction */
                                   
@@ -869,8 +771,15 @@ libnf_instance_t *src_instance = libnf_instances[src_handle];
 		return 0;
 	}
 
+	if (!lnf_rec_copy(instance->lnf_rec, src_instance->lnf_rec) ) {
+		return 0;
+	} 
+
+
+/*	
 	memcpy(&instance->master_record_w, src_instance->lnf_nffile_r->master_record, sizeof(master_record_t));
 	bit_array_copy(&instance->ext_w, &src_instance->ext_r);
+*/
 
 	return 1;
 
@@ -878,7 +787,6 @@ libnf_instance_t *src_instance = libnf_instances[src_handle];
 
 /* TAG for check_items_map.pl: libnf_write_row */
 int libnf_write_row(int handle, SV * arrayref) {
-master_record_t *rec;
 libnf_instance_t *instance = libnf_instances[handle];
 //extension_map_t *map;
 //bit_array_t ext;
@@ -888,7 +796,7 @@ int i;
 lnf_ip_t tip;
 
 int field, ret;
-lnf_rec_t lnf_rec;
+lnf_rec_t *lnf_rec;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -902,18 +810,19 @@ lnf_rec_t lnf_rec;
 			return 0;
 	}
 
-
 	if (last_field != instance->field_last) {
 		croak("%s number of fields do not match", NFL_LOG);
 		return 0;
 	}
 
-	rec = &instance->master_record_w;
+//	rec = &instance->master_record_w;
 
 	// rec + array
-	lnf_rec.master_record = rec;
-	lnf_rec.extensions_arr = &instance->ext_w;
+//	lnf_rec.master_record = rec;
+//	lnf_rec.extensions_arr = &instance->ext_w;
+//
 
+	lnf_rec = instance->lnf_rec;
 
 	i = 0;
 	while ( instance->field_list[i] ) {
@@ -933,12 +842,12 @@ lnf_rec_t lnf_rec;
 			case LNF_UINT16:
 			case LNF_UINT32: {
 				uint32_t t32 = SvUV(sv);
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)&t32);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)&t32);
 				break;
 			}
 			case LNF_UINT64: {
 				uint64_t t64 = SvU64(sv);
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)&t64);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)&t64);
 				break;
 			}
 			case LNF_ADDR: {
@@ -957,7 +866,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)&tip);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)&tip);
 				break;
 			}
 			case LNF_MAC: {
@@ -971,7 +880,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)s);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -986,7 +895,7 @@ lnf_rec_t lnf_rec;
 					return 0;
 				}
 
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)s);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)s);
 				break;
 			}
 
@@ -1002,7 +911,7 @@ lnf_rec_t lnf_rec;
 				memcpy(buf, s, len);
 				buf[len] = '\0';
 
-				ret = lnf_rec_fset(&lnf_rec, field, (void *)buf);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)buf);
 				break;
 			}
 
@@ -1015,10 +924,10 @@ lnf_rec_t lnf_rec;
 		i++;
 	}
 
-	lnf_write(instance->lnf_nffile_w, &lnf_rec);
 
-	bit_array_clear(&instance->ext_w);
-	memzero(rec, sizeof(master_record_t));	// clean rec for next row 
+	lnf_write(instance->lnf_nffile_w, lnf_rec);
+
+	lnf_rec_clear(lnf_rec);
 
 	return 1;
 }
@@ -1041,11 +950,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 		instance->lnf_nffile_r = NULL;
 	}
 
-	//release list of extensions map
-	// TODO 
-	
-	bit_array_release(&instance->ext_r);
-	bit_array_release(&instance->ext_w);
+	lnf_rec_free(instance->lnf_rec);
 
 /*
 	PackExtensionMapList(instance->extension_map_list);
@@ -1053,7 +958,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 */
 	free(instance); 
 	libnf_instances[handle] = NULL;
-	//return stat_record;
+
 	return ;
 
 } // End of process_data_finish
