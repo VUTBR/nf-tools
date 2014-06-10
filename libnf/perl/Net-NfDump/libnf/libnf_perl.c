@@ -117,7 +117,7 @@ typedef struct libnf_instance_s {
 	lnf_file_t				*lnf_nffile_w;			/* filehandle for wirting */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
 	//FilterEngine_data_t		*engine;
-	lnf_filter_t			filter;
+	lnf_filter_t			*filter;
 //	common_record_t			*flow_record;
 	int						*field_list;
 	int						field_last;
@@ -558,7 +558,7 @@ int i;
 			warn("%s ivalid itemd ID", NFL_LOG);
 		}
 	}
-	instance->field_list[i++] = NFL_ZERO_FIELD;
+	instance->field_list[i++] = LNF_FLD_ZERO;
 	instance->field_last = last_field;
 	return 1;
 }
@@ -650,9 +650,7 @@ int flags = 0;
 	flags |= compressed ? LNF_COMP  : 0x0;
 	flags |= anonymized ? LNF_ANON  : 0x0;
 
-    instance->lnf_nffile_w = lnf_open(filename, flags , ident);
-//    instance->nffile_w = OpenNewFile(filename, NULL, compressed, anonymized, ident);
-    if ( !instance->lnf_nffile_w ) {
+    if ( lnf_open(&instance->lnf_nffile_w, filename, flags , ident) != LNF_OK ) {
 		warn("%s cannot open file %s", NFL_LOG, filename);
 		return 0;
     }
@@ -708,7 +706,10 @@ begin:
 					return NULL;
 				}
 				//instance->nffile_r = OpenFile((char *)instance->files->filename, instance->nffile_r);
-				instance->lnf_nffile_r = lnf_open((char *)instance->files->filename, LNF_READ, NULL);
+				if (lnf_open(&instance->lnf_nffile_r, (char *)instance->files->filename, LNF_READ, NULL) != LNF_OK) {
+					croak("%s can not open/read file %s", NFL_LOG, instance->files->filename);
+					return NULL;
+				}
 				instance->processed_files++;
 
 				next = instance->files->next;
@@ -722,10 +723,6 @@ begin:
 				free(instance->files);
 				instance->files = next;
 
-				if ( instance->lnf_nffile_r == NULL ) {
-					croak("%s can not read file %s", NFL_LOG, instance->files->filename);
-					return NULL;
-				}
 				goto begin;
 			}
 
@@ -742,7 +739,7 @@ begin:
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 
-		match = lnf_filter_match(&instance->filter, lnf_rec); 
+		match = lnf_filter_match(instance->filter, lnf_rec); 
 //		match = (*instance->engine->FilterEngine)(instance->engine);
 
 	if ( match == 0 ) { // record failed to pass all filters
@@ -951,6 +948,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 	}
 
 	lnf_rec_free(instance->lnf_rec);
+	lnf_filter_free(instance->filter);
 
 /*
 	PackExtensionMapList(instance->extension_map_list);

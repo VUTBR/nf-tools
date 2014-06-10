@@ -116,7 +116,14 @@ typedef struct lnf_mpls { uint32_t data[10]; } lnf_mpls_t;
 #define LNF_FLD_SERVER_NW_DELAY_USEC	0x580064
 #define LNF_FLD_APPL_LATENCY_USEC		0x590064
 
+/* text description of fields */
+typedef struct lnf_field_f {
+	int index;			/* numerical index of field */
+	char *name;			/* field name */
+	char *fld_descr;	/* short description */
+} lnf_field_t;
 
+extern lnf_field_t lnf_fields[];
 
 /* the maximim number of fields requested from the client */
 #define NFL_MAX_FIELDS 256
@@ -235,14 +242,14 @@ lnf_sortset(ahnd, numfields, bitmask);
 
 
 /* file operations */
-lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident);
+int lnf_open(lnf_file_t **lnf_filep, char * filename, unsigned int flags, char * ident);
 int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 void lnf_close(lnf_file_t *lnf_file);
 
 
 /* record operations */
-int lnf_rec_init(lnf_rec_t **rec);
+int lnf_rec_init(lnf_rec_t **recp);
 void lnf_rec_clear(lnf_rec_t *rec);
 int lnf_rec_copy(lnf_rec_t *dst, lnf_rec_t *src);
 int lnf_rec_fset(lnf_rec_t *rec, int field, void * p);
@@ -251,7 +258,7 @@ void lnf_rec_free(lnf_rec_t *rec);
 
 
 /* filter operations */
-int	lnf_filter_init(lnf_filter_t *filter, char *expr);
+int	lnf_filter_init(lnf_filter_t **filterp, char *expr);
 int	lnf_filter_match(lnf_filter_t *filter, lnf_rec_t *rec);
 void lnf_filter_free(lnf_filter_t *filter);
 
