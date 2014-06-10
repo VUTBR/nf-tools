@@ -1,6 +1,6 @@
 
 use Test::More;
-#open(STDOUT, ">&STDERR");
+open(STDOUT, ">&STDERR");
 
 if ( ! -x "nfdump/bin/nfdump" ) {
 	plan skip_all => 'nfdump executable not available';

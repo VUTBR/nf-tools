@@ -174,9 +174,9 @@ typedef struct lnf_file_s {
 	lnf_map_list_t			*lnf_map_list;			/* internal list of maps (used by lnf) */
 	int						max_num_extensions;		/* the max number of extensions */
 	common_record_t 		*flow_record;			/* ptr to buffer/next record */
-	master_record_t			*master_record;
-	lnf_rec_t				*lnf_rec;				/* temporary */
-	bit_array_t				extensions_arr;			/* structure initialised at the beginging to store bitt array of extensions from last record */
+//	master_record_t			*master_record;
+//	lnf_rec_t				*lnf_rec;				/* temporary */
+//	bit_array_t				extensions_arr;			/* structure initialised at the beginging to store bitt array of extensions from last record */
 	uint64_t                processed_blocks;
 	uint64_t                skipped_blocks;
 	uint64_t                processed_records;
@@ -209,6 +209,9 @@ lnf_close(hnd);
 #define LNF_ERR_NOTSET		-0x0100	/* item is not set  */
 #define LNF_ERR_UKNFLD		-0x0200	/* inknown field  */
 #define LNF_ERR_FILTER		-0x0400	/* cannot compile filter  */
+#define LNF_ERR_NOMEM		-0x0800	/* cannot allocate memory  */
+#define LNF_ERR_OTHER		-0x0F00	/* cannot allocate memory  */
+
 
 //lnf_read(hnd, rechnd);
 
@@ -230,18 +233,19 @@ lnf_sortset(ahnd, numfields, bitmask);
 
 */
 
+/* file operations */
 lnf_file_t * lnf_open(char * filename, unsigned int flags, char * ident);
-void lnf_close(lnf_file_t *lnf_file);
 int lnf_read(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
 int lnf_write(lnf_file_t *lnf_file, lnf_rec_t *lnf_rec);
+void lnf_close(lnf_file_t *lnf_file);
 
-/*
-int lnf_rec_init(lnf_rec_t *rec);
-int lnf_rec_free(lnf_rec_t *rec);
-*/
-
+/* record operations */
+int lnf_rec_init(lnf_rec_t **rec);
+void lnf_rec_clear(lnf_rec_t *rec);
+int lnf_rec_copy(lnf_rec_t *dst, lnf_rec_t *src);
 int lnf_rec_fset(lnf_rec_t *rec, int field, void * p);
 int lnf_rec_fget(lnf_rec_t *rec, int field, void * p);
+void lnf_rec_free(lnf_rec_t *rec);
 
 
 /* filter operations */
