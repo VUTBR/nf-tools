@@ -7,9 +7,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <nffile.h>
-#include <nfx.h>
-//#include "bit_array.h"
 
 
 /* multiple use of version for both perl and nfdump so we redefine it */

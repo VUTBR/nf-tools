@@ -4,7 +4,7 @@
 
 #include "ppport.h"
 
-#include "libnf/libnf_perl.h"
+#include "libnf_perl/libnf_perl.h"
 
 #include "const-c.inc"
 

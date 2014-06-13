@@ -32,23 +32,6 @@
 #include <stdint.h>
 #endif
 
-#include "nffile.h"
-#include "nfx.h"
-#include "nfnet.h"
-#include "bookkeeper.h"
-#include "nfxstat.h"
-#include "nf_common.h"
-#include "rbtree.h"
-#include "nftree.h"
-#include "nfprof.h"
-#include "nfdump.h"
-#include "nflowcache.h"
-#include "nfstat.h"
-#include "nfexport.h"
-#include "ipconv.h"
-#include "util.h"
-#include "flist.h"
-
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -97,11 +80,11 @@ typedef struct libnf_file_list_s {
 } libnf_file_list_t;
 
 /* list of maps used in file taht we create */
-typedef struct libnf_map_list_s {
-	bit_array_t 				bit_array;
-	extension_map_t 			*map;
-	struct libnf_map_list_s 	*next;
-} libnf_map_list_t;
+//typedef struct libnf_map_list_s {
+//	bit_array_t 				bit_array;
+//	extension_map_t 			*map;
+//	struct libnf_map_list_s 	*next;
+//} libnf_map_list_t;
 
 
 /* structure that bears all data related to one instance */
@@ -142,7 +125,7 @@ typedef struct libnf_instance_s {
 libnf_instance_t *libnf_instances[NFL_MAX_INSTANCES] = { NULL };
 
 /* Global Variables */
-extern extension_descriptor_t extension_descriptor[];
+//extern extension_descriptor_t extension_descriptor[];
 
 // compare at most 16 chars
 #define MAXMODELEN	16	
@@ -150,8 +133,8 @@ extern extension_descriptor_t extension_descriptor[];
 #define STRINGSIZE 10240
 #define IP_STRING_LEN (INET6_ADDRSTRLEN)
 
-#include "nfdump_inline.c"
-#include "nffile_inline.c"
+//#include "nfdump_inline.c"
+//#include "nffile_inline.c"
 //#include "nf_common.c"
 
 
@@ -180,6 +163,7 @@ static inline SV * uint64_to_SV(uint64_t n, int is_defined) {
 }
 
 /* converts mpls array to SV */
+/*
 static inline SV * mpls_to_SV(char *mpls, int is_defined) {
 
 	if (!is_defined) 
@@ -187,9 +171,11 @@ static inline SV * mpls_to_SV(char *mpls, int is_defined) {
 
 	return newSVpvn(mpls, sizeof(((struct master_record_s *)0)->mpls_label));
 }
+*/
 
 /* converts SV to MPLS string   */
 /* returns 0 if conversion was not succesfull */
+/*
 static inline int SV_to_mpls(char *a, SV * sv) {
 STRLEN len;
 char *s;
@@ -203,9 +189,11 @@ char *s;
 	
 	return 0;
 }
+*/
 
 
 /* IPv4 or IPv6 address to SV */
+/*
 static inline SV * ip_addr_to_SV(ip_addr_t *a, int is6, int is_defined) {
 char s[IP_STRING_LEN];
 int len = 0;
@@ -231,9 +219,11 @@ int len = 0;
 
 	return  newSVpvn(s, len);
 }
+*/
 
 /* converts SV to  IP addres (ip_addr_t) */
 /* returns AF_INET or AF_INET6 based of the address type */
+/*
 static inline int SV_to_ip_addr(ip_addr_t *a, SV * sv) {
 uint64_t ip6[2];
 uint32_t ip4;
@@ -256,8 +246,10 @@ STRLEN len;
 		return -1;
 	}
 }
+*/
 
 /* converts MAC address to SV */
+/*
 static inline SV * mac_to_SV(uint8_t *a, int is_defined) {
 char s[sizeof(uint64_t)];
 int i;
@@ -274,8 +266,11 @@ int i;
 	return newSVpvn(s, 6);
 }
 
+*/
+
 /* converts SV to MAC addres and store to uint64_t   */
 /* returns 0 if conversion was not succesfull */
+/*
 static inline int SV_to_mac(uint64_t *a, SV * sv) {
 uint8_t *mac = (uint8_t *)a;
 char *s;
@@ -296,6 +291,7 @@ STRLEN len;
 
 	return 0;
 }
+*/
 
 /*
 ************************************************************************
@@ -309,10 +305,10 @@ STRLEN len;
 /* returns the information about file get from file header */
 SV * libnf_file_info(char *file) {
 HV *res;
-nffile_t *nffile = NULL;
+//nffile_t *nffile = NULL;
 
 	res = (HV *)sv_2mortal((SV *)newHV());
-
+/*
 	nffile = OpenFile((char *)file, nffile);
 	if ( nffile == NULL ) {
 		return NULL;
@@ -356,6 +352,7 @@ nffile_t *nffile = NULL;
 
 	CloseFile(nffile);
 	DisposeFile(nffile);
+*/
 	
 	
 	return newRV((SV *)res);
@@ -373,6 +370,7 @@ HV *res;
 
 	res = (HV *)sv_2mortal((SV *)newHV());
 
+/*
 	if ( instance->current_filename != NULL && instance->lnf_nffile_r->nffile != NULL ) {
 		int nblocs = instance->lnf_nffile_r->nffile->file_header->NumBlocks;
 		HV_STORE_PV(res, "current_filename", instance->current_filename);
@@ -384,6 +382,7 @@ HV *res;
 	HV_STORE_NV(res, "processed_blocks", instance->processed_blocks);
 	HV_STORE_NV(res, "processed_bytes", instance->processed_bytes);
 	HV_STORE_NV(res, "processed_records", instance->processed_records);
+*/
 
 	return newRV((SV *)res);
 }
@@ -683,16 +682,16 @@ begin:
 		if (instance->lnf_nffile_r) {
 			ret = lnf_read(instance->lnf_nffile_r, lnf_rec);
 		} else {
-			ret = NF_EOF;		/* the firt file in the list */
+			ret = LNF_EOF;		/* the firt file in the list */
 		}
 
 		switch (ret) {
 			case LNF_ERR_CORRUPT:
-				LogError("Skip corrupt data file '%s'\n",GetCurrentFilename());
-				exit(1);
+				croak("Skip corrupt data file '%s'\n", (char *)instance->files->filename);
+				return NULL;
 			case LNF_ERR_READ:
-				LogError("Read error in file '%s': %s\n",GetCurrentFilename(), strerror(errno) );
-				exit(1);
+				croak("Read error in file '%s': %s\n", (char *)instance->files->filename, strerror(errno) );
+				return NULL;
 				// fall through - get next file in chain
 			case LNF_EOF: {
 				libnf_file_list_t *next;
@@ -733,8 +732,11 @@ begin:
 
 	// Time based filter
 	// if no time filter is given, the result is always true
+
+/*
 	match  = instance->twin_start && (lnf_rec->master_record->first < instance->twin_start || 
 						lnf_rec->master_record->last > instance->twin_end) ? 0 : 1;
+*/
 
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;

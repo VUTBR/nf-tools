@@ -22,7 +22,7 @@ WriteMakefile(
     INC               => '-I. -I nfdump/bin', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
     OBJECT            => '$(O_FILES)', # link all the C files too
-    MYEXTLIB          => 'libnf/libnf_perl$(LIB_EXT)',
+    MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
     clean             => {FILES => "nfdump/ nfdump t/*.tmp" },
     realclean         => {FILES => "nfdump-*.tar.gz"},
@@ -93,9 +93,13 @@ nfdump: $(NFDUMP).tar.gz
 		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
 		$(RM_F) nfdump/bin/*.o
 
-$(MYEXTLIB): nfdump libnf/Makefile
-		cd libnf && $(MAKE) $(PASSTHRU)
-		#cd libnf && $(MAKE) 
+libnf:	libnf
+		
+
+#$(MYEXTLIB): nfdump libnf_perl/Makefile
+$(MYEXTLIB): libnf_perl/Makefile
+		cd libnf && $(MAKE)
+		cd libnf_perl && $(MAKE) $(PASSTHRU)
 ';
 }
 
