@@ -24,13 +24,13 @@ printf "# generated with h2fields.pl\n";
 printf "package Net::NfDump::Fields;\n";
 printf "our %%NFL_FIELDS_INT = (\n";
 foreach ( sort keys %F ) {
-	printf "\t\'%s\' => %s,\n", $F{$_}, $_;
+	printf "\t%s => \'%s\',\n", $_, $F{$_};
 }
 printf ");\n\n";
 
 printf "our %%NFL_FIELDS_TXT = (\n";
 foreach ( sort keys %F ) {
-	printf "\t%s => \'%s\',\n", $_, $F{$_};
+	printf "\t\'%s\' => %s,\n", $F{$_}, $_;
 }
 printf ");\n\n";
 

@@ -305,55 +305,51 @@ STRLEN len;
 /* returns the information about file get from file header */
 SV * libnf_file_info(char *file) {
 HV *res;
-//nffile_t *nffile = NULL;
+lnf_file_t *f;
+lnf_info_t i;
 
 	res = (HV *)sv_2mortal((SV *)newHV());
-/*
-	nffile = OpenFile((char *)file, nffile);
-	if ( nffile == NULL ) {
+
+	if (lnf_open(&f, file, LNF_READ, NULL) != LNF_OK) {
 		return NULL;
 	}
 
-	HV_STORE_NV(res, "version", nffile->file_header->version);
-	HV_STORE_NV(res, "blocks", nffile->file_header->NumBlocks);
-	HV_STORE_NV(res, "compressed", nffile->file_header->flags & FLAG_COMPRESSED);
-	HV_STORE_NV(res, "anonymized", nffile->file_header->flags & FLAG_ANONYMIZED);
-	HV_STORE_NV(res, "catalog", nffile->file_header->flags & FLAG_CATALOG);
-	HV_STORE_PV(res, "ident", nffile->file_header->ident);
+	lnf_info(f, &i);
 
-	if (nffile->stat_record != NULL) {
-		HV_STORE_U64V(res, "flows", nffile->stat_record->numflows);
-		HV_STORE_U64V(res, "bytes", nffile->stat_record->numbytes);
-		HV_STORE_U64V(res, "packets", nffile->stat_record->numpackets);
+	HV_STORE_NV(res, "version", i.version);
+	HV_STORE_NV(res, "blocks", i.blocks);
+	HV_STORE_NV(res, "compressed", i.compressed);
+	HV_STORE_NV(res, "anonymized", i.anonymized);
+	HV_STORE_NV(res, "catalog", i.catalog);
+	HV_STORE_PV(res, "ident", i.ident);
+
+	HV_STORE_U64V(res, "flows", i.flows);
+	HV_STORE_U64V(res, "bytes", i.bytes);
+	HV_STORE_U64V(res, "packets", i.packets);
 		
-		HV_STORE_U64V(res, "flows_tcp", nffile->stat_record->numflows_tcp);
-		HV_STORE_U64V(res, "bytes_tcp", nffile->stat_record->numbytes_tcp);
-		HV_STORE_U64V(res, "packets_tcp", nffile->stat_record->numpackets_tcp);
+	HV_STORE_U64V(res, "flows_tcp", i.flows_tcp);
+	HV_STORE_U64V(res, "bytes_tcp", i.bytes_tcp);
+	HV_STORE_U64V(res, "packets_tcp", i.packets_tcp);
 
-		HV_STORE_U64V(res, "flows_udp", nffile->stat_record->numflows_udp);
-		HV_STORE_U64V(res, "bytes_udp", nffile->stat_record->numbytes_udp);
-		HV_STORE_U64V(res, "packets_udp", nffile->stat_record->numpackets_udp);
+	HV_STORE_U64V(res, "flows_udp", i.flows_udp);
+	HV_STORE_U64V(res, "bytes_udp", i.bytes_udp);
+	HV_STORE_U64V(res, "packets_udp", i.packets_udp);
 
-		HV_STORE_U64V(res, "flows_icmp", nffile->stat_record->numflows_icmp);
-		HV_STORE_U64V(res, "bytes_icmp", nffile->stat_record->numbytes_icmp);
-		HV_STORE_U64V(res, "packets_icmp", nffile->stat_record->numpackets_icmp);
+	HV_STORE_U64V(res, "flows_icmp", i.flows_icmp);
+	HV_STORE_U64V(res, "bytes_icmp", i.bytes_icmp);
+	HV_STORE_U64V(res, "packets_icmp", i.packets_icmp);
 
-		HV_STORE_U64V(res, "flows_other", nffile->stat_record->numflows_other);
-		HV_STORE_U64V(res, "bytes_other", nffile->stat_record->numbytes_other);
-		HV_STORE_U64V(res, "packets_other", nffile->stat_record->numpackets_other);
+	HV_STORE_U64V(res, "flows_other", i.flows_other);
+	HV_STORE_U64V(res, "bytes_other", i.bytes_other);
+	HV_STORE_U64V(res, "packets_other", i.packets_other);
 
-		HV_STORE_U64V(res, "first", nffile->stat_record->first_seen * 1000LL + nffile->stat_record->msec_first);
-		HV_STORE_U64V(res, "last", nffile->stat_record->last_seen * 1000LL + nffile->stat_record->msec_last);
-//		HV_STORE_NV(res, "msec_first", nffile->stat_record->msec_first);
-//		HV_STORE_NV(res, "msec_last", nffile->stat_record->msec_last);
+	HV_STORE_U64V(res, "first", i.first);
+	HV_STORE_U64V(res, "last", i.last);
 
-		HV_STORE_U64V(res, "sequence_failures", nffile->stat_record->sequence_failure);
-	}
+	HV_STORE_U64V(res, "sequence_failures", i.failures);
 
-	CloseFile(nffile);
-	DisposeFile(nffile);
-*/
-	
+
+	lnf_close(f);	
 	
 	return newRV((SV *)res);
 }
@@ -362,21 +358,28 @@ HV *res;
 SV * libnf_instance_info(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 HV *res;
+lnf_file_t *f;
+lnf_info_t i;
 
-	if (instance == NULL ) {
+	if (libnf_instances[handle] == NULL) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
-		return 0;
+		return NULL;
 	}
 
 	res = (HV *)sv_2mortal((SV *)newHV());
 
-/*
-	if ( instance->current_filename != NULL && instance->lnf_nffile_r->nffile != NULL ) {
-		int nblocs = instance->lnf_nffile_r->nffile->file_header->NumBlocks;
-		HV_STORE_PV(res, "current_filename", instance->current_filename);
-		HV_STORE_NV(res, "current_processed_blocks", instance->current_processed_blocks);
-		HV_STORE_NV(res, "current_total_blocks", nblocs);
+	if (instance->lnf_nffile_r == NULL) {
+		return NULL;
 	}
+
+	lnf_info(instance->lnf_nffile_r, &i);
+
+	if ( f != NULL ) {
+//		HV_STORE_PV(res, "current_filename", instance->current_filename);
+		HV_STORE_NV(res, "current_processed_blocks", i.proc_blocks);
+//		HV_STORE_NV(res, "current_total_blocks", nblocs);
+	}
+/*
 	HV_STORE_NV(res, "total_files", instance->total_files);
 	HV_STORE_NV(res, "processed_files", instance->processed_files);
 	HV_STORE_NV(res, "processed_blocks", instance->processed_blocks);
@@ -677,6 +680,7 @@ int	v1_map_done = 0;
 
 	lnf_rec = instance->lnf_rec;
 
+
 begin:
 		// get next data block from file
 		if (instance->lnf_nffile_r) {
@@ -738,6 +742,7 @@ begin:
 						lnf_rec->master_record->last > instance->twin_end) ? 0 : 1;
 */
 
+	match = 1;
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 

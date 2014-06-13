@@ -6,7 +6,7 @@ use Data::Dumper;
 open(STDOUT, ">&STDERR");
 
 
-if ( ! -x "nfdump/bin/nfdump" ) {
+if ( ! -x "libnf/nfdump/bin/nfdump" ) {
 	plan skip_all => 'nfdump executable not available';
 	exit 0;
 } else {
@@ -42,8 +42,8 @@ $floww->finish();
 
 SKIP: {
 
-    system("nfdump/bin/nfdump -q -r t/clonerow.tmp -o raw | grep -v size > t/clonerow.txt.tmp");
-    system("nfdump/bin/nfdump -q -r t/clonerow_out.tmp -o raw | grep -v size > t/clonerow_out.txt.tmp");
+    system("libnf/nfdump/bin/nfdump -q -r t/clonerow.tmp -o raw | grep -v size > t/clonerow.txt.tmp");
+    system("libnf/nfdump/bin/nfdump -q -r t/clonerow_out.tmp -o raw | grep -v size > t/clonerow_out.txt.tmp");
 
     system("diff t/clonerow.txt.tmp t/clonerow_out.txt.tmp");
 

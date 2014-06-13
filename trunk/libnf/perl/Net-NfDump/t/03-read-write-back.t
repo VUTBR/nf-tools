@@ -2,7 +2,7 @@
 use Test::More;
 open(STDOUT, ">&STDERR");
 
-if ( ! -x "nfdump/bin/nfdump" ) {
+if ( ! -x "libnf/nfdump/bin/nfdump" ) {
 	plan skip_all => 'nfdump executable not available';
 	exit 0;
 } else {
@@ -30,8 +30,8 @@ $floww->finish();
 
 SKIP: { 
 
-	system("nfdump/bin/nfdump -q -r t/data1 -o raw | grep -v size > t/data2.txt.tmp");
-	system("nfdump/bin/nfdump -q -r t/data2.tmp -o raw | grep -v size > t/data1.txt.tmp");
+	system("libnf/nfdump/bin/nfdump -q -r t/data1 -o raw | grep -v size > t/data2.txt.tmp");
+	system("libnf/nfdump/bin/nfdump -q -r t/data2.tmp -o raw | grep -v size > t/data1.txt.tmp");
 
 	system("diff t/data2.txt.tmp t/data1.txt.tmp");
 

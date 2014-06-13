@@ -14,7 +14,6 @@ $floww->storerow_hashref( $DS{'v4_raw'} );
 $floww->storerow_hashref( $DS{'v4_raw'} );
 $floww->finish();
 
-
 $flowr = new Net::NfDump(InputFiles => [ "t/v4_rec.tmp" ] );
 while ( my $row = $flowr->fetchrow_hashref() )  {
 #	diag Dumper(flow2txt($row));
