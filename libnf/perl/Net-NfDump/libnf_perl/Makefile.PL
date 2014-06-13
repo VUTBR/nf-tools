@@ -5,23 +5,11 @@ WriteMakefile(
 	NAME => 'Net::NfDump::libnf',
     VERSION_FROM => '../lib/Net/NfDump.pm',
 #	SKIP => [qw(all static static_lib dynamic dynamic_lib)],
-	INC  => '-I ../nfdump -I ../nfdump/bin',
+	INC  => '-I ../libnf/include',
 	C => [ 
 		'libnf_perl.c',
-		'libnf.c',
-		'bit_array.c',
-		'../nfdump/bin/nffile.c', 
-		'../nfdump/bin/grammar.c', 
-		'../nfdump/bin/nfx.c', 
-		'../nfdump/bin/minilzo.c', 
-		'../nfdump/bin/nftree.c', 
-		'../nfdump/bin/scanner.c', 
-		'../nfdump/bin/util.c', 
-		'../nfdump/bin/ipconv.c', 
-		'../nfdump/bin/flist.c', 
-		'../nfdump/bin/nf_common.c', 
 		],	
-	CCFLAGS => '-DNSEL=1 -D__SUNPRO_C=1 ', # see note 
+#	CCFLAGS => '-DNSEL=1 -D__SUNPRO_C=1 ', # see note 
 #	CCFLAGS => '-D__SUNPRO_C=1', # see note 
 	clean => { 'FILES' => '*$(LIB_EXT) *$(OBJ_EXT) $(O_FILES)' },
 );
@@ -42,21 +30,27 @@ DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
 
 sub MY::top_targets {
 '
-NFOBJS = nffile grammar nfx minilzo nftree scanner util ipconv first
+#NFOBJS = nffile grammar nfx minilzo nftree scanner util ipconv first
 
 all :: static
 pure_all :: static
-static :: libnf$(LIB_EXT)
+static :: libnf_perl$(LIB_EXT)
 
-libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.h libnf_perl.c
-		$(CP) *.o ../nfdump/bin/
-		./check_items_map.pl 
+#libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.h libnf_perl.c
+libnf_perl$(LIB_EXT): $(O_FILES) libnf_perl.c 
 		./h2pod.pl < libnf_perl.h > libnf_perl.h.pod
-		./h2fields.pl < libnf_perl.h > ../lib/Net/NfDump/Fields.pm 
 		$(CP) ../lib/Net/NfDump.pm ../lib/Net/NfDump.pm.bkp
 		cat ../lib/Net/NfDump.pm.bkp libnf_perl.h.pod | ./mergechapter.pl > ../lib/Net/NfDump.pm
 		$(RM_F) ../lib/Net/NfDump.pm.bkp
-		$(AR) cr libnf_perl$(LIB_EXT) $(O_FILES) 
+		echo "XXX"
+		$(AR) cr libnf_perl$(LIB_EXT) $(O_FILES)
+#		$(RANLIB) libnf_perl$(LIB_EXT)
+		echo "XXX2"
+
+libnf_perl$(LIB_EXT): 
+		../libnf/src/libnf-info | ./info2fields.pl > ../lib/Net/NfDump/Fields.pm 
+		$(AR) x ../libnf/src/.libs/libnf.a
+		$(AR) cr libnf_perl$(LIB_EXT) *.o
 		$(RANLIB) libnf_perl$(LIB_EXT)
 ';
 }
