@@ -95,7 +95,7 @@ libnf/configure: libnf/prepare-nfdump.sh
 libnf/Makefile: libnf/configure 
 		(cd libnf && ./configure && cd ..) 
 
-libnf/nfdump/bin/nfdump: libnf/nfdump/bin/*.c
+libnf/nfdump/bin/nfdump: 
 		(cd libnf/nfdump && ./configure --enable-nsel && make && cd ../..) 
 
 $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
