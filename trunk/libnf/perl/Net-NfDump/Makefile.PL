@@ -24,8 +24,8 @@ WriteMakefile(
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
-    clean             => {FILES => "libnf t/*.tmp" },
-#    realclean         => {FILES => "nfdump-*.tar.gz"},
+    clean             => {FILES => "t/*.tmp" },
+    realclean         => {FILES => "libnf"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
