@@ -11,7 +11,7 @@
 #define MATH_INT64_NATIVE_IF_AVAILABLE 1
 #include "../perl_math_int64.h"
 
-#include "config.h"
+//#include "config.h"
 
 #include <stdio.h>
 #include <unistd.h>
@@ -64,47 +64,21 @@
 #define HV_STORE_U64V(r,k,v) (void)hv_store(r, k, strlen(k), newSVu64(v), 0)
 #define HV_STORE_PV(r,k,v) (void)hv_store(r, k, strlen(k), newSVpvn(v, strlen(v)), 0)
 
-
-/* hash parameters */
-//#define NumPrealloc 128000
-
-//#define AGGR_SIZE 7
-
-//#define STRINGSIZE 10240
-//static char data_string[STRINGSIZE];
-
 /* list of maps used in file taht we create */
 typedef struct libnf_file_list_s {
 	char			 			*filename;
 	struct libnf_file_list_s 	*next;
 } libnf_file_list_t;
 
-/* list of maps used in file taht we create */
-//typedef struct libnf_map_list_s {
-//	bit_array_t 				bit_array;
-//	extension_map_t 			*map;
-//	struct libnf_map_list_s 	*next;
-//} libnf_map_list_t;
-
-
 /* structure that bears all data related to one instance */
 typedef struct libnf_instance_s {
-	//extension_map_list_t 	extension_map_list;		/* nfdup structure containig extmap */
-//	extension_map_list_t 	*extension_map_list;		/* nfdup structure containig extmap */
-//	libnf_map_list_t		*map_list;				/* libnf structure that holds maps */
-//	int 					max_num_extensions;		/* mamimum number of extensions */
 	libnf_file_list_t		*files;					/* list of files to read */
-//	nffile_t				*nffile_r;				/* filehandle to the file that we read data from */
-//	nffile_t				*nffile_w;				/* filehandle for writing */
 	lnf_file_t				*lnf_nffile_r;			/* filehandle for reading */
 	lnf_file_t				*lnf_nffile_w;			/* filehandle for wirting */
 	int 					blk_record_remains; 	/* counter of processed rows in a signle block */
-	//FilterEngine_data_t		*engine;
 	lnf_filter_t			*filter;
-//	common_record_t			*flow_record;
 	int						*field_list;
 	int						field_last;
-//	stat_record_t			stat_record;
 	uint64_t				processed_bytes;		/* read statistics */
 	uint64_t				total_files;
 	uint64_t				processed_files;
@@ -113,10 +87,8 @@ typedef struct libnf_instance_s {
 	uint64_t				processed_records;
 	char 					*current_filename;		/* currently processed file name */
 	uint64_t				current_processed_blocks;
-//	uint32_t				is_anonymized;
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
-//	master_record_t			*master_record_r;		/* pointer to last read master record */
 	lnf_rec_t				*lnf_rec;
 } libnf_instance_t;
 
@@ -124,19 +96,11 @@ typedef struct libnf_instance_s {
 /* array of initalized instances */
 libnf_instance_t *libnf_instances[NFL_MAX_INSTANCES] = { NULL };
 
-/* Global Variables */
-//extern extension_descriptor_t extension_descriptor[];
-
 // compare at most 16 chars
 #define MAXMODELEN	16	
 
 #define STRINGSIZE 10240
 #define IP_STRING_LEN (INET6_ADDRSTRLEN)
-
-//#include "nfdump_inline.c"
-//#include "nffile_inline.c"
-//#include "nf_common.c"
-
 
 /***********************************************************************
 *                                                                      *
@@ -161,137 +125,6 @@ static inline SV * uint64_to_SV(uint64_t n, int is_defined) {
 
 	return newSVu64(n);
 }
-
-/* converts mpls array to SV */
-/*
-static inline SV * mpls_to_SV(char *mpls, int is_defined) {
-
-	if (!is_defined) 
-		return newSV(0);
-
-	return newSVpvn(mpls, sizeof(((struct master_record_s *)0)->mpls_label));
-}
-*/
-
-/* converts SV to MPLS string   */
-/* returns 0 if conversion was not succesfull */
-/*
-static inline int SV_to_mpls(char *a, SV * sv) {
-STRLEN len;
-char *s;
-
-	s = SvPV(sv, len);
-
-	if ( len != sizeof(((struct master_record_s *)0)->mpls_label) ) 
-		return -1;
-
-	memcpy(a, s, sizeof(((struct master_record_s *)0)->mpls_label) );
-	
-	return 0;
-}
-*/
-
-
-/* IPv4 or IPv6 address to SV */
-/*
-static inline SV * ip_addr_to_SV(ip_addr_t *a, int is6, int is_defined) {
-char s[IP_STRING_LEN];
-int len = 0;
-
-	if (!is_defined) 
-		return newSV(0);
-
-	if ( is6 ) { // IPv6
-		uint64_t ip[2];
-
-		ip[0] = htonll(a->v6[0]);
-		ip[1] = htonll(a->v6[1]);
-		len = sizeof(a->v6);
-		memcpy(s, ip, len);
-	} else {    // IPv4
-		uint32_t ip;
-
-		//ip = a->v4;
-		ip = htonl(a->v4);
-		len = sizeof(a->v4);
-		memcpy(s, &ip, len);
-	}
-
-	return  newSVpvn(s, len);
-}
-*/
-
-/* converts SV to  IP addres (ip_addr_t) */
-/* returns AF_INET or AF_INET6 based of the address type */
-/*
-static inline int SV_to_ip_addr(ip_addr_t *a, SV * sv) {
-uint64_t ip6[2];
-uint32_t ip4;
-char *s;
-STRLEN len;
-
-	s = SvPV(sv, len);
-
-	if ( len == sizeof(ip4) )  {
-		memcpy(&ip4, s, sizeof(ip4));
-		//a->v4 = ip4;
-		a->v4 = ntohl(ip4);
-		return AF_INET;
-	} else if ( len == sizeof(ip6) ) {
-		memcpy(ip6, s, sizeof(ip6));
-		a->v6[0] = ntohll(ip6[0]);
-		a->v6[1] = ntohll(ip6[1]);
-		return AF_INET6;
-	} else {
-		return -1;
-	}
-}
-*/
-
-/* converts MAC address to SV */
-/*
-static inline SV * mac_to_SV(uint8_t *a, int is_defined) {
-char s[sizeof(uint64_t)];
-int i;
-
-	if (!is_defined) 
-		return newSV(0);
-
-	s[0] = 0;
-
-	for ( i=0; i<6; i++ ) {
-		s[5 - i] = a[i] & 0xFF;
-    }
-
-	return newSVpvn(s, 6);
-}
-
-*/
-
-/* converts SV to MAC addres and store to uint64_t   */
-/* returns 0 if conversion was not succesfull */
-/*
-static inline int SV_to_mac(uint64_t *a, SV * sv) {
-uint8_t *mac = (uint8_t *)a;
-char *s;
-int i; 
-STRLEN len;
-
-	s = SvPV(sv, len);
-
-	if ( len != 6 ) 
-		return -1;
-		
-	for (i = 0; i < 6; i++) {
-		mac[5 - i] = s[i];
-	}
-	
-	mac[6] = 0x0;
-	mac[7] = 0x0;
-
-	return 0;
-}
-*/
 
 /*
 ************************************************************************
@@ -391,8 +224,6 @@ lnf_info_t i;
 }
 
 /* converts master_record to perl structures (hashref) */
-/* TAG for check_items_map.pl: libnf_master_record_to_SV */
-//SV * libnf_master_record_to_AV(int handle, master_record_t *rec, extension_map_t *map) {
 SV * libnf_master_record_to_AV(int handle, lnf_rec_t *lnf_rec) {
 libnf_instance_t *instance = libnf_instances[handle];
 AV *res_array;
@@ -511,9 +342,6 @@ libnf_instance_t *instance;
 
 	libnf_instances[handle] = instance;
 
-//	InitExtensionMaps(&(instance->extension_map_list));
-//	instance->extension_map_list = InitExtensionMaps(NEEDS_EXTENSION_LIST);
-
 	/* initialise empty record */	
 	lnf_rec_init(&instance->lnf_rec);
 
@@ -619,13 +447,6 @@ int i;
 		croak("%s can not setup filter (%s)", NFL_LOG, filter);
 		return 0;
 	}
-/*
-	instance->engine = CompileFilter(filter);
-	if ( !instance->engine ) {
-		croak("%s can not setup filter (%s)", NFL_LOG, filter);
-		return 0;
-	}
-*/
 	
 	return 1;
 }
@@ -662,11 +483,9 @@ int flags = 0;
 
 /* returns hashref or NULL if we are et the end of the file */
 SV * libnf_read_row(int handle) {
-//master_record_t	*master_record;
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
-//uint32_t map_id;
 lnf_rec_t *lnf_rec;
 
 	if (instance == NULL ) {
@@ -741,13 +560,12 @@ begin:
 	match  = instance->twin_start && (lnf_rec->master_record->first < instance->twin_start || 
 						lnf_rec->master_record->last > instance->twin_end) ? 0 : 1;
 */
-
+	/* to be FIXED XXX */
 	match = 1;
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
 	if ( match ) 
 		match = lnf_filter_match(instance->filter, lnf_rec); 
-//		match = (*instance->engine->FilterEngine)(instance->engine);
 
 	if ( match == 0 ) { // record failed to pass all filters
 		goto begin;
@@ -778,12 +596,6 @@ libnf_instance_t *src_instance = libnf_instances[src_handle];
 	if (!lnf_rec_copy(instance->lnf_rec, src_instance->lnf_rec) ) {
 		return 0;
 	} 
-
-
-/*	
-	memcpy(&instance->master_record_w, src_instance->lnf_nffile_r->master_record, sizeof(master_record_t));
-	bit_array_copy(&instance->ext_w, &src_instance->ext_r);
-*/
 
 	return 1;
 
@@ -818,13 +630,6 @@ lnf_rec_t *lnf_rec;
 		croak("%s number of fields do not match", NFL_LOG);
 		return 0;
 	}
-
-//	rec = &instance->master_record_w;
-
-	// rec + array
-//	lnf_rec.master_record = rec;
-//	lnf_rec.extensions_arr = &instance->ext_w;
-//
 
 	lnf_rec = instance->lnf_rec;
 
@@ -957,10 +762,6 @@ libnf_instance_t *instance = libnf_instances[handle];
 	lnf_rec_free(instance->lnf_rec);
 	lnf_filter_free(instance->filter);
 
-/*
-	PackExtensionMapList(instance->extension_map_list);
-	FreeExtensionMaps(instance->extension_map_list);
-*/
 	free(instance); 
 	libnf_instances[handle] = NULL;
 
