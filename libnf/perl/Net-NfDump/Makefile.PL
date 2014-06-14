@@ -24,8 +24,8 @@ WriteMakefile(
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
-    clean             => {FILES => "nfdump/ nfdump t/*.tmp" },
-    realclean         => {FILES => "nfdump-*.tar.gz"},
+    clean             => {FILES => "libnf t/*.tmp" },
+#    realclean         => {FILES => "nfdump-*.tar.gz"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
@@ -49,14 +49,6 @@ else {
     my $fallback = File::Spec->catfile('fallback', $file);
     copy ($fallback, $file) or die "Can't copy $fallback to $file: $!";
   }
-}
-
-
-sub MY::post_constants {
-'
-VERSION_MACRO = LIBNF_VERSION
-DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
-';
 }
 
 sub MY::postamble {
@@ -93,11 +85,20 @@ nfdump: $(NFDUMP).tar.gz
 		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
 		$(RM_F) nfdump/bin/*.o
 
-libnf:	libnf
-		
 
-#$(MYEXTLIB): nfdump libnf_perl/Makefile
-$(MYEXTLIB): libnf_perl/Makefile
+libnf/prepare-nfdump.sh: 
+		ln -s ../../c libnf 
+
+libnf/configure: libnf/prepare-nfdump.sh
+		(cd libnf && ./prepare-nfdump.sh && cd ..) 
+
+libnf/Makefile: libnf/configure 
+		(cd libnf && ./configure && cd ..) 
+
+libnf/nfdump/bin/nfdump: libnf/nfdump/bin/*.c
+		(cd libnf/nfdump && ./configure --enable-nsel && make && cd ../..) 
+
+$(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 		cd libnf && $(MAKE)
 		cd libnf_perl && $(MAKE) $(PASSTHRU)
 ';
