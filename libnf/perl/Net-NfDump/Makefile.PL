@@ -4,6 +4,16 @@ use ExtUtils::MakeMaker;
 use POSIX;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
+
+#if ( -e 'libnf/configure.ac' ) {
+#	$ver = `cat libnf/configure.ac | grep INIT | grep libnf | cut -f2 -d,`;
+#	chomp $ver;
+#} else {
+#	$ver = "0.??";
+#}
+
+printf "Version detected from libnf/configure.ac %s\n", $ver;
+
 WriteMakefile(
     NAME              => 'Net::NfDump',
     VERSION_FROM      => 'lib/Net/NfDump.pm', # finds $VERSION
@@ -24,8 +34,9 @@ WriteMakefile(
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
-    clean             => {FILES => "t/*.tmp" },
-    realclean         => {FILES => "libnf"},
+	PREOP             => 'make dist-preop',
+    clean             => {FILES => "t/*.tmp libnf-*.tar.gz" },
+    realclean         => {FILES => "libnf Net-NfDump-*.tar*"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
@@ -53,41 +64,12 @@ else {
 
 sub MY::postamble {
 '
-NFDUMP		= nfdump-1.6.12
-#NFDUMP_MD5	= 2b90d9f799d7f16b854485dffbe08e54
-NFDUMP_MD5	= e55a9130c93cfb9ed24b01bccd691bcb
-NFDUMP_SRC	= $(NFDUMP).tar.gz
-NFDUMP_URL	= http://downloads.sourceforge.net/project/nfdump/stable/$(NFDUMP)/$(NFDUMP_SRC)
-
-$(NFDUMP).tar.gz:
-		@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-		@echo "!!                                                     !!"
-		@echo "!!  If automatic download fails please get nfdump      !!"
-		@echo "!!  sources manually                                   !!"
-		@echo "!!                                                     !!"
-		@echo "!!  VERSION: $(NFDUMP)                            !!"
-		@echo "!!  URL:     http://sourceforge.net/projects/nfdump/   !!"
-		@echo "!!  FILE:    $(NFDUMP).tar.gz                     !!"
-		@echo "!!                                                     !!"
-		@echo "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"
-		wget -nv $(NFDUMP_URL) || curl -L -o $(NFDUMP_SRC) $(NFDUMP_URL)
-
-
-nfdump: $(NFDUMP).tar.gz 
-		./md5sum.sh $(NFDUMP_MD5) $(NFDUMP).tar.gz 
-		tar xzf $(NFDUMP).tar.gz
-		$(MV) -f $(NFDUMP) nfdump 
-		# apply patches in beta code 
-		cd nfdump && patch -p1 < ../nfdump-bugs.patch && cd ..
-		# nfdump gzip contains object files, so we rid them off
-		$(RM_F) nfdump/bin/nfdump
-		$(RM_F) nfdump/bin/*.o
-		cd nfdump && export CFLAGS=-fPIC && ./configure --enable-nsel && cd bin && make nfdump
-		$(RM_F) nfdump/bin/*.o
-
-
 libnf/prepare-nfdump.sh: 
-		ln -s ../../c libnf 
+		echo XXXX
+		pwd
+		echo XXXX
+		(ln -s ../../c libnf || exit 0)
+		cp libnf/ChangeLog Changes
 
 libnf/configure: libnf/prepare-nfdump.sh
 		(cd libnf && ./prepare-nfdump.sh && cd ..) 
@@ -101,6 +83,11 @@ libnf/nfdump/bin/nfdump:
 $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 		cd libnf && $(MAKE)
 		cd libnf_perl && $(MAKE) $(PASSTHRU)
+
+dist-preop:
+		(cd libnf && make dist) 
+		cp libnf/libnf-*.tar.gz .
 ';
+
 }
 
