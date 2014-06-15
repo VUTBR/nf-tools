@@ -11,8 +11,8 @@ use POSIX;
 #} else {
 #	$ver = "0.??";
 #}
-
-printf "Version detected from libnf/configure.ac %s\n", $ver;
+#
+#printf "Version detected from libnf/configure.ac %s\n", $ver;
 
 WriteMakefile(
     NAME              => 'Net::NfDump',
