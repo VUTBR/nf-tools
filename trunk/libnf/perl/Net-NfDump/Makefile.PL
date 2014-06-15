@@ -36,7 +36,7 @@ WriteMakefile(
     NORECURS          => 0,
 	PREOP             => 'make dist-preop',
     clean             => {FILES => "t/*.tmp libnf-*.tar.gz" },
-    realclean         => {FILES => "libnf Net-NfDump-*.tar*"},
+    realclean         => {FILES => "libnf Net-NfDump-*"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
