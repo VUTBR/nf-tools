@@ -36,18 +36,7 @@ all :: static
 pure_all :: static
 static :: libnf_perl$(LIB_EXT)
 
-#libnf$(LIB_EXT): $(O_FILES) libnf.c libnf.h bit_array.h bit_array.c libnf_perl.h libnf_perl.c
 libnf_perl$(LIB_EXT): $(O_FILES) libnf_perl.c 
-		./h2pod.pl < libnf_perl.h > libnf_perl.h.pod
-		$(CP) ../lib/Net/NfDump.pm ../lib/Net/NfDump.pm.bkp
-		cat ../lib/Net/NfDump.pm.bkp libnf_perl.h.pod | ./mergechapter.pl > ../lib/Net/NfDump.pm
-		$(RM_F) ../lib/Net/NfDump.pm.bkp
-		echo "XXX"
-		$(AR) cr libnf_perl$(LIB_EXT) $(O_FILES)
-#		$(RANLIB) libnf_perl$(LIB_EXT)
-		echo "XXX2"
-
-libnf_perl$(LIB_EXT): 
 		../libnf/src/libnf-info | ./info2fields.pl > ../lib/Net/NfDump/Fields.pm 
 		$(AR) x ../libnf/src/.libs/libnf.a
 		$(AR) cr libnf_perl$(LIB_EXT) *.o

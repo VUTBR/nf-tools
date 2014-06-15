@@ -79,7 +79,8 @@ libnf/Makefile: libnf/configure
 		(cd libnf && ./configure && cd ..) 
 
 libnf/nfdump/bin/nfdump: 
-		(cd libnf/nfdump && ./configure --enable-nsel && make && cd ../..) 
+		@echo "building nfdump..."
+		(cd libnf/nfdump && ./configure --enable-nsel && cd bin && make nfdump && cd ../../..) >/dev/null 2>&1 || exit 0
 
 $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 		cd libnf && $(MAKE)
@@ -88,6 +89,7 @@ $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 dist-preop:
 		(cd libnf && make dist) 
 		cp libnf/libnf-*.tar.gz .
+		perl -pi -w -e \'s/(libnf-).*(.tar.gz)/libnf-\'$(VERSION)\'.tar.gz/g;\' MANIFEST
 ';
 
 }
