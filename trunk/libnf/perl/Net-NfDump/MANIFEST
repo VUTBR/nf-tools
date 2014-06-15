@@ -1,3 +1,4 @@
+libnf-0.99_02.tar.gz
 Changes
 Makefile.PL
 MANIFEST
@@ -9,8 +10,9 @@ perl_math_int64.c
 perl_math_int64.h
 libnf_perl/libnf_perl.c  
 libnf_perl/libnf_perl.h  
-libnf_perl/h2pod.pl
+libnf_perl/info2fields.pl
 libnf_perl/mergechapter.pl
+libnf_perl/Makefile.PL
 lib/Net/NfDump.pm
 lib/Net/NfDump/Fields.pm
 t/ds.pl 
