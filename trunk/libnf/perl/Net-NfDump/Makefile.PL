@@ -35,8 +35,8 @@ WriteMakefile(
     MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
 	PREOP             => 'make dist-preop',
-    clean             => {FILES => "t/*.tmp libnf-*.tar.gz" },
-    realclean         => {FILES => "libnf Net-NfDump-*"},
+    clean             => {FILES => "t/*.tmp" },
+    realclean         => {FILES => "libnf Net-NfDump-* libnf-*.tar.gz"},
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,
