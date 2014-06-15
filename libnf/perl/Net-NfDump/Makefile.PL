@@ -64,15 +64,16 @@ else {
 
 sub MY::postamble {
 '
-libnf/prepare-nfdump.sh: 
-		echo XXXX
-		pwd
-		echo XXXX
-		(ln -s ../../c libnf || exit 0)
+libnf/configure: 
+		# if there is svn checkout preffer direct 
+		# connection to the libnf source isn svn 
+		if [ -d ../../c ] ; then ln -f -s ../../c libnf && (cd libnf && ./prepare-nfdump.sh && cd ..) ; fi 
+		# else decompress libnf tar and link 
+		(tar xzf libnf-$(VERSION).tar.gz && ln -s libnf-$(VERSION) libnf) || exit 0;
 		cp libnf/ChangeLog Changes
 
-libnf/configure: libnf/prepare-nfdump.sh
-		(cd libnf && ./prepare-nfdump.sh && cd ..) 
+#libnf/configure: libnf/prepare-nfdump.sh
+#		(cd libnf && ./prepare-nfdump.sh && cd ..) 
 
 libnf/Makefile: libnf/configure 
 		(cd libnf && ./configure && cd ..) 
