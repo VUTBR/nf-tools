@@ -13,6 +13,8 @@ use Net::NfDump::Fields;
 
 our @ISA = qw(Exporter);
 
+our $VERSION = '1.02';
+
 # XXX
 # Items to export into callers namespace by default. Note: do not export
 # names by default without a very good reason. Use EXPORT_OK instead.
@@ -35,7 +37,6 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.01';
 
 sub AUTOLOAD {
     # This AUTOLOAD is used to 'autoload' constants from the constant()

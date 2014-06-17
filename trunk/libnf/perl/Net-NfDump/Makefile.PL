@@ -71,6 +71,7 @@ libnf/configure:
 		# else decompress libnf tar and link 
 		(tar xzf libnf-$(VERSION).tar.gz && ln -s libnf-$(VERSION) libnf) || exit 0;
 		cp libnf/ChangeLog Changes
+		$(RM_F) libnf/nfdump/bin/nfdump  
 
 #libnf/configure: libnf/prepare-nfdump.sh
 #		(cd libnf && ./prepare-nfdump.sh && cd ..) 
@@ -79,9 +80,8 @@ libnf/Makefile: libnf/configure
 		(cd libnf && ./configure && cd ..) 
 
 libnf/nfdump/bin/nfdump: 
-		@echo "building nfdump..."
-		$(RM_F) libnf/nfdump/bin/nfdump  
-		(cd libnf/nfdump && ./configure --enable-nsel && cd bin && make nfdump && cd ../../..) >/dev/null 2>&1 || exit 0
+		@echo "trying to building nfdump..."
+		(cd libnf/nfdump && (./bootstrap ; ./configure --enable-nsel) && make && cd ../..) >nfdump.log 2>&1 || exit 0
 
 $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 		cd libnf && $(MAKE)
