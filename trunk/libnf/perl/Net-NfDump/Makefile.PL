@@ -80,7 +80,7 @@ libnf/Makefile: libnf/configure
 		(cd libnf && ./configure && cd ..) 
 
 libnf/nfdump/bin/nfdump: 
-		@echo "trying to building nfdump..."
+		@echo "trying to build nfdump..."
 		(cd libnf/nfdump && (./bootstrap ; ./configure --enable-nsel) && make && cd ../..) >nfdump.log 2>&1 || exit 0
 
 $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
