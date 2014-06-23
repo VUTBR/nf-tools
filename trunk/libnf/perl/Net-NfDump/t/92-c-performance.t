@@ -17,7 +17,12 @@ system("libnf/examples/lnf_ex01_writer -n $recs ");
 
 
 #%ctests = (' >/dev/null ' => 'read with output', '-p' => 'read without output', '-p -F' => 'read without output and filters');
-%ctests = ('-p' => 'read without output', '-p -F' => 'read without output and filters');
+%ctests = (
+	'-P' => 'read without output', 
+	'-P -F' => 'read without output and filters',
+	'-P -F' => 'read without output and filters',
+	'-P -F -G' => 'read without output and filters and lnf_fld_fget',
+);
 
 diag "Running read test using lnf_ex02_reader ...";
 while (my ($opts, $name) = each %ctests) {
