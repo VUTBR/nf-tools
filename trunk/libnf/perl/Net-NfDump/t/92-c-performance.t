@@ -11,7 +11,7 @@ require "t/ds.pl";
 diag "";
 diag "Testing C performance, it will take while...";
 
-$recs = 50000000;
+$recs = 150000000;
 diag "Preparing dataset with $recs records...";
 system("libnf/examples/lnf_ex01_writer -n $recs ");
 
