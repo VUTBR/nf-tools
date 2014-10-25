@@ -225,7 +225,8 @@ sub merge_opts {
 	}
 
 	while ( my ($key, $val) =  each %opts ) {
-		if ($key eq "InputFiles" || $key eq "Fields") {
+		if ($key eq "InputFiles" || $key eq "Fields" 
+			|| $key eq "Aggreg" || $key eq "Sort") {
 			$val = split_str($val);
 		}
 		$ropts->{$key} = $val;
@@ -496,6 +497,23 @@ sub query {
 	} 
 
 	$self->set_fields($o->{Fields});
+
+	if (defined($o->{Aggreg}) && @{$o->{Aggreg}} > 0) {
+		foreach (@{$o->{Aggreg}}) {
+			my $numbits = 0;
+			my $numbits6 = 0;
+
+			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$_};
+			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_AGGR{$id};
+
+			if (defined($o->{Sort}) && $_ eq $o->{Sort}) {
+				$flags |= $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_SORT{$id};
+			}
+
+			Net::NfDump::libnf_aggr_add($self->{handle}, $id, $flags, 
+				$numbits, $numbits6);
+		}
+	}
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 

@@ -5,7 +5,7 @@
 #include "perl.h"
 #include "XSUB.h"
 
-#include "libnf.h"
+//#include "libnf.h"
 #include "libnf_perl.h"
 
 #define MATH_INT64_NATIVE_IF_AVAILABLE 1
@@ -89,6 +89,7 @@ typedef struct libnf_instance_s {
 	uint64_t				current_processed_blocks;
 	time_t 					t_first_flow, t_last_flow;
 	time_t					twin_start, twin_end;
+	lnf_mem_t				*lnf_mem;				/* lnf_mem - aggregated/sorted results */
 	lnf_rec_t				*lnf_rec;
 } libnf_instance_t;
 
@@ -344,6 +345,7 @@ libnf_instance_t *instance;
 
 	/* initialise empty record */	
 	lnf_rec_init(&instance->lnf_rec);
+	instance->lnf_mem = NULL;
 
 	return handle;
 }
@@ -393,11 +395,34 @@ int i;
 	return 1;
 }
 
+int libnf_aggr_add(int handle, int field, int flags, int numbits, int numbits6 ) {
+libnf_instance_t *instance = libnf_instances[handle];
+
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG, handle);
+		return 0;
+	}
+
+	if (instance->lnf_mem == NULL) {
+		if (lnf_mem_init(&instance->lnf_mem) != LNF_OK ) {
+			return 0;
+		}
+	}
+
+	fprintf(stderr, "%x %x %x \n", field, flags, numbits);
+	if (lnf_mem_fadd(instance->lnf_mem, field, flags, numbits, numbits6) != LNF_OK ) {
+		return 0;
+	}	
+
+	return 1;
+} 
+
 
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files) {
 libnf_instance_t *instance = libnf_instances[handle];
 
 libnf_file_list_t	*pfile;
+lnf_rec_t	*lnf_rec;
 I32 numfiles = 0;
 int i;
 
@@ -447,7 +472,14 @@ int i;
 		croak("%s can not setup filter (%s)", NFL_LOG, filter);
 		return 0;
 	}
-	
+
+	/* if aggregation is requested process all records and store in lnf_mem */
+	if (instance->lnf_mem != NULL) {
+		while ((lnf_rec = libnf_read_row_files(handle)) != NULL) {
+			lnf_mem_write(instance->lnf_mem, lnf_rec);	
+		}
+	}
+
 	return 1;
 }
 
@@ -482,7 +514,48 @@ int flags = 0;
 }
 
 /* returns hashref or NULL if we are et the end of the file */
+/* function is divided into two parts */
+/* 1 - if the result is aggregated/sorted we read result from  mem object */
+/* 2 - not agregated - call libnf_read_row_file */
 SV * libnf_read_row(int handle) {
+libnf_instance_t *instance = libnf_instances[handle];
+int ret;
+int match;
+lnf_rec_t *lnf_rec;
+
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG, handle);
+		return 0;
+	}
+
+	if (instance->lnf_mem == NULL) {
+		/* non aggregated result - read directly from file */
+		lnf_rec = libnf_read_row_files(handle);
+
+		if (lnf_rec != NULL) {
+			return libnf_master_record_to_AV(handle, lnf_rec); 
+		} else {
+			return NULL;
+		}
+
+	} else {
+		/* aggregated result - read from lnf_mem */
+
+		if (lnf_mem_read(instance->lnf_mem, instance->lnf_rec) != LNF_EOF) {
+			return libnf_master_record_to_AV(handle, instance->lnf_rec);
+		} else {
+			/* last record - clean lnf_mem object */
+			lnf_mem_free(instance->lnf_mem);
+			instance->lnf_mem = NULL;
+			return NULL;
+		}
+	}
+
+}
+
+
+/* returns hashref or NULL if we are et the end of the file */
+lnf_rec_t * libnf_read_row_files(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
@@ -571,9 +644,9 @@ begin:
 		goto begin;
 	}
 
-	/* the record seems OK. We prepare hash reference with items */
-	//return libnf_master_record_to_AV(handle, lnf_rec.master_record, lnf_rec.master_record->map_ref); 
-	return libnf_master_record_to_AV(handle, lnf_rec); 
+	/* the record seems OK */
+	return lnf_rec; 
+//	return libnf_master_record_to_AV(handle, lnf_rec); 
 
 } /* end of _next fnction */
                                   

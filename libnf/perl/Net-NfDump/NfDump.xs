@@ -66,6 +66,15 @@ libnf_set_fields(handle, fields)
 	SV * fields
 
 
+int 
+libnf_aggr_add(handle, field, flags, numbits, numbits6)
+	int handle
+	int field
+	int flags
+	int numbits 
+	int numbits6
+
+
 int
 libnf_copy_row(handle, src_handle)
 	int handle
