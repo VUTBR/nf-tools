@@ -1,12 +1,7 @@
 
-/* 
-* This .h file is also used to create some parts of libnf documentation 
-* the text after the macro pod<double dot> will be placed into separate file libnf.h.pod 
-* and then is included into basic libnf documentation 
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
+#include <libnf.h>
 
 
 /* multiple use of version for both perl and nfdump so we redefine it */
@@ -40,9 +35,10 @@ int libnf_set_fields(int handle, SV *fields);
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files);
 int libnf_create_file(int handle, char *filename, int compressed, int anonymized, char *ident);
 SV * libnf_read_row(int handle);
+lnf_rec_t * libnf_read_row_files(int handle);
 int libnf_copy_row(int handle, int src_handle);
 int libnf_write_row(int handle, SV * arrayref);
 void libnf_finish(int handle);
 
-
+int libnf_aggr_add(int handle, int field, int flags, int numbits, int numbits6);
 
