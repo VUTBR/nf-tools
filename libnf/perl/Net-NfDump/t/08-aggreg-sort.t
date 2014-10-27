@@ -1,5 +1,5 @@
 
-use Test::More tests => 4;
+use Test::More tests => 2;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
@@ -18,10 +18,24 @@ $floww->finish();
 
 $flowr = new Net::NfDump(InputFiles => [ "t/agg_dataset.tmp" ], Aggreg => "srcip,dstport,bytes");
 $flowr->query();
+my $numrows = 0;
 while ( my $row = $flowr->fetchrow_hashref() )  {
-#	diag Dumper($DS{'v4_nel_nsel_txt'});
-	diag Dumper(flow2txt($row));
+	$row = flow2txt($row);
+	$numrows++ if ($row->{'srcip'} eq '147.229.3.135' && $row->{'bytes'} eq '2910000');
+#	diag Dumper($row);
 }
 
+ok($numrows == 1);
 
+
+$flowr = new Net::NfDump(InputFiles => [ "t/agg_dataset.tmp" ], Aggreg => "srcip/24/0,bytes");
+$flowr->query();
+$numrows = 0;
+while ( my $row = $flowr->fetchrow_hashref() )  {
+	$row = flow2txt($row);
+	$numrows++ if ($row->{'srcip'} eq '147.229.3.0' && $row->{'bytes'} eq '2910000');
+	diag Dumper($row);
+}
+
+ok($numrows == 1);
 

@@ -499,11 +499,20 @@ sub query {
 	$self->set_fields($o->{Fields});
 
 	if (defined($o->{Aggreg}) && @{$o->{Aggreg}} > 0) {
-		foreach (@{$o->{Aggreg}}) {
+		foreach my $fld (@{$o->{Aggreg}}) {
 			my $numbits = 0;
 			my $numbits6 = 0;
 
-			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$_};
+			if ($fld =~ /\//) {
+				($fld, $numbits, $numbits6) = split(/\//, $fld);
+				$numbits6 = $numbits if (!defined($numbits6));
+			}
+
+			if (!defined($Net::NfDump::Fields::NFL_FIELDS_TXT{$fld})) {
+				croak("Unknown aggregation field $fld");
+			}
+
+			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld};
 			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_AGGR{$id};
 
 			if (defined($o->{Sort}) && $_ eq $o->{Sort}) {
