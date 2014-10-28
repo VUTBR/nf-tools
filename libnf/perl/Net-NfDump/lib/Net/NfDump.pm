@@ -225,8 +225,7 @@ sub merge_opts {
 	}
 
 	while ( my ($key, $val) =  each %opts ) {
-		if ($key eq "InputFiles" || $key eq "Fields" 
-			|| $key eq "Aggreg" || $key eq "Sort") {
+		if ($key eq "InputFiles" || $key eq "Fields" ) {
 			$val = split_str($val);
 		}
 		$ropts->{$key} = $val;
@@ -496,33 +495,42 @@ sub query {
 		croak("No imput files defined");
 	} 
 
-	$self->set_fields($o->{Fields});
+	my @resfields = ();
+	foreach my $fld (@{$o->{Fields}}) {
+		my $numbits = 32;
+		my $numbits6 = 128;
 
-	if (defined($o->{Aggreg}) && @{$o->{Aggreg}} > 0) {
-		foreach my $fld (@{$o->{Aggreg}}) {
-			my $numbits = 0;
-			my $numbits6 = 0;
+		if ($fld =~ /\//) {
+			($fld, $numbits, $numbits6) = split(/\//, $fld);
+			$numbits6 = $numbits if (!defined($numbits6));
+		}
+		push(@resfields, $fld);
 
-			if ($fld =~ /\//) {
-				($fld, $numbits, $numbits6) = split(/\//, $fld);
-				$numbits6 = $numbits if (!defined($numbits6));
+
+		if (defined($o->{Aggreg}) && $o->{Aggreg}) {
+			if ($fld eq '*') {
+				croak("Symbol '*' is not allower for aggregated items");
 			}
-
+		
 			if (!defined($Net::NfDump::Fields::NFL_FIELDS_TXT{$fld})) {
-				croak("Unknown aggregation field $fld");
+				croak("Unknown field $fld");
 			}
 
 			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld};
 			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_AGGR{$id};
 
-			if (defined($o->{Sort}) && $_ eq $o->{Sort}) {
+			if (defined($o->{OrderBy}) && $fld eq $o->{OrderBy}) {
 				$flags |= $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_SORT{$id};
 			}
 
+			printf(" $fld $id $flags $numbits, $numbits6\n");
 			Net::NfDump::libnf_aggr_add($self->{handle}, $id, $flags, 
 				$numbits, $numbits6);
 		}
+
 	}
+
+	$self->set_fields([ @resfields ]);
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 

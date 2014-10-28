@@ -409,8 +409,6 @@ libnf_instance_t *instance = libnf_instances[handle];
 		}
 	}
 
-	fprintf(stderr, "%x %x %d %d \n", field, flags, numbits, numbits6);
-
 	if (lnf_mem_fadd(instance->lnf_mem, field, flags, numbits, numbits6) != LNF_OK ) {
 		return 0;
 	}	
