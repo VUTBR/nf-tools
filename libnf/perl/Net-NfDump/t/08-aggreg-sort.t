@@ -35,7 +35,7 @@ $numrows = 0;
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	$row = flow2txt($row);
 	$numrows++ if ($row->{'srcip'} eq '147.229.3.0' && $row->{'bytes'} eq '291000');
-#	diag Dumper($row);
+	diag Dumper($row);
 }
 
 ok($numrows == 1);
@@ -61,7 +61,7 @@ $numrows = 0;
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	$row = flow2txt($row);
 	$numrows++;
-	diag Dumper($row);
+#	diag Dumper($row);
 }
 
 ok($numrows == 20);
