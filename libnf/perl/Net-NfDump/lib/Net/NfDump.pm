@@ -523,7 +523,6 @@ sub query {
 				$flags |= $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_SORT{$id};
 			}
 
-			printf(" $fld $id $flags $numbits, $numbits6\n");
 			Net::NfDump::libnf_aggr_add($self->{handle}, $id, $flags, 
 				$numbits, $numbits6);
 		}
