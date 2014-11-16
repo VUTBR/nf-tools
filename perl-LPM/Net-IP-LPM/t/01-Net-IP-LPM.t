@@ -5,9 +5,9 @@
 
 # change 'tests => 1' to 'tests => last_test_to_print';
 
-#open(STDOUT, ">&STDERR");
+open(STDOUT, ">&STDERR");
 
-use Test::More tests => 10;
+use Test::More tests => 11;
 BEGIN { use_ok('Net::IP::LPM') };
 
 use Socket qw( AF_INET );
@@ -258,3 +258,18 @@ while ( my ($a, $p) = each %tests2 ) {
 }
 
 ok( eq_hash(\%tests2, \%results2), 'lookup_cache_raw - undef' );
+
+
+# DUMP
+my $cnt = 0;
+my $dump = $lpm2->dump();
+foreach ( sort keys %{$dump} ) {
+	if ($_ !~ /$dump->{$_}/ && $_ ne '2001:67c::/32') {
+	    diag sprintf "   %s -> %s", $_, $dump->{$_};
+		$cnt++;
+	}
+}
+
+ok( $cnt == 0, 'dump()' );
+
+

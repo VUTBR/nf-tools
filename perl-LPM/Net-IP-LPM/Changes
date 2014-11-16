@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::IP::LPM.
 
+1.06 Sat Nov 15 2014
+	- added lpm->dump();
+
 1.05 Wen Nov 1 2013
 	- crashes on emty database
 

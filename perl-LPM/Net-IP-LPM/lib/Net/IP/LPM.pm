@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.05';
+our $VERSION = '1.06';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
@@ -244,6 +244,18 @@ sub info {
 	my ($self) = @_;
 
 	return lpm_info($self->{handle});
+}	
+
+=head2  dump - Return hash array reference containg all stored prefixes in the trie
+ 
+  $ref = $lpm->dump();
+
+=cut 
+
+sub dump {
+	my ($self) = @_;
+
+	return lpm_dump($self->{handle});
 }	
 
 =head2  finish - Release all data in object
