@@ -9,5 +9,6 @@ SV * lpm_lookup_raw(int handle, SV *svaddr);
 void lpm_finish(int handle);
 void lpm_destroy(int handle);
 SV * lpm_info(int handle);
+SV * lpm_dump(int handle);
 
 

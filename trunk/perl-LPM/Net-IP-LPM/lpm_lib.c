@@ -27,6 +27,15 @@ typedef struct TrieNode{
   bool hasValue;
 } TTrieNode;
 
+/* linked list of TTrieNode(s) */
+typedef struct TrieNodeList {
+	struct TrieNode *pNode;
+	struct TrieNodeList *pNext;
+	int Depth;
+	int AfType;
+	char *Prefix;
+} TTrieNodeList;
+
 /// Structure of alokated chunks of Trie Nodes
 typedef struct AlocTrieNodes{
   struct TrieNode TrieNodes[ALOCSIZE];
@@ -54,6 +63,7 @@ void freeAlocTrieNodes(TAlocTrieNodes *pATN);
 TTrieNode *lookupAddress(unsigned char *address, int addrLen, TTrieNode *pTN);
 TTrieNode **lookupInTrie(unsigned char *prefix, unsigned char *byte, unsigned char *bit, unsigned char *makeMatches, TTrieNode **ppTN, bool *root); 
 TTrieNode *myMalloc();
+int listTrieNode(TTrieNode *pTN, TTrieNodeList **plTN, const int AfType, int *depth, unsigned char *prefix);
 
 
 /// Alocation speeding variables
@@ -93,6 +103,46 @@ void countTrieNode(TTrieNode *pTN, int * totalNodes, int * valueNodes, int * tri
 		(*totalNodes)++;
 		(*trieBytes) += sizeof(struct TrieNode);
 	}
+}
+
+/* convert trie node into linked list  */
+int listTrieNode(TTrieNode *pTN, TTrieNodeList **plTN, const int AfType, int *depth, unsigned char *prefix) {
+	TTrieNodeList *ptmp;
+	int allocsize;
+
+	if (pTN != NULL) {
+		if (pTN->hasValue) {
+			ptmp = malloc(sizeof(TTrieNodeList));
+			if (ptmp == NULL) {
+				return 0;
+			}
+			/* get prefix len */
+			allocsize = (((*depth) - 1) / 8) + 1;
+
+			ptmp->pNext = *plTN;
+			ptmp->pNode = pTN;
+			ptmp->Depth = *depth;
+			ptmp->AfType = AfType;
+			ptmp->Prefix = malloc(allocsize);
+			if (ptmp->Prefix == NULL) {
+				return 0;
+			}
+			memcpy(ptmp->Prefix, prefix, allocsize);
+			
+			*plTN = ptmp;
+		}
+		(*depth)++;
+
+		if (listTrieNode(pTN->pTN0, plTN, AfType, depth, prefix) == 0) return 0;
+
+		prefix[((*depth) - 1 ) / 8] |= 0x80 >> ((((*depth) - 1) % 8) );
+		if (listTrieNode(pTN->pTN1, plTN, AfType, depth, prefix) == 0) return 0;
+		prefix[((*depth) - 1 ) / 8] &= 0xFF7F >> ((((*depth) - 1) % 8) );
+
+		(*depth)--;
+
+	}
+	return 1;
 }
 
 /**
@@ -443,6 +493,59 @@ HV * res;
 
 	return newRV((SV *)res);
 
+}
+
+SV * lpm_dump(int handle) {
+lpm_instance_t *instance = lpm_instances[handle];
+TTrieNodeList *ptmp;
+TTrieNodeList *plist = NULL;
+HV * res;
+unsigned char prefix[BUFFSIZE];
+int depth;
+
+	if (instance == NULL ) {
+		croak("handler %d not initialized", handle);
+		return &PL_sv_undef;
+	}
+
+	res = (HV *)sv_2mortal((SV *)newHV());
+
+	if (instance->pTrieIPV4 != NULL) {
+		depth = 0;
+		memset(&prefix, 0x0, sizeof(prefix));
+		listTrieNode(instance->pTrieIPV4, &plist, AF_INET, &depth, prefix);
+	}
+
+	if (instance->pTrieIPV6 != NULL) {
+		depth = 0;
+		memset(&prefix, 0x0, sizeof(prefix));
+		listTrieNode(instance->pTrieIPV6, &plist, AF_INET6, &depth, prefix);
+	}
+
+
+	while (plist != NULL) {
+		STRLEN len;
+		char buf[BUFFSIZE];
+		int allocsize;
+
+		allocsize = ((plist->Depth - 1) / 8) + 1;
+
+		memset(prefix, 0x0, BUFFSIZE - 1);
+		memcpy(prefix, plist->Prefix, allocsize); 
+
+		inet_ntop(plist->AfType, prefix, buf, BUFFSIZE);
+
+		sprintf(buf, "%s/%d", buf, plist->Depth);
+
+		SvREFCNT_inc(plist->pNode->Value);
+		hv_store(res, buf, strlen(buf),  plist->pNode->Value, 0);
+
+		ptmp = plist;
+		plist = plist->pNext;
+		free(ptmp);
+	}
+
+	return newRV((SV *)res);
 }
 
 void lpm_finish(int handle) {

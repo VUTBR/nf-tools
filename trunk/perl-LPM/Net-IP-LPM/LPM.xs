@@ -36,6 +36,11 @@ lpm_info(handle)
 	int handle
 
 
+SV * 
+lpm_dump(handle)
+	int handle
+
+
 void 
 lpm_finish(handle)
 	int handle
