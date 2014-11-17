@@ -11,15 +11,6 @@ if (@ARGV == 0) {
 	exit 1;
 }
 
-# create and display progressbar 
-local $SIG{ALRM} = sub { 
-	my $i = $flow->info();
-	printf STDERR "%sprocessed: %3.0f%%, remaining time: %ds    ", "\b" x 50, 
-			$i->{'percent'},
-			$i->{'remaining_time'} ; 
-	alarm(1); 
-};
-
 # create nfdump instance
 $flow = new Net::NfDump(
         InputFiles => [ @ARGV ], 
@@ -29,7 +20,6 @@ $flow = new Net::NfDump(
 		OrderBy => 'bytes' ); 
 
 $flow->query();
-alarm(1);
 
 # traverse all records
 while (my ($proto, $bytes) = $flow->fetchrow_array() )  {
