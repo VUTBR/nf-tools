@@ -13,7 +13,7 @@ use Net::NfDump::Fields;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = '1.04';
+our $VERSION = '1.05';
 
 # XXX
 # Items to export into callers namespace by default. Note: do not export
