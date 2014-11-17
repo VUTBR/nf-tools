@@ -1,5 +1,12 @@
 
-use Test::More tests => 1;
+use Test::More;
+
+if (defined($ENV{'AUTOMATED_TESTING'}) && $ENV{'AUTOMATED_TESTING'} eq 1) {
+	plan skip_all => 'Not performed as automated test';
+} else {
+	plan tests => 1;
+}
+
 use Net::NfDump qw ':all';
 use Data::Dumper;
 open(STDOUT, ">&STDERR");

@@ -1,5 +1,12 @@
 
-use Test::More tests => 1;
+use Test::More;
+
+if (defined($ENV{'AUTOMATED_TESTING'}) && $ENV{'AUTOMATED_TESTING'} eq 1) {
+	plan skip_all => 'Not performed as automated test';
+} else {
+	plan tests => 1;
+}
+
 use Net::NfDump qw ':all';
 use Data::Dumper;
 #open(STDOUT, ">&STDERR");
@@ -11,7 +18,7 @@ require "t/ds.pl";
 diag "";
 diag "Testing C performance, it will take while...";
 
-$recs = 150000000;
+$recs = 50000000;
 diag "Preparing dataset with $recs records...";
 system("libnf/examples/lnf_ex01_writer -n $recs ");
 

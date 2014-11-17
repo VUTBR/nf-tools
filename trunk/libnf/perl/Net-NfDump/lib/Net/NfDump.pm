@@ -295,6 +295,16 @@ List of fields to read or to update. Any supported field can be used
 here. See the chapter "Supported Fields" for the full list.
 Special field * can be used to define all fields. 
 
+=item * B<Aggreg> => 0
+
+Create aggregated result. When the method ->query() is callet 
+the library loads data into memory structure and 
+perform aggregation according the Fields attribute. 
+
+=item * B<OrderBy> => '<none>'
+
+Sort the final result according the field specified. It can by 
+used only for aggregated results. 
 
 =item * B<TimeWindowStart>, B<TimeWindowEnd> => 0
 
