@@ -7,7 +7,8 @@
 
 open(STDOUT, ">&STDERR");
 
-use Test::More tests => 11;
+use Test::More tests => 13;
+use Data::Dumper;
 BEGIN { use_ok('Net::IP::LPM') };
 
 use Socket qw( AF_INET );
@@ -260,7 +261,7 @@ while ( my ($a, $p) = each %tests2 ) {
 ok( eq_hash(\%tests2, \%results2), 'lookup_cache_raw - undef' );
 
 
-# DUMP
+# DUMP - without default 
 my $cnt = 0;
 my $dump = $lpm2->dump();
 foreach ( sort keys %{$dump} ) {
@@ -272,4 +273,34 @@ foreach ( sort keys %{$dump} ) {
 
 ok( $cnt == 0, 'dump()' );
 
+
+# DUMP - with default 
+$cnt = 0;
+$lpm2->add('0.0.0.0/0', '0.0.0.0/0');
+$dump = $lpm2->dump();
+#diag Dumper($dump);
+foreach ( sort keys %{$dump} ) {
+	if ($_ !~ /$dump->{$_}/ && $_ ne '2001:67c::/32') {
+	    diag sprintf "   %s -> %s", $_, $dump->{$_};
+		$cnt++;
+	}
+}
+
+ok( $cnt == 0, 'dump()' );
+
+# DUMP - v4 only
+$cnt = 0;
+my $lpm3 = Net::IP::LPM->new();
+$lpm3->add('0.0.0.0/0', '0.0.0.0/0');
+$lpm3->add('147.229.0.0/16', '147.229.0.0/16');
+$dump = $lpm3->dump();
+#diag Dumper($dump);
+foreach ( sort keys %{$dump} ) {
+	if ($_ !~ /$dump->{$_}/ && $_ ne '2001:67c::/32') {
+	    diag sprintf "   %s -> %s", $_, $dump->{$_};
+		$cnt++;
+	}
+}
+
+ok( $cnt == 0, 'dump()' );
 

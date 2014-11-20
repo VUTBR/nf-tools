@@ -1,5 +1,8 @@
 Revision history for Perl extension Net::IP::LPM.
 
+1.07 Fri Nov 21 2014
+	- added more tests
+
 1.06 Sat Nov 15 2014
 	- added lpm->dump();
 
