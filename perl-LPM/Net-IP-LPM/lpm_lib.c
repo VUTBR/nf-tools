@@ -526,6 +526,7 @@ int depth;
 	while (plist != NULL) {
 		STRLEN len;
 		char buf[BUFFSIZE];
+		char buf2[BUFFSIZE];
 		int allocsize;
 
 		allocsize = ((plist->Depth - 1) / 8) + 1;
@@ -535,10 +536,10 @@ int depth;
 
 		inet_ntop(plist->AfType, prefix, buf, BUFFSIZE);
 
-		sprintf(buf, "%s/%d", buf, plist->Depth);
+		sprintf(buf2, "%s/%d", buf, plist->Depth);
 
 		SvREFCNT_inc(plist->pNode->Value);
-		hv_store(res, buf, strlen(buf),  plist->pNode->Value, 0);
+		hv_store(res, buf2, strlen(buf2),  plist->pNode->Value, 0);
 
 		ptmp = plist;
 		plist = plist->pNext;
