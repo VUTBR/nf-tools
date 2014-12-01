@@ -32,7 +32,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.08';
+our $VERSION = '1.09';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
