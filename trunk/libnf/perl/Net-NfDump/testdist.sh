@@ -5,9 +5,9 @@ DIST="Net-NfDump-1.05"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 
-	echo ***********************************************
+	echo "***********************************************"
 	echo ${h}
-	echo ***********************************************
+	echo "***********************************************"
 	scp ${DIST}${EXT} ${h}:/tmp/
 	ssh ${h} "export AUTOMATED_TESTING=1 ; cd /tmp/ && (rm -rf ${DIST}/ ; tar xzf ${DIST}${EXT}) && cd ${DIST} && perl Makefile.PL && make test ; rm -rf Net-Dump-*"
 
