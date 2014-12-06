@@ -30,6 +30,8 @@ DEFINE_VERSION = -D$(VERSION_MACRO)=\"$(VERSION)\"
 
 sub MY::top_targets {
 '
+.NOTPARALLEL:
+
 #NFOBJS = nffile grammar nfx minilzo nftree scanner util ipconv first
 
 all :: static
