@@ -64,6 +64,8 @@ else {
 
 sub MY::postamble {
 '
+.NOTPARALLEL:
+
 libnf/configure: 
 		# if there is svn checkout preffer direct 
 		# connection to the libnf source isn svn 
