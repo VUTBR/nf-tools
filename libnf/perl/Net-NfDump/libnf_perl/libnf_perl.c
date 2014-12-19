@@ -243,7 +243,7 @@ int ret;
 		SV * sv;
 		int field = instance->field_list[i];
 
-		switch (LNF_GET_TYPE(field)) {
+		switch (lnf_fld_type(field)) {
 			case LNF_UINT8:
 			case LNF_UINT16:
 			case LNF_UINT32: {
@@ -718,7 +718,7 @@ lnf_rec_t *lnf_rec;
 		field = instance->field_list[i];
 
 
-		switch (LNF_GET_TYPE(field)) {
+		switch (lnf_fld_type(field)) {
 			case LNF_UINT8:
 			case LNF_UINT16:
 			case LNF_UINT32: {
