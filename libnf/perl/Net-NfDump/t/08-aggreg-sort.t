@@ -22,7 +22,7 @@ my $numrows = 0;
 %row = %{$DS{'v4_txt'}};
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	$row = flow2txt($row);
-	$numrows++ if ($row->{'srcip'} eq '147.229.3.135' && $row->{'bytes'} eq '291000');
+	$numrows++ if ($row->{'srcip'} eq '147.229.3.135' && $row->{'bytes'} eq '9999111291000');
 #	diag Dumper($row);
 }
 
@@ -34,7 +34,7 @@ $flowr->query();
 $numrows = 0;
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	$row = flow2txt($row);
-	$numrows++ if ($row->{'srcip'} eq '147.229.3.0' && $row->{'bytes'} eq '291000');
+	$numrows++ if ($row->{'srcip'} eq '147.229.3.0' && $row->{'bytes'} eq '9999111291000');
 #	diag Dumper($row);
 }
 

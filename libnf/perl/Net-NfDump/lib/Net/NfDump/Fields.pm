@@ -65,6 +65,10 @@ our %NFL_FIELDS_INT = (
 	0x0000003e => 'cl',
 	0x0000003f => 'sl',
 	0x00000040 => 'al',
+	0x000000a0 => 'duration',
+	0x000000a1 => 'bps',
+	0x000000a2 => 'pps',
+	0x000000a3 => 'bpp',
 );
 
 our %NFL_FIELDS_TXT = (
@@ -132,6 +136,10 @@ our %NFL_FIELDS_TXT = (
 	'cl' => 0x0000003e,
 	'sl' => 0x0000003f,
 	'al' => 0x00000040,
+	'duration' => 0x000000a0,
+	'bps' => 0x000000a1,
+	'pps' => 0x000000a2,
+	'bpp' => 0x000000a3,
 );
 
 our %NFL_FIELDS_DEFAULT_AGGR = (
@@ -199,6 +207,10 @@ our %NFL_FIELDS_DEFAULT_AGGR = (
 	0x0000003e => 0x00,
 	0x0000003f => 0x00,
 	0x00000040 => 0x00,
+	0x000000a0 => 0x03,
+	0x000000a1 => 0x03,
+	0x000000a2 => 0x03,
+	0x000000a3 => 0x03,
 );
 
 our %NFL_FIELDS_DEFAULT_SORT = (
@@ -266,6 +278,10 @@ our %NFL_FIELDS_DEFAULT_SORT = (
 	0x0000003e => 0x10,
 	0x0000003f => 0x10,
 	0x00000040 => 0x10,
+	0x000000a0 => 0x00,
+	0x000000a1 => 0x00,
+	0x000000a2 => 0x00,
+	0x000000a3 => 0x00,
 );
 
 =pod
@@ -336,6 +352,10 @@ our %NFL_FIELDS_DEFAULT_SORT = (
   cl => nprobe latency client_nw_delay_usec
   sl => nprobe latency server_nw_delay_usec
   al => nprobe latency appl_latency_usec
+  duration => Flow duration
+  bps => Bytes per second
+  pps => Packets per second
+  bpp => Bytes per packet
 
 =cut
 

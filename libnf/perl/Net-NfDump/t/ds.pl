@@ -5,12 +5,10 @@ our %DS;		# data sets
 
 $DS{'v4_basic_txt'} = {
 	'first' => '1355439616',
-#	'msecfirst' => '747',
-	'last' => '1355439616',
-#	'mseclast' => '748',
+	'last' => '1355458616',
 	
-	'bytes' => '291',
-	'pkts' => '5',
+	'bytes' => '9999111291',
+	'pkts' => '999911115',
 
 	'srcport' => '53008',
 	'dstport' => '10050',
@@ -21,17 +19,20 @@ $DS{'v4_basic_txt'} = {
 	'nexthop' => '10.255.5.1',
 
 	'proto' => '6',
+
+	'duration' => '19000',
+	'bpp' => '99',
+	'pps' => '40',
+	'bps' => '4208',
 };
 
 $DS{'v4_txt'} = {
 	'first' => '1355439616',
-#	'msecfirst' => '747',
-	'last' => '1355439616',
-#	'mseclast' => '748',
+	'last' => '1355458616',
 	'received' => '22341355439617',
 	
-	'bytes' => '291',
-	'pkts' => '5',
+	'bytes' => '9999111291',
+	'pkts' => '99991115',
 	'outbytes' => '291',
 	'outpkts' => '5',
 	'flows' => '1',
@@ -76,8 +77,12 @@ $DS{'v4_txt'} = {
 
 	'cl' => '100', 
 	'sl' => '200',
-	'al' => '300'
+	'al' => '300',
 
+	'duration' => '19000',
+	'bpp' => '99',
+	'pps' => '40',
+	'bps' => '4208',
 };
 
 # prepare v6 structure - same as V4 but address changed to v6
