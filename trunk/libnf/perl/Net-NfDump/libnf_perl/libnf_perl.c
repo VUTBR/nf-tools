@@ -127,6 +127,15 @@ static inline SV * uint64_to_SV(uint64_t n, int is_defined) {
 	return newSVu64(n);
 }
 
+/* converts unsigned integer 64b. to SV */
+static inline SV * double_to_SV(double n, int is_defined) {
+
+	if (!is_defined) 
+		return newSV(0);
+
+	return newSVnv(n);
+}
+
 /*
 ************************************************************************
 *                                                                      *
@@ -258,6 +267,12 @@ int ret;
 				sv = uint64_to_SV(t64, ret == LNF_OK);
                 break;
 			}
+            case LNF_DOUBLE: {
+                double d = 0;
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&d);
+				sv = double_to_SV(d, ret == LNF_OK);
+                break;
+			}
 			case LNF_ADDR: {
 				lnf_ip_t tip;
 
@@ -307,8 +322,11 @@ int ret;
 				}
 				break;
 			}
+			case LNF_BASIC_RECORD1: 
+				sv = newSV(0);	
+				break;
 			default: 
-				croak("%s Unknown field (id %d) in %s !!", NFL_LOG, field, __FUNCTION__);
+				croak("%s Unknown field (id %02x) in %s !!", NFL_LOG, field, __FUNCTION__);
 		} /* case */
 
 		i++;
@@ -390,7 +408,8 @@ int i;
 			warn("%s ivalid itemd ID", NFL_LOG);
 		}
 	}
-	instance->field_list[i++] = LNF_FLD_ZERO;
+
+	instance->field_list[i++] = LNF_FLD_ZERO_;
 	instance->field_last = last_field;
 	return 1;
 }
@@ -518,8 +537,8 @@ int flags = 0;
 /* 2 - not agregated - call libnf_read_row_file */
 SV * libnf_read_row(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
-int ret;
-int match;
+//int ret;
+//int match;
 lnf_rec_t *lnf_rec;
 
 	if (instance == NULL ) {
@@ -729,6 +748,11 @@ lnf_rec_t *lnf_rec;
 			case LNF_UINT64: {
 				uint64_t t64 = SvU64(sv);
 				ret = lnf_rec_fset(lnf_rec, field, (void *)&t64);
+				break;
+			}
+			case LNF_DOUBLE: {
+				double d = SvNV(sv);
+				ret = lnf_rec_fset(lnf_rec, field, (void *)&d);
 				break;
 			}
 			case LNF_ADDR: {
