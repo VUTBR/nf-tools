@@ -149,7 +149,7 @@ static inline SV * double_to_SV(double n, int is_defined) {
 SV * libnf_file_info(char *file) {
 HV *res;
 lnf_file_t *f;
-lnf_info_t i;
+char buf[LNF_INFO_BUFSIZE];
 
 	res = (HV *)sv_2mortal((SV *)newHV());
 
@@ -157,40 +157,44 @@ lnf_info_t i;
 		return NULL;
 	}
 
-	lnf_info(f, &i);
+	if (lnf_info(f, LNF_INFO_VERSION, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_PV(res, "version", buf);
 
-	HV_STORE_NV(res, "version", i.version);
-	HV_STORE_NV(res, "blocks", i.blocks);
-	HV_STORE_NV(res, "compressed", i.compressed);
-	HV_STORE_NV(res, "anonymized", i.anonymized);
-	HV_STORE_NV(res, "catalog", i.catalog);
-	HV_STORE_PV(res, "ident", i.ident);
+	if (lnf_info(f, LNF_INFO_NFDUMP_VERSION, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_PV(res, "nfdump_version", buf);
 
-	HV_STORE_U64V(res, "flows", i.flows);
-	HV_STORE_U64V(res, "bytes", i.bytes);
-	HV_STORE_U64V(res, "packets", i.packets);
+	if (lnf_info(f, LNF_INFO_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "blocks", *(uint64_t *)buf);
+
+	if (lnf_info(f, LNF_INFO_COMPRESSED, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "compressed", *(int *)buf);
+
+	if (lnf_info(f, LNF_INFO_ANONYMIZED, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "anonymized", *(int *)buf);
+
+	if (lnf_info(f, LNF_INFO_CATALOG, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "catalog", *(int *)buf);
+
+	if (lnf_info(f, LNF_INFO_IDENT, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_PV(res, "ident", buf);
+
+	if (lnf_info(f, LNF_INFO_FLOWS, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "flows", *(uint64_t *)buf);
+
+	if (lnf_info(f, LNF_INFO_BYTES, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "bytes", *(uint64_t *)buf);
 		
-	HV_STORE_U64V(res, "flows_tcp", i.flows_tcp);
-	HV_STORE_U64V(res, "bytes_tcp", i.bytes_tcp);
-	HV_STORE_U64V(res, "packets_tcp", i.packets_tcp);
+	if (lnf_info(f, LNF_INFO_PACKETS, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "packets", *(uint64_t *)buf);
 
-	HV_STORE_U64V(res, "flows_udp", i.flows_udp);
-	HV_STORE_U64V(res, "bytes_udp", i.bytes_udp);
-	HV_STORE_U64V(res, "packets_udp", i.packets_udp);
+	if (lnf_info(f, LNF_INFO_FIRST, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "first", *(uint64_t *)buf);
 
-	HV_STORE_U64V(res, "flows_icmp", i.flows_icmp);
-	HV_STORE_U64V(res, "bytes_icmp", i.bytes_icmp);
-	HV_STORE_U64V(res, "packets_icmp", i.packets_icmp);
+	if (lnf_info(f, LNF_INFO_LAST, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "last", *(uint64_t *)buf);
 
-	HV_STORE_U64V(res, "flows_other", i.flows_other);
-	HV_STORE_U64V(res, "bytes_other", i.bytes_other);
-	HV_STORE_U64V(res, "packets_other", i.packets_other);
-
-	HV_STORE_U64V(res, "first", i.first);
-	HV_STORE_U64V(res, "last", i.last);
-
-	HV_STORE_U64V(res, "sequence_failures", i.failures);
-
+	if (lnf_info(f, LNF_INFO_FAILURES, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		HV_STORE_NV(res, "sequence_failures", *(uint64_t *)buf);
 
 	lnf_close(f);	
 	
@@ -202,7 +206,8 @@ SV * libnf_instance_info(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 HV *res;
 lnf_file_t *f;
-lnf_info_t i;
+char buf[LNF_INFO_BUFSIZE];
+//lnf_info_t i;
 
 	if (libnf_instances[handle] == NULL) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -215,13 +220,12 @@ lnf_info_t i;
 		return NULL;
 	}
 
-	lnf_info(instance->lnf_nffile_r, &i);
+	f = instance->lnf_nffile_r;
 
 	if ( f != NULL ) {
-//		HV_STORE_PV(res, "current_filename", instance->current_filename);
-		HV_STORE_NV(res, "current_processed_blocks", i.proc_blocks);
-//		HV_STORE_NV(res, "current_total_blocks", nblocs);
-	}
+		if (lnf_info(f, LNF_INFO_PROC_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+			HV_STORE_NV(res, "current_processed_blocks", *(uint64_t *)buf);
+		}
 /*
 	HV_STORE_NV(res, "total_files", instance->total_files);
 	HV_STORE_NV(res, "processed_files", instance->processed_files);
