@@ -32,5 +32,4 @@ examples/example1.pl
 examples/example2.pl
 examples/example3.pl
 examples/example4.pl
-examples/download_asn_db
 examples/nf_asn_geo_update
