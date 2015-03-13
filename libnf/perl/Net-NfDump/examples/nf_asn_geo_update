@@ -4,7 +4,6 @@ use strict;
 use Net::NfDump;
 use Data::Dumper;
 use Net::IP::LPM;
-use Geo::IP;
 use Socket;
 use Socket6;
 use Getopt::Std;
@@ -221,6 +220,7 @@ if ($UPDATE_AS) {
 
 # Open MAXMIND GEO database
 if ($UPDATE_GEO) {
+	use Geo::IP;
 	mylog("Opening country code (IPv4 and IPv6) database.") if ($DEBUG > 0);
 	$GEO4 = Geo::IP->open($GEO_DB4, GEOIP_MEMORY_CACHE);
 	$GEO6 = Geo::IP->open($GEO_DB6, GEOIP_MEMORY_CACHE);
