@@ -13,9 +13,9 @@ use File::Basename;
 
 
 # path to ASN database
-my $DBDIR       = "/var/tmp";
-my $BGPDB		= $DBDIR."/asns-$>.gz";
-my $BGPDB_MD5	= $DBDIR."/asns-$>.gz.md5";
+my $DBDIR       = "/var/db/flowtools";
+my $BGPDB		= "/var/tmp/asns-$>.gz";
+my $BGPDB_MD5	= "/var/tmp/asns-$>.gz.md5";
 my $GEO_DB4     = $DBDIR.'/geo/GeoIP.dat';
 my $GEO_DB6     = $DBDIR.'/geo/GeoIPv6.dat';
 my $FNAME_TMP   = ".nffile_$$.tmp";
@@ -87,7 +87,7 @@ sub check_bgpdb() {
 
 			# BGPDB os older than $BGPDB_CHECK_INTERVA
 			if ($time - $mtime > $BGPDB_CHECK_INTERVAL) {
-				srand($time);
+				srand($time+$$);
 				my $rand = int(rand($BGPDB_CHECK_SCATTER));
 
 #				printf("%s %s\n", $time - $mtime - $BGPDB_CHECK_INTERVAL, $rand);
