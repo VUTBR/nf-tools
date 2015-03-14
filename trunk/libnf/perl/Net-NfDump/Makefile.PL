@@ -34,6 +34,7 @@ WriteMakefile(
     OBJECT            => '$(O_FILES)', # link all the C files too
     MYEXTLIB          => 'libnf_perl/libnf_perl$(LIB_EXT)',
     NORECURS          => 0,
+	EXE_FILES         => ['bin/nfasnupd'],
 	PREOP             => 'make dist-preop',
     clean             => {FILES => "t/*.tmp" },
     realclean         => {FILES => "libnf Net-NfDump-* libnf-*.tar.gz"},
