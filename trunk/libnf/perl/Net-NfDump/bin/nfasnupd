@@ -160,7 +160,7 @@ sub geo_lookup_raw {
 # parse options 
 sub usage() {
 
-	printf "Command updates nfdump file and adds AS ang geoIP information\n\n";
+	printf "\nCommand updates nfdump file and adds AS ang geoIP information\n\n";
 	printf "Usage: \n\n";
 	printf "   %s  [ -d <level> ] -b -g [ -a -5 -4 -6 ] <nfdump_file>\n\n", $LOGNAME;
 	printf "Options: \n\n";
@@ -171,7 +171,7 @@ sub usage() {
 	printf "   -5 <file>  : path to BGPDB MD5 (default: %s) \n", $BGPDB_MD5;
 	printf "   -4 <file>  : path to IPv4 GeoIP database (default: %s) \n", $GEO_DB4;
 	printf "   -6 <file>  : path to IPv6 GeoIP database (default: %s) \n\n", $GEO_DB6;
-	printf " Version: %s \n", $VERSION;
+	printf " Part of libnf.net project, version: %s \n", $VERSION;
 }
 
 
