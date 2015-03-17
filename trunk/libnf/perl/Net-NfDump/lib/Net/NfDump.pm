@@ -99,10 +99,29 @@ Net::NfDump - Perl API for manipulating with nfdump files
       printf "%s %d\n", $_, $h{$_};
   }
 
+  #
+  #
+  # Example 2: reading nfdump file(s) with aggregation and sorting
+  # 
+  
+  $flow = new Net::NfDump(
+              InputFiles => [ 'nfdump_file1', 'nfdump_file2' ], 
+              Filter => 'icmp and src net 10.0.0.0/8',
+              Fields => 'srcip/24/64, bytes', 
+              Aggreg => 1, OrderBy => "bytes" ); 
+
+  $flow->query();
+
+  while (my ($ip, $bytes) = $flow->fetchrow_array() )  {
+      printf "%s %d\n", $ip, $bytes;
+      $h{$proto} += $bytes;
+  }
+  $flow->finish();
+
 
   #
   #
-  # Example 2: creating and writing records to nfdump file
+  # Example 3: creating and writing records to nfdump file
   #
   
   $flow = new Net::NfDump(
@@ -116,7 +135,7 @@ Net::NfDump - Perl API for manipulating with nfdump files
 
   #
   #
-  # Example 3: reading/writing (merging two input files) and swap
+  # Example 4: reading/writing (merging two input files) and swap
   #            source and destination address if the destination port 
   #            is 80/http (I know it doesn't make much sense).
   #
@@ -1276,49 +1295,26 @@ Nfdump primary uses 64 bit counters and other items to store single integer valu
 the native 64 bit support is not compiled in every perl. For those cases where 
 only 32 integer values are supported, the C<Net::NfDump> uses C<Math::Int64> module. 
 
-The build scripts detect the platform automatically and C<Math::Int64> module is required
+The build scripts detect the platform automatically and C<math::Int64> module is required
 only on platforms where an available perl does not support 64bit integer values. 
-
-=head1 AGGREGATION, STATISTICS AND SORTING
-
-The current version of Net::NfDump do not support aggregation, statistics
-and sorting. This features are planned for future version. However
-tehere are some workarounnds how to use thoose features in Net::NfDump.
-
-=over 
-
-=item * 
-
-Implement functions as part of perl code. However this approach might lead
-to very low performance. 
-
-=item * 
-
-Preprocess the data with nfdump utility and write output into separate 
-file (in nfdump format, -w option). For exmaple:
-
-  nfdump -R 12 -w out -A dstport "dst net 147.229.0.0/16"
-
-Then read data in Net::NfDump from out. 
 
 =back
 
 
 =head1 EXAMPLES OF USE 
 
-There are several examples in the C<examples> directory. 
+There are several examples in the C<examples> and C<bin> directory. 
 
 
-C<download_asn_db>, C<nf_asn_geo_update> - The set of scripts for updating the information 
+C<nfasnupd> - Is script for updating the information 
 about AS numbers and country codes based on BGP and geolocation database. Every flow 
-can be extended with src/dst AS number and src/dst country code. 
+can be extended with src/dst AS number and alco can be 
+extended with src/dst country code. 
 
-The first script (C<download_asn_db>) downloads the BGP database which is available 
-on RIPE server. Then, the database is preprocessed and prepared for the second script (with 
-support of C<Net::IP::LPM> module).
-
-The second script (C<download_asn_db>) updates the AS (or country code) information 
-in the nfdump file. It can be run as the extra command (-x option of nfcapd) to update 
+The C<nfasnupd> periodically checks and downloads the BGP database 
+which is available as part of libn.net project. After that it updates 
+the AS (or country code) information in the nfdump file. It can be 
+run as the extra command (-x option of nfcapd) to update 
 information when the new file is available. 
 
 The information about src/dst country works in a similar way. It uses maxmind database 
