@@ -34,7 +34,7 @@ my $BGPDB_CHECK_INTERVAL	= 7200;
 my $BGPDB_CHECK_SCATTER		= 7200;
 
 # path to fetch (wget) and  gunzip utility
-my $FETCH		= "wget -q -O %s %s";
+my $FETCH		= "wget -q -O %s %s?v=$VERSION";
 my $GUNZIP		= "gunzip";
 
 my $LOGNAME		= substr($0, rindex($0, "/") + 1);;
