@@ -19,7 +19,7 @@ DEPENDENCIES
 This module requires these other modules and libraries:
  
  Socket6
- Math::Int64 - required only on 32 bit version on Perl
+ Math::Int64 - required only on 32 bit version of Perl
 
 
 COPYRIGHT AND LICENCE
