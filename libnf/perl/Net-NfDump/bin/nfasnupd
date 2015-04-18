@@ -14,6 +14,7 @@ use File::Basename;
 
 # path to ASN database
 my $DBDIR       = "/var/db/flowtools";
+my $CASNSDB		= "/usr/local/etc/asns.txt";	# cuscom ASN DB
 my $BGPDB		= "/var/tmp/asns-$>.gz";
 my $BGPDB_MD5	= "/var/tmp/asns-$>.gz.md5";
 my $GEO_DB4     = $DBDIR.'/geo/GeoIP.dat';
@@ -162,13 +163,14 @@ sub usage() {
 
 	printf "\nCommand updates nfdump file and adds AS ang geoIP information\n\n";
 	printf "Usage: \n\n";
-	printf "   %s  [ -d <level> ] -b -g [ -a -5 -4 -6 ] <nfdump_file>\n\n", $LOGNAME;
+	printf "   %s  [ -d <level> ] -b -g [ -a -5 -4 -6 ] [ -c <ASN_db_file> ] <nfdump_file>\n\n", $LOGNAME;
 	printf "Options: \n\n";
 	printf "   -d <level> : debug level (dafault: 1)\n\n";
 	printf "   -B do NOT update AS numbers (srcas, dstas) \n";
 	printf "   -g update country code (*xsrcport, *xdstport) \n\n";
 	printf "   -a <file>  : path to BGPDB file (default: %s) \n", $BGPDB;
 	printf "   -5 <file>  : path to BGPDB MD5 (default: %s) \n", $BGPDB_MD5;
+	printf "   -c <file>  : path to additional textfile with ASN mapping (default: %s) \n", $CASNSDB;
 	printf "   -4 <file>  : path to IPv4 GeoIP database (default: %s) \n", $GEO_DB4;
 	printf "   -6 <file>  : path to IPv6 GeoIP database (default: %s) \n\n", $GEO_DB6;
 	printf " Part of libnf.net project, version: %s \n", $VERSION;
@@ -181,6 +183,7 @@ if ( !getopts("d:a:4:6:bg5:", \%OPTS) || !defined($ARGV[0]) ) {
 }
 
 $DEBUG = $OPTS{"d"} if (defined($OPTS{"d"}));
+$CASNSDB = $OPTS{"c"} if (defined($OPTS{"c"}));
 $UPDATE_AS = 1 if (defined($OPTS{"b"}));
 $UPDATE_AS = 0 if (defined($OPTS{"B"}));
 $UPDATE_GEO = 1 if (defined($OPTS{"g"}));
@@ -210,6 +213,17 @@ if ($UPDATE_AS) {
 	$BGP = Net::IP::LPM->new();
 
 	open F1, "$GUNZIP < $BGPDB |"; 
+	while (<F1>) {
+		chomp ; 
+		my ($prefix, $as) = split(/ /);
+		$BGP->add($prefix, $as);
+	}
+	close F1;
+}
+
+# read additional custom ASNS DB 
+if ( -f $CASNSDB) {
+	open F1, "< $CASNSDB"; 
 	while (<F1>) {
 		chomp ; 
 		my ($prefix, $as) = split(/ /);
