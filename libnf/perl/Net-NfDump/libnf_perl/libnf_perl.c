@@ -369,6 +369,8 @@ libnf_instance_t *instance;
 	lnf_rec_init(&instance->lnf_rec);
 	instance->lnf_mem = NULL;
 
+	instance->files = NULL;
+
 	return handle;
 }
 
@@ -480,20 +482,22 @@ int i;
 		pfile->next = malloc(sizeof(libnf_file_list_t));
 		pfile = pfile->next;
 		pfile->filename = NULL;
+		pfile->next = NULL;
 
 	}
 //	instance->nffile_r = NULL;
 	instance->lnf_nffile_r = NULL;
 
-	/* set filter */
-	if (filter == NULL || strcmp(filter, "") == 0) {
-		filter = "any";
-	}
+	instance->filter = NULL;
 
-	if ( lnf_filter_init(&instance->filter, filter) != LNF_OK ) {
-		croak("%s can not setup filter (%s)", NFL_LOG, filter);
-		return 0;
-	}
+	/* set filter */
+	if (filter != NULL && strcmp(filter, "") != 0 && strcmp(filter, "any") != 0) {
+		if ( lnf_filter_init(&instance->filter, filter) != LNF_OK ) {
+			croak("%s can not setup filter (%s)", NFL_LOG, filter);
+			return 0;
+		}
+	} 
+
 
 	/* if aggregation is requested process all records and store in lnf_mem */
 	if (instance->lnf_mem != NULL) {
@@ -659,8 +663,9 @@ begin:
 	match = 1;
 	// filter netflow record with user supplied filter
 //	instance->engine->nfrecord = (uint64_t *)lnf_rec.master_record;
-	if ( match ) 
+	if ( instance->filter != NULL && match ) {
 		match = lnf_filter_match(instance->filter, lnf_rec); 
+	}
 
 	if ( match == 0 ) { // record failed to pass all filters
 		goto begin;
@@ -843,6 +848,7 @@ lnf_rec_t *lnf_rec;
 
 void libnf_finish(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
+libnf_file_list_t  *tmp_pfile, *pfile;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -860,7 +866,21 @@ libnf_instance_t *instance = libnf_instances[handle];
 	}
 
 	lnf_rec_free(instance->lnf_rec);
-	lnf_filter_free(instance->filter);
+	if (instance->filter != NULL) {
+		lnf_filter_free(instance->filter);
+		instance->filter = NULL;
+	}
+
+	/* release file list */
+	pfile = instance->files;
+	while (pfile != NULL) {
+		tmp_pfile = pfile;
+		pfile = pfile->next;
+		free(tmp_pfile);
+	}
+
+	instance->files = NULL;
+
 
 	free(instance); 
 	libnf_instances[handle] = NULL;

@@ -28,7 +28,7 @@ our %EXPORT_TAGS = ( 'all' => [ qw(
 	mac2txt txt2mac
 	mpls2txt txt2mpls
 	flow2txt txt2flow 
-	file_info
+	file_info 
 ) ] );
 
 our @EXPORT_OK = ( @{ $EXPORT_TAGS{'all'} } );
@@ -513,10 +513,11 @@ This method has to be applied before any of the C<fetchrow_*> methods is used. A
 # flow query is handled. See section FLOW QUERY how to create flow 
 # queries.
 
-# =cut
+# =cut#
 
 sub query {
 	my ($self, %opts) = @_;
+
 
 	my $o = $self->merge_opts(%opts);
 
@@ -562,8 +563,8 @@ sub query {
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
-					$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
-					$o->{InputFiles});	
+				$o->{TimeWindowStart}, $o->{TimeWindowEnd}, 
+				$o->{InputFiles});	
 
 	$self->{read_prepared} = 1;
 	$self->{read_started} = time();
