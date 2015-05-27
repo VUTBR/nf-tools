@@ -197,7 +197,7 @@ The architecture is following:
    +------------------------+
    |                        |  The code converts internal nfdump 
    | libnf - glue code (C)  |  structures into perl and back to C.
-   |                        |
+   |                        |  See http://libnf.net for more information.
    +------------------------+
    |                        |  All original nfdump source files. There  
    |   nfdump sources (C)   |  are no changes in these files. All  
@@ -1329,7 +1329,8 @@ another 8 bits for the second one).
 
 =head1 SEE ALSO
 
-http://nfdump.sourceforge.net/
+nfdump project - http://nfdump.sourceforge.net/
+libnf C interface http://libnf.net/
 
 =head1 AUTHOR
 
