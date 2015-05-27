@@ -4,10 +4,10 @@ use Net::NfDump qw ':all';
 our %DS;		# data sets
 
 $DS{'v4_basic_txt'} = {
-	'first' => '1355439616',
-	'last' => '1355458616',
+	'first' => '1401177532345',
+	'last' => '1401177592345',	# 60s 
 	
-	'bytes' => '9999111291',
+	'bytes' => '750000000',	# 12.5MB * 60s = (100mb/s)
 	'pkts' => '999911115',
 
 	'srcport' => '53008',
@@ -20,19 +20,19 @@ $DS{'v4_basic_txt'} = {
 
 	'proto' => '6',
 
-	'duration' => '19000',
-	'bpp' => '99',
-	'pps' => '40',
-	'bps' => '4208',
+	'duration' => '60000',
+	'bpp' => '512',
+	'pps' => '24414.05',
+	'bps' => '100000000',	# 100Mb/s
 };
 
 $DS{'v4_txt'} = {
-	'first' => '1355439616',
-	'last' => '1355458616',
+	'first' => '1401177532345',
+	'last' => '1401177592345',
 	'received' => '22341355439617',
 	
-	'bytes' => '9999111291',
-	'pkts' => '99991115',
+	'bytes' => '750000000',
+	'pkts' => '1464843',
 	'outbytes' => '291',
 	'outpkts' => '5',
 	'flows' => '1',
@@ -79,10 +79,10 @@ $DS{'v4_txt'} = {
 	'sl' => '200',
 	'al' => '300',
 
-	'duration' => '19000',
-	'bpp' => '99',
-	'pps' => '40',
-	'bps' => '4208',
+	'duration' => '60000',
+	'bpp' => '512',
+	'pps' => '24414.05',
+	'bps' => '100000000',
 };
 
 # prepare v6 structure - same as V4 but address changed to v6
