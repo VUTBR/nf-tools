@@ -371,6 +371,8 @@ libnf_instance_t *instance;
 
 	instance->files = NULL;
 
+	instance->field_list = NULL;
+
 	return handle;
 }
 
@@ -874,12 +876,21 @@ libnf_file_list_t  *tmp_pfile, *pfile;
 	/* release file list */
 	pfile = instance->files;
 	while (pfile != NULL) {
+		if (pfile->filename != NULL) {
+			free(pfile->filename);
+		}
 		tmp_pfile = pfile;
 		pfile = pfile->next;
 		free(tmp_pfile);
 	}
 
 	instance->files = NULL;
+
+	/* field list */
+
+	if (instance->field_list != NULL) {
+		free(instance->field_list);
+	}
 
 
 	free(instance); 
