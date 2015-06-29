@@ -73,6 +73,7 @@ our %NFL_FIELDS_INT = (
 	0x000000c1 => 'ip',
 	0x000000c2 => 'as',
 	0x000000c3 => 'if',
+	0x000000c4 => 'vlan',
 );
 
 our %NFL_FIELDS_TXT = (
@@ -148,6 +149,7 @@ our %NFL_FIELDS_TXT = (
 	'ip' => 0x000000c1,
 	'as' => 0x000000c2,
 	'if' => 0x000000c3,
+	'vlan' => 0x000000c4,
 );
 
 our %NFL_FIELDS_DEFAULT_AGGR = (
@@ -223,6 +225,7 @@ our %NFL_FIELDS_DEFAULT_AGGR = (
 	0x000000c1 => 0x00,
 	0x000000c2 => 0x00,
 	0x000000c3 => 0x00,
+	0x000000c4 => 0x00,
 );
 
 our %NFL_FIELDS_DEFAULT_SORT = (
@@ -298,6 +301,7 @@ our %NFL_FIELDS_DEFAULT_SORT = (
 	0x000000c1 => 0x00,
 	0x000000c2 => 0x00,
 	0x000000c3 => 0x00,
+	0x000000c4 => 0x00,
 );
 
 =pod
@@ -376,6 +380,7 @@ our %NFL_FIELDS_DEFAULT_SORT = (
   ip => Source or destination ip address (pair field)
   as => Source or destination ASn (pair field)
   if => Input or output interface (pair field)
+  vlan => Source or destination vlan (pair field)
 
 =cut
 
