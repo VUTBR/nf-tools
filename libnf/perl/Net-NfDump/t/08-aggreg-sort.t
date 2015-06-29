@@ -16,20 +16,27 @@ for (my $i = 0; $i < 1000; $i++) {
 $floww->finish();
 
 
-$flowr = new Net::NfDump(InputFiles => [ "t/agg_dataset.tmp" ], Fields => "srcip,dstport,bytes", Aggreg => 1);
+$flowr = new Net::NfDump(
+		InputFiles => [ "t/agg_dataset.tmp" ], 
+		Fields => "srcip,dstport,bytes,duration,inif,outif,bps,pps,pkts", 
+		Aggreg => 1);
 $flowr->query();
 my $numrows = 0;
 %row = %{$DS{'v4_txt'}};
 while ( my $row = $flowr->fetchrow_hashref() )  {
 	$row = flow2txt($row);
-	$numrows++ if ($row->{'srcip'} eq '147.229.3.135' && $row->{'bytes'} eq '750000000000');
+	$numrows++ if ($row->{'srcip'} eq '147.229.3.135' && $row->{'bytes'} eq '750000000000' 
+	&& $row->{'outif'} eq '1' && $row->{'bps'} eq '100000000000');
 #	diag Dumper($row);
 }
 
 ok($numrows == 1);
 
 
-$flowr = new Net::NfDump(InputFiles => [ "t/agg_dataset.tmp" ], Fields => "srcip/24/64,bytes", Aggreg => 1);
+$flowr = new Net::NfDump(
+		InputFiles => [ "t/agg_dataset.tmp" ], 
+		Fields => "srcip/24/64,bytes,bps", 
+		Aggreg => 1);
 $flowr->query();
 $numrows = 0;
 while ( my $row = $flowr->fetchrow_hashref() )  {

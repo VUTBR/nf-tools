@@ -1,5 +1,5 @@
 
-use Test::More tests => 1;;
+use Test::More tests => 2;;
 open(STDOUT, ">&STDERR");
 
 use Net::NfDump qw ':all';
@@ -40,6 +40,18 @@ my %data =(
 
 # we will use the output file from the previous test 
 
+my %data2 =( 
+	'total_files' => 1,
+	'percent' => 100,
+	'remaining_time' => 0,
+	'elapsed_time' => 0,
+	'processed_files' => 1,
+	'processed_blocks' => 1,
+	'current_processed_blocks' => 1,
+	'current_total_blocks' => 1
+);
+
+
 my $info = file_info("t/data2");
 $info->{'nfdump_version'} = '*';
 $info->{'version'} = '*';
@@ -52,4 +64,16 @@ foreach (keys %{$info}) {
 }
 ok( eq_hash($info, \%data) );
 
+
+$flowr = new Net::NfDump(InputFiles => [ "t/v4_rec.tmp" ] );
+
+while ( my $row = $flowr->fetchrow_hashref() )  {
+
+	my $i = $flowr->info();
+#	diag Dumper($i);
+#	diag Dumper(\%data2);
+	ok( eq_hash(\%data2, $i) );
+	last;
+
+}
 

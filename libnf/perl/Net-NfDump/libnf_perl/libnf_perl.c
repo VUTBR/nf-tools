@@ -223,12 +223,22 @@ char buf[LNF_INFO_BUFSIZE];
 	f = instance->lnf_nffile_r;
 
 	if ( f != NULL ) {
-		if (lnf_info(f, LNF_INFO_PROC_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK) 
+		if (lnf_info(f, LNF_INFO_PROC_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK)
 			HV_STORE_NV(res, "current_processed_blocks", *(uint64_t *)buf);
+
+		if (lnf_info(f, LNF_INFO_PROC_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK) {
+			uint64_t b = instance->processed_blocks + *(uint64_t *)buf;
+			HV_STORE_NV(res, "processed_blocks", b);
 		}
+
+		if (lnf_info(f, LNF_INFO_BLOCKS, buf, LNF_INFO_BUFSIZE) == LNF_OK)
+			HV_STORE_NV(res, "current_total_blocks", *(uint64_t *)buf);
+
+		HV_STORE_NV(res, "total_files", instance->total_files);
+		HV_STORE_NV(res, "processed_files", instance->processed_files);
+
+	}
 /*
-	HV_STORE_NV(res, "total_files", instance->total_files);
-	HV_STORE_NV(res, "processed_files", instance->processed_files);
 	HV_STORE_NV(res, "processed_blocks", instance->processed_blocks);
 	HV_STORE_NV(res, "processed_bytes", instance->processed_bytes);
 	HV_STORE_NV(res, "processed_records", instance->processed_records);
@@ -257,10 +267,20 @@ int ret;
 		int field = instance->field_list[i];
 
 		switch (lnf_fld_type(field)) {
-			case LNF_UINT8:
-			case LNF_UINT16:
+			case LNF_UINT8: {
+                uint8_t t8 = 0;
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&t8);
+				sv = uint_to_SV(t8, ret == LNF_OK);
+                break;
+            }
+			case LNF_UINT16: {
+                uint16_t t16 = 0;
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&t16);
+				sv = uint_to_SV(t16, ret == LNF_OK);
+                break;
+            }
 			case LNF_UINT32: {
-                uint64_t t32 = 0;
+                uint32_t t32 = 0;
                 ret = lnf_rec_fget(lnf_rec, field, (void *)&t32);
 				sv = uint_to_SV(t32, ret == LNF_OK);
                 break;
@@ -434,6 +454,13 @@ libnf_instance_t *instance = libnf_instances[handle];
 		if (lnf_mem_init(&instance->lnf_mem) != LNF_OK ) {
 			return 0;
 		}
+		/* first and last is always present */
+		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_FIRST, LNF_AGGR_MIN, 0, 0) != LNF_OK ) {
+			return 0;
+		}	
+		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_LAST, LNF_AGGR_MAX, 0, 0) != LNF_OK ) {
+			return 0;
+		}	
 	}
 
 	if (lnf_mem_fadd(instance->lnf_mem, field, flags, numbits, numbits6) != LNF_OK ) {
@@ -472,6 +499,7 @@ int i;
 	instance->total_files = numfiles + 1;
 	instance->twin_start = window_start;
 	instance->twin_end = window_end;
+	instance->processed_blocks = 0;
 
 	for (i = 0; i <= numfiles; i++) {
 		STRLEN l;
@@ -587,6 +615,7 @@ lnf_rec_t * libnf_read_row_files(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 int ret;
 int match;
+uint64_t blocks;
 lnf_rec_t *lnf_rec;
 
 	if (instance == NULL ) {
@@ -621,6 +650,9 @@ begin:
 				libnf_file_list_t *next;
 
 				//CloseFile(instance->nffile_r);
+				if (lnf_info(instance->lnf_nffile_r, LNF_INFO_BLOCKS, &blocks, sizeof(uint64_t)) == LNF_OK) {
+					instance->processed_blocks += blocks;
+				}
 				lnf_close(instance->lnf_nffile_r);
 				instance->lnf_nffile_r = NULL;
 				if (instance->files->filename == NULL) {	// the end of the list 

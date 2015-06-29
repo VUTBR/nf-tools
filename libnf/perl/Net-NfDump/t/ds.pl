@@ -24,6 +24,12 @@ $DS{'v4_basic_txt'} = {
 	'bpp' => '500',
 	'pps' => '25000',
 	'bps' => '100000000',	# 100Mb/s
+
+	'if' => '2',
+	'port' => '53008',
+	'ip' => '147.229.3.135',
+	'as' => '1234568',
+	
 };
 
 $DS{'v4_txt'} = {
@@ -83,6 +89,11 @@ $DS{'v4_txt'} = {
 	'bpp' => '500',
 	'pps' => '25000',
 	'bps' => '100000000',
+
+	'if' => '2',
+	'port' => '53008',
+	'ip' => '147.229.3.135',
+	'as' => '1234568',
 };
 
 # prepare v6 structure - same as V4 but address changed to v6
@@ -92,6 +103,7 @@ $DS{'v6_txt'}->{'dstip'} ='2001:abc:1220:f565::93e5:f0fb';
 $DS{'v6_txt'}->{'nexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'bgpnexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'router'} ='2001:67c:1220:f565::10';
+$DS{'v6_txt'}->{'ip'} ='2001:67c:1220:f565::93e5:f0fb';
 
 $DS{'v4_raw'} = txt2flow( $DS{'v4_txt'} );
 $DS{'v4_basic_raw'} = txt2flow( $DS{'v4_basic_txt'} );
