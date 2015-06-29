@@ -94,6 +94,7 @@ $DS{'v4_txt'} = {
 	'port' => '53008',
 	'ip' => '147.229.3.135',
 	'as' => '1234568',
+	'vlan' => '10',
 };
 
 # prepare v6 structure - same as V4 but address changed to v6
