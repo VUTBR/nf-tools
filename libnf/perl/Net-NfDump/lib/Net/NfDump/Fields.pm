@@ -69,6 +69,10 @@ our %NFL_FIELDS_INT = (
 	0x000000a1 => 'bps',
 	0x000000a2 => 'pps',
 	0x000000a3 => 'bpp',
+	0x000000c0 => 'port',
+	0x000000c1 => 'ip',
+	0x000000c2 => 'as',
+	0x000000c3 => 'if',
 );
 
 our %NFL_FIELDS_TXT = (
@@ -140,6 +144,10 @@ our %NFL_FIELDS_TXT = (
 	'bps' => 0x000000a1,
 	'pps' => 0x000000a2,
 	'bpp' => 0x000000a3,
+	'port' => 0x000000c0,
+	'ip' => 0x000000c1,
+	'as' => 0x000000c2,
+	'if' => 0x000000c3,
 );
 
 our %NFL_FIELDS_DEFAULT_AGGR = (
@@ -211,6 +219,10 @@ our %NFL_FIELDS_DEFAULT_AGGR = (
 	0x000000a1 => 0x03,
 	0x000000a2 => 0x03,
 	0x000000a3 => 0x03,
+	0x000000c0 => 0x00,
+	0x000000c1 => 0x00,
+	0x000000c2 => 0x00,
+	0x000000c3 => 0x00,
 );
 
 our %NFL_FIELDS_DEFAULT_SORT = (
@@ -282,6 +294,10 @@ our %NFL_FIELDS_DEFAULT_SORT = (
 	0x000000a1 => 0x00,
 	0x000000a2 => 0x00,
 	0x000000a3 => 0x00,
+	0x000000c0 => 0x00,
+	0x000000c1 => 0x00,
+	0x000000c2 => 0x00,
+	0x000000c3 => 0x00,
 );
 
 =pod
@@ -356,6 +372,10 @@ our %NFL_FIELDS_DEFAULT_SORT = (
   bps => Bytes per second
   pps => Packets per second
   bpp => Bytes per packet
+  port => Source or destination port (pair field)
+  ip => Source or destination ip address (pair field)
+  as => Source or destination ASn (pair field)
+  if => Input or output interface (pair field)
 
 =cut
 

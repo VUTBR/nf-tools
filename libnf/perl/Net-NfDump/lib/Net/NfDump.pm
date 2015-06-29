@@ -13,7 +13,7 @@ use Net::NfDump::Fields;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 
 # XXX
 # Items to export into callers namespace by default. Note: do not export
@@ -1008,7 +1008,7 @@ txt2flow does the exact opossite.
 
 # how to convert particular type to 
 my %CVTTYPE = ( 
-	'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
+	'ip' => 'ip', 'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
 	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
 	'mpls' => 'mpls',
 	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip' );
