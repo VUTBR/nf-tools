@@ -22,7 +22,7 @@ my $GEO_DB6     = $DBDIR.'/geo/GeoIPv6.dat';
 my $FNAME_TMP   = ".nffile_$$.tmp";
 my $DEBUG 		= 1;
 my $FNAME;
-my $VERSION     = "1.01";
+my $VERSION     = "1.10";
 
 # URL of bgpdb database and its checksum privided by libnf.net project 
 my $BGPDB_URL       = "http://bgpdb.libnf.net/bgpdb/latest.gz";
@@ -234,10 +234,16 @@ if ( -f $CASNSDB) {
 
 # Open MAXMIND GEO database
 if ($UPDATE_GEO) {
-	use Geo::IP;
-	mylog("Opening country code (IPv4 and IPv6) database.") if ($DEBUG > 0);
-	$GEO4 = Geo::IP->open($GEO_DB4, GEOIP_MEMORY_CACHE);
-	$GEO6 = Geo::IP->open($GEO_DB6, GEOIP_MEMORY_CACHE);
+	printf("XXXx\n");
+	if (!eval("use Geo::IP;")) {
+		mylog("%s", $@);
+		mylog("Geo::IP module not found. Geo update remains disabled.", $@);
+		$UPDATE_GEO = 0;
+	} else {
+		mylog("Opening country code (IPv4 and IPv6) database.") if ($DEBUG > 0);
+		$GEO4 = Geo::IP->open($GEO_DB4);
+		$GEO6 = Geo::IP->open($GEO_DB6);
+	}
 }
 
 # statistics counters

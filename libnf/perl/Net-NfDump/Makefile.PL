@@ -22,6 +22,8 @@ WriteMakefile(
 	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0, Math::Int64 => 0.09 }) :
 	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0 }) 
 	), 
+	# for testing Net::LPM is required (used by nfasnupd)
+#	TEST_REQUIRES => { Net::LPM => 1.09 },
     LICENSE           => 'perl',
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Net/NfDump.pm', # retrieve abstract from module
