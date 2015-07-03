@@ -29,7 +29,7 @@ WriteMakefile(
       (ABSTRACT_FROM  => 'lib/Net/NfDump.pm', # retrieve abstract from module
        AUTHOR         => 'Tomas Podermanski <tpoder@cis.vutbr.cz>') : ()
 	),
-    LIBS              => ['-lresolv'], # e.g., '-lm'
+    LIBS              => [ '-lresolv', '-lpthead' ], # e.g., '-lm'
     DEFINE            => '', # e.g., '-DHAVE_SOMETHING'
     INC               => '-I. -I libnf/include', # e.g., '-I. -I/usr/include/other'
 	# Un-comment this if you add C files to link with later:
