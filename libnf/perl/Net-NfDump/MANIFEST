@@ -22,6 +22,7 @@ t/04-file-info.t
 t/05-clonerow.t
 t/06-addr-conversion.t
 t/07-nel-nsel.t
+t/51-libnf-threads.t
 t/91-perl-performance.t
 t/92-c-performance.t
 t/record_v4
