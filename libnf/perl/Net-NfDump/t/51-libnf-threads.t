@@ -12,8 +12,8 @@ require "t/ds.pl";
 
 system("mkdir t/testdir 2>/dev/null");
 
-for (my $i = 0; $i < 100; $i++) {
-	system("libnf/examples/lnf_ex01_writer -f t/testdir/$i -r 10 -n 30000");
+for (my $i = 0; $i < 1000; $i++) {
+	system("libnf/examples/lnf_ex01_writer -f t/testdir/$i -r 10 -n 3000");
 }
 
 # get result wiyh single thread 
