@@ -26,6 +26,10 @@ for (my $i = 1; $i < 10; $i++) {
 
 	system("diff t/threads-reference.txt t/threads-res-$i.txt");
 
+	if ($? != 0) {
+		diag("\nInvalid result for $i threads\n");
+	}
+
     ok( $? == 0 );
 }
 
