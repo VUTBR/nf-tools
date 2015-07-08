@@ -75,7 +75,6 @@ libnf/configure:
 		if [ -d ../../c ] ; then ln -f -s ../../c libnf && (cd libnf && ./prepare-nfdump.sh && cd ..) ; fi 
 		# else decompress libnf tar and link 
 		(tar xzf libnf-$(VERSION).tar.gz && ln -s libnf-$(VERSION) libnf) || exit 0;
-		cp libnf/ChangeLog Changes
 		$(RM_F) libnf/nfdump/bin/nfdump  
 
 #libnf/configure: libnf/prepare-nfdump.sh
@@ -94,6 +93,7 @@ $(MYEXTLIB): libnf/Makefile libnf_perl/Makefile libnf/nfdump/bin/nfdump
 
 dist-preop:
 		(cd libnf && make dist) 
+		cp libnf/ChangeLog Changes
 		cp libnf/libnf-*.tar.gz .
 		perl -pi -w -e \'s/(libnf-).*(.tar.gz)/libnf-\'$(VERSION)\'.tar.gz/g;\' MANIFEST
 ';
