@@ -3,6 +3,14 @@
 
 #########################
 
+BEGIN {
+	use Config;
+	if (! $Config{'useithreads'}) {
+		print("1..0 # Skip: Perl not compiled with 'useithreads'\n");
+		exit(0);
+	}
+}
+
 # change 'tests => 1' to 'tests => last_test_to_print';
 
 use Test::More tests => 1;

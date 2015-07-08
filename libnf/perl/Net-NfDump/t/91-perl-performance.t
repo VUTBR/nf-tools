@@ -1,4 +1,14 @@
 
+
+BEGIN {
+	use Config;
+	if (! $Config{'useithreads'}) {
+		print("1..0 # Skip: Perl not compiled with 'useithreads'\n");
+		exit(0);
+	}
+}
+
+
 use Test::More;
 
 if (defined($ENV{'AUTOMATED_TESTING'}) && $ENV{'AUTOMATED_TESTING'} eq 1) {

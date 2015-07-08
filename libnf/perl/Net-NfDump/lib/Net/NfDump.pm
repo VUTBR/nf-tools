@@ -10,10 +10,11 @@ use AutoLoader;
 use Socket qw( AF_INET );
 use Socket6 qw( inet_ntop inet_pton AF_INET6 );
 use Net::NfDump::Fields;
+use threads;
 
 our @ISA = qw(Exporter);
 
-our $VERSION = '1.12';
+our $VERSION = '1.13';
 
 # XXX
 # Items to export into callers namespace by default. Note: do not export

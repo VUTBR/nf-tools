@@ -7,12 +7,8 @@ if (defined($ENV{'AUTOMATED_TESTING'}) && $ENV{'AUTOMATED_TESTING'} eq 1) {
 	plan tests => 1;
 }
 
-use Net::NfDump qw ':all';
-use Data::Dumper;
 #open(STDOUT, ">&STDERR");
-our %DS;
 
-require "t/ds.pl";
 
 # testing performance 
 diag "";

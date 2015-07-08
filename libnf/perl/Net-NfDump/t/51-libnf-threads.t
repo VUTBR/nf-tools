@@ -3,12 +3,8 @@ use Test::More;
 
 plan tests => 9;
 
-use Net::NfDump qw ':all';
-use Data::Dumper;
 #open(STDOUT, ">&STDERR");
-our %DS;
 
-require "t/ds.pl";
 
 system("mkdir t/testdir 2>/dev/null");
 
