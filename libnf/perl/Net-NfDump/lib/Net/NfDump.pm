@@ -8,7 +8,9 @@ use Carp;
 require Exporter;
 use AutoLoader;
 use Socket qw( AF_INET );
-use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+if ($] < 5.014000) {
+	use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+}
 use Net::NfDump::Fields;
 use threads;
 

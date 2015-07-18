@@ -4,24 +4,16 @@ use ExtUtils::MakeMaker;
 use POSIX;
 # See lib/ExtUtils/MakeMaker.pm for details of how to influence
 # the contents of the Makefile that is written.
-
-#if ( -e 'libnf/configure.ac' ) {
-#	$ver = `cat libnf/configure.ac | grep INIT | grep libnf | cut -f2 -d,`;
-#	chomp $ver;
-#} else {
-#	$ver = "0.??";
-#}
-#
-#printf "Version detected from libnf/configure.ac %s\n", $ver;
-
 WriteMakefile(
     NAME              => 'Net::NfDump',
     VERSION_FROM      => 'lib/Net/NfDump.pm', # finds $VERSION
-	# test whether the platform supports 32bit interger or not 
-	(ULONG_MAX == 0xFFFFFFFF ?
-	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0, Math::Int64 => 0.09 }) :
-	    (PREREQ_PM         => { Socket6 => 0.15, strict => 0 }) 
-	), 
+	# require Match::Int64 on 32b. systems
+	# require Socket6 on perl older than 5.14.0 
+	PREREQ_PM         => { 
+			strict => 0, 
+			($] < 5.014000 ?  ( Socket6 => 0.15 ) : () ), 
+			(ULONG_MAX == 0xFFFFFFFF ? ( Math::Int64 => 0.09 ) : () ),
+	},
 	# for testing Net::LPM is required (used by nfasnupd)
 #	TEST_REQUIRES => { Net::LPM => 1.09 },
     LICENSE           => 'perl',
