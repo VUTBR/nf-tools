@@ -7,9 +7,9 @@ use Carp;
 
 require Exporter;
 use AutoLoader;
-use if $] <  5.014000, Socket  => qw(AF_INET);
+use if $] <  5.014000, Socket  => qw(inet_aton AF_INET);
 use if $] <  5.014000, Socket6 => qw(inet_ntop inet_pton AF_INET6);
-use if $] >= 5.014000, Socket  => qw(inet_ntop inet_pton AF_INET6 AF_INET);
+use if $] >= 5.014000, Socket  => qw(inet_ntop inet_pton inet_aton AF_INET6 AF_INET);
 use Net::NfDump::Fields;
 use threads;
 
@@ -865,12 +865,12 @@ sub txt2ip ($) {
 	}
 
 	if (index($addr, ':') != -1) {
-		$type = AF_INET6;
+    	return inet_pton(AF_INET6, $addr);
 	} else {
-		$type = AF_INET;
+		# ubuntu have buggy implementation of inet_pton for IPv4 
+    	return inet_aton($addr);
 	}
 
-    return inet_pton($type, $addr);
 }
 
 =pod
