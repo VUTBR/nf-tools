@@ -74,7 +74,7 @@ XSLoader::load('Net::NfDump', $VERSION);
 
 =head1 NAME
 
-Net::NfDump - Perl API for manipulating with nfdump files
+Net::NfDump - Perl API for manipulating with nfdump files based on libnf.net library 
 
 =head1 SYNOPSIS
 

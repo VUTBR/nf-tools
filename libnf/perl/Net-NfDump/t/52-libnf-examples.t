@@ -55,7 +55,7 @@ $count = 0;
 while (<F1>) { $count++; };
 close F1;
 
-ok($count == 23);
+ok($count == 24);
 
 
 
