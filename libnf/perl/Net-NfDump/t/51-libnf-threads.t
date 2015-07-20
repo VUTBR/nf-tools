@@ -1,7 +1,7 @@
 
 use Test::More;
 
-plan tests => 9;
+plan tests => 15;
 
 #open(STDOUT, ">&STDERR");
 
@@ -16,7 +16,7 @@ for (my $i = 0; $i < 1000; $i++) {
 system("./libnf/bin/nfdumpp -R t/testdir -T 1 -A srcip -O bytes > t/threads-reference.txt 2>t/err");
 
 
-for (my $i = 1; $i < 10; $i++) {
+for (my $i = 1; $i < 16; $i++) {
 
 	system("./libnf/bin/nfdumpp -R t/testdir -T $i -A srcip -O bytes > t/threads-res-$i.txt 2>t/err");
 

@@ -3,7 +3,7 @@
 set -x
 
 HOSTS="root@hawk.cis.vutbr.cz root@coyote.cis.vutbr.cz tpoder@185.62.109.9 root@test-ubuntu.net.vutbr.cz root@r101.cis.vutbr.cz root@test-freebsd.net.vutbr.cz root@test-gnukfreebsd.net.vutbr.cz root@test-openbsd.net.vutbr.cz"
-DIST="Net-NfDump-1.14"
+DIST="Net-NfDump-1.15"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 
