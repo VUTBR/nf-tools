@@ -1,7 +1,7 @@
 
 use Test::More;
 
-plan tests => 1006;
+plan tests => 1009;
 
 #open(STDOUT, ">&STDERR");
 
@@ -41,6 +41,15 @@ close F1;
 
 ok($count == 12);
 
+# threads in list mode 
+open F1, "libnf/examples/lnf_ex04_threads -l -P t/testdir/* 2>&1 |";
+$count = 0;
+while (<F1>) { $count++; };
+close F1;
+
+ok($count == 300002);
+
+
 # memtrans
 open F1, "libnf/examples/lnf_ex05_memtrans -P -f t/testfile 2>&1 |";
 $count = 0;
@@ -56,6 +65,24 @@ while (<F1>) { $count++; };
 close F1;
 
 ok($count == 24);
+
+
+# statistics
+open F1, "libnf/examples/lnf_ex08_statistics -P -f t/testfile 2>&1 |";
+$count = 0;
+while (<F1>) { $count++; };
+close F1;
+
+ok($count == 13);
+
+
+# statistics
+open F1, "libnf/examples/lnf_ex09_memlookup -P -f t/testfile 2>&1 |";
+$count = 0;
+while (<F1>) { $count++; };
+close F1;
+
+ok($count == 6);
 
 
 
