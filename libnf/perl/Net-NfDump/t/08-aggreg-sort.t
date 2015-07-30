@@ -7,7 +7,7 @@ BEGIN {
 	}
 }
 
-use Test::More tests => 3;
+use Test::More tests => 9705;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
@@ -82,5 +82,69 @@ while ( my $row = $flowr->fetchrow_hashref() )  {
 #	printf "NUMROWS: $numrows\n";
 }
 
+$flowr->finish();
 ok($numrows == 20);
+
+# sorting 
+# we will perform test for 0 to 1000 records in dataset in reverse order 
+for ( my $nrecs = 1; $nrecs < 100; $nrecs++ ) {
+	
+	# create dataset with n records 
+	$floww = new Net::NfDump(OutputFile => "t/sort_dataset1.tmp", OrderBy => "bytes" );
+
+	for ($i = 0; $i < $nrecs; $i++) {
+		$row6{'srcip'} = sprintf("2001:67c:1220:%d::10", $i);
+		$row6{'bytes'} = $i;
+		delete($row4{'ip'});
+		delete($row6{'ip'});
+		$floww->storerow_hashref( txt2flow(\%row6) );
+	}	
+	$floww->finish();
+
+
+	# read aggregated and sorted 
+	$flowr = new Net::NfDump(InputFiles => [ "t/sort_dataset1.tmp" ], Fields => "srcip,bytes", 
+			Aggreg => 1, OrderBy => "bytes");
+	$flowr->query();
+	my $last_bytes = undef;
+	while ( my $row = $flowr->fetchrow_hashref() )  {
+		$row = flow2txt($row);
+		if (defined($last_bytes)) {
+			if ($last_bytes <= $row->{'bytes'}) {
+				diag "invalid sequence (aggregated) last_bytes: $last_bytes, bytes: ".$row->{'bytes'}.", nrecs: $nrecs\n";
+		#		diag Dumper($row);
+			} else {
+				ok(1);
+			}
+		}
+#		diag Dumper($row);
+		$last_bytes = $row->{'bytes'};
+
+	}
+	$flowr->finish();
+
+
+	# not aggregated 
+	$flowr = new Net::NfDump(InputFiles => [ "t/sort_dataset1.tmp" ], Fields => "srcip,bytes", 
+			Aggreg => 0, OrderBy => "bytes");
+	$flowr->query();
+	$last_bytes = undef;
+	while ( my $row = $flowr->fetchrow_hashref() )  {
+		$row = flow2txt($row);
+		if (defined($last_bytes)) {
+			if ($last_bytes <= $row->{'bytes'}) {
+				diag "invalid sequence (aggregated) last_bytes: $last_bytes, bytes: ".$row->{'bytes'}.", nrecs: $nrecs\n";
+		#		diag Dumper($row);
+			} else {
+				ok(1);
+			}
+		}
+#		diag Dumper($row);
+		$last_bytes = $row->{'bytes'};
+
+	}
+	$flowr->finish();
+}
+
+
 

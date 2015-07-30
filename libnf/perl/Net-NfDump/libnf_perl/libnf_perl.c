@@ -470,6 +470,25 @@ libnf_instance_t *instance = libnf_instances[handle];
 	return 1;
 } 
 
+int libnf_listmode(int handle) {
+libnf_instance_t *instance = libnf_instances[handle];
+
+	if (instance == NULL ) {
+		croak("%s handler %d not initialized", NFL_LOG, handle);
+		return 0;
+	}
+
+	if (instance->lnf_mem == NULL) {
+			return 0;
+		}
+
+	if (lnf_mem_setopt(instance->lnf_mem, LNF_OPT_LISTMODE, NULL, 0) != LNF_OK ) {
+		return 0;
+	}	
+
+	return 1;
+} 
+
 
 int libnf_read_files(int handle, char *filter, int window_start, int window_end, SV *files) {
 libnf_instance_t *instance = libnf_instances[handle];

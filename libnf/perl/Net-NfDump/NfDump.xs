@@ -75,6 +75,10 @@ libnf_aggr_add(handle, field, flags, numbits, numbits6)
 	int numbits6
 
 
+int 
+libnf_listmode(handle)
+	int handle
+
 int
 libnf_copy_row(handle, src_handle)
 	int handle

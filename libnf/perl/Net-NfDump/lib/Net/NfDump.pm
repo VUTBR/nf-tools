@@ -318,7 +318,7 @@ Special field * can be used to define all fields.
 
 =item * B<Aggreg> => 0
 
-Create aggregated result. When the method ->query() is callet 
+Create aggregated result. When the method ->query() is called
 the library loads data into memory structure and 
 perform aggregation according the Fields attribute. 
 
@@ -557,6 +557,15 @@ sub query {
 
 			Net::NfDump::libnf_aggr_add($self->{handle}, $id, $flags, 
 				$numbits, $numbits6);
+		} elsif (defined($o->{OrderBy}) && $fld eq $o->{OrderBy}) {
+			# sorting in list mode 
+
+			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld};
+			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_SORT{$id};
+			Net::NfDump::libnf_aggr_add($self->{handle}, $id, $flags, 
+				$numbits, $numbits6);
+
+			Net::NfDump::libnf_listmode($self->{handle});
 		}
 
 	}
