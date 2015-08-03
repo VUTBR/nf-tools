@@ -7,6 +7,10 @@ WriteMakefile(
     NAME              => 'Net::IP::LPM',
     VERSION_FROM      => 'lib/Net/IP/LPM.pm', # finds $VERSION
 	LICENSE			  => 'perl',
+	PREREQ_PM         => {
+            strict => 0,
+            ($] < 5.014000 ?  ( Socket6 => 0.15 ) : () ),
+    },
     PREREQ_PM         => { Socket6 => 0.15 }, # e.g., Module::Name => 1.1
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Net/IP/LPM.pm', # retrieve abstract from module
@@ -21,7 +25,7 @@ WriteMakefile(
     #MYEXTLIB          => 'libnf/libnf$(LIB_EXT)',
     NORECURS          => 0,
     #CCFLAGS			  => '-std=c99 -Wall -pedantic -O3'
-    CCFLAGS			  => '-O3'
+    OPTIMIZE		  => '-O3'
 );
 if  (eval {require ExtUtils::Constant; 1}) {
   # If you edit these definitions to change the constants used by this module,

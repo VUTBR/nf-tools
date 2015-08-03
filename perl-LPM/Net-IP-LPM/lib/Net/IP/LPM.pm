@@ -8,9 +8,12 @@ use Carp;
 require Exporter;
 #use AutoLoader;
 
-use Socket qw( AF_INET );
-use Socket6 qw( inet_ntop inet_pton AF_INET6 );
-use Data::Dumper;
+#use Socket qw( AF_INET );
+#use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+use if $] <  5.014000, Socket  => qw(inet_aton AF_INET);
+use if $] <  5.014000, Socket6 => qw(inet_ntop inet_pton AF_INET6);
+use if $] >= 5.014000, Socket  => qw(inet_ntop inet_pton inet_aton AF_INET6 AF_INET);
+#use Data::Dumper;
 
 #our @ISA = qw(DB_File);
 our @ISA = qw();
@@ -32,7 +35,7 @@ our @EXPORT = qw(
 	
 );
 
-our $VERSION = '1.09';
+our $VERSION = '1.10';
 sub AUTOLOAD {
 	# This AUTOLOAD is used to 'autoload' constants from the constant()
 	# XS function.
@@ -132,7 +135,11 @@ sub new {
 sub format_addr {
 	my ($addr) = @_;
 
-	if ((my $addr_bin = inet_pton(AF_INET, $addr))) {
+	if (!defined($addr)) {
+		return undef;
+	}
+
+	if ((my $addr_bin = inet_aton($addr))) {
 		return $addr_bin;
 	} else {
 		return inet_pton(AF_INET6, $addr);
@@ -158,7 +165,7 @@ sub add {
 
 	($prefix, $prefix_len) = split('/', $prefix);	
 
-	if (! ($prefix_bin = inet_pton(AF_INET, $prefix)) ) {
+	if (! ($prefix_bin = inet_aton($prefix)) ) {
 		$prefix_bin = inet_pton(AF_INET6, $prefix);
 	}
 
@@ -193,7 +200,7 @@ sub lookup {
 	my ($self, $addr) = @_;
 	my $addr_bin;
 
-	if (! ($addr_bin = inet_pton(AF_INET, $addr)) ) {
+	if (! ($addr_bin = inet_aton($addr)) ) {
 		$addr_bin = inet_pton(AF_INET6, $addr);
 	}
 

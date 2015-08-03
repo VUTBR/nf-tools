@@ -1,5 +1,10 @@
 Revision history for Perl extension Net::IP::LPM.
 
+1.10 Mon Aug 3 2015
+	- Socket6 module is not required starting with perl 5.14.0
+	- removed bug #106168, thanks to jmaslak@antelope.net
+	- buggy implementation of inet_pton in Ubuntu
+	
 1.09 Mon Dec 1 2014
 	- buffer bug removed 
 

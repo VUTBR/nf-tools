@@ -11,8 +11,11 @@ use Test::More tests => 13;
 use Data::Dumper;
 BEGIN { use_ok('Net::IP::LPM') };
 
-use Socket qw( AF_INET );
-use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+#use Socket qw( AF_INET );
+#use Socket6 qw( inet_ntop inet_pton AF_INET6 );
+use if $] <  5.014000, Socket  => qw(inet_aton AF_INET);
+use if $] <  5.014000, Socket6 => qw(inet_ntop inet_pton AF_INET6);
+use if $] >= 5.014000, Socket  => qw(inet_ntop inet_pton inet_aton AF_INET6 AF_INET);
 
 #########################
 
@@ -112,7 +115,8 @@ while ( my ($a, $p) = each %tests ) {
 	if ($a =~ /:/) {
 		$ab = inet_pton(AF_INET6, $a);
 	} else {
-		$ab = inet_pton(AF_INET, $a);
+		#$ab = inet_pton(AF_INET, $a);
+		$ab = inet_aton($a);
 	}
 	my $res = $lpm->lookup_raw($ab);
 	if ($p ne $res) {
@@ -131,7 +135,8 @@ while ( my ($a, $p) = each %tests ) {
 	if ($a =~ /:/) {
 		$ab = inet_pton(AF_INET6, $a);
 	} else {
-		$ab = inet_pton(AF_INET, $a);
+		#$ab = inet_pton(AF_INET, $a);
+		$ab = inet_aton($a);
 	}
 	my $res = $lpm->lookup_cache_raw($ab);
 	if ($p ne $res) {
@@ -226,7 +231,8 @@ while ( my ($a, $p) = each %tests2 ) {
 	if ($a =~ /:/) {
 		$ab = inet_pton(AF_INET6, $a);
 	} else {
-		$ab = inet_pton(AF_INET, $a);
+		#$ab = inet_pton(AF_INET, $a);
+		$ab = inet_aton($a);
 	}
 	my $res = $lpm2->lookup_raw($ab);
 	$results2{$a} = $res;
@@ -247,7 +253,8 @@ while ( my ($a, $p) = each %tests2 ) {
 	if ($a =~ /:/) {
 		$ab = inet_pton(AF_INET6, $a);
 	} else {
-		$ab = inet_pton(AF_INET, $a);
+		#$ab = inet_pton(AF_INET, $a);
+		$ab = inet_aton($a);
 	}
 	my $res = $lpm2->lookup_cache_raw($ab);
 	$results2{$a} = $res;
