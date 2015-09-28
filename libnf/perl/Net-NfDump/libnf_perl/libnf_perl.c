@@ -335,6 +335,17 @@ int ret;
 				}
 				break;
 			}
+			case LNF_ACL: {
+				lnf_acl_t tacl;
+
+                ret = lnf_rec_fget(lnf_rec, field, (void *)&tacl);
+				if (ret != LNF_OK) {
+					sv = newSV(0);
+				} else {
+					sv = newSVpvn((char *)&tacl, sizeof(lnf_acl_t));
+				}
+				break;
+			}
 			case LNF_STRING: {
 				char buf[LNF_MAX_STRING];
 
@@ -859,6 +870,21 @@ lnf_rec_t *lnf_rec;
 
 				if ( len != sizeof(lnf_mpls_t) ) {
 					warn("%s invalid MPLS stack value for %d", NFL_LOG, field);
+					return 0;
+				}
+
+				ret = lnf_rec_fset(lnf_rec, field, (void *)s);
+				break;
+			}
+
+			case LNF_ACL: {
+				char *s;
+				STRLEN len;
+
+				s = SvPV(sv, len);
+
+				if ( len != sizeof(lnf_acl_t) ) {
+					warn("%s invalid ACL value for %d", NFL_LOG, field);
 					return 0;
 				}
 
