@@ -404,6 +404,7 @@ libnf_instance_t *instance;
 
 	instance->field_list = NULL;
 
+
 	return handle;
 }
 
@@ -455,6 +456,7 @@ int i;
 
 int libnf_aggr_add(int handle, int field, int flags, int numbits, int numbits6 ) {
 libnf_instance_t *instance = libnf_instances[handle];
+int ret = 0;
 
 	if (instance == NULL ) {
 		croak("%s handler %d not initialized", NFL_LOG, handle);
@@ -462,7 +464,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 	}
 
 	if (instance->lnf_mem == NULL) {
-		if (lnf_mem_init(&instance->lnf_mem) != LNF_OK ) {
+		if ((ret = lnf_mem_init(&instance->lnf_mem)) != LNF_OK ) {
 			return 0;
 		}
 		/* first and last is always present */
