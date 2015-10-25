@@ -7,7 +7,7 @@ BEGIN {
 	}
 }
 
-use Test::More tests => 14655;
+use Test::More tests => 19502;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
@@ -89,13 +89,17 @@ ok($numrows == 20);
 # sorting 
 # we will perform test for 0 to 1000 records in dataset in reverse order 
 for ( my $nrecs = 1; $nrecs < 100; $nrecs++ ) {
+#for ( my $nrecs = 10; $nrecs < 11; $nrecs++ ) {
 	
 	# create dataset with n records 
 	$floww = new Net::NfDump(OutputFile => "t/sort_dataset1.tmp", OrderBy => "bytes" );
 
-	for ($i = 0; $i < $nrecs; $i++) {
+	#for ($i = 0; $i < $nrecs; $i++) {
+	for ($i = 1; $i < $nrecs; $i++) {
 		$row6{'srcip'} = sprintf("2001:67c:1220:%d::10", $i);
-		$row6{'bytes'} = $i;
+		$row6{'bytes'} = $i * 8;
+		$row6{'first'} = 1 * 1000;
+		$row6{'last'} = 11 * 1000;
 		delete($row4{'ip'});
 		delete($row6{'ip'});
 		$floww->storerow_hashref( txt2flow(\%row6) );
@@ -122,6 +126,27 @@ for ( my $nrecs = 1; $nrecs < 100; $nrecs++ ) {
 		}
 #		diag Dumper($row);
 		$last_bytes = $row->{'bytes'};
+
+	}
+	$flowr->finish();
+
+	# read aggregated and sorted by calculated  field
+	$flowr = new Net::NfDump(InputFiles => [ "t/sort_dataset1.tmp" ], Fields => "srcip,bytes,bps", 
+			Aggreg => 1, OrderBy => "bps");
+	$flowr->query();
+	my $last_bps = undef;
+	while ( my $row = $flowr->fetchrow_hashref() )  {
+		$row = flow2txt($row);
+		if (defined($last_bps)) {
+			if ($last_bps <= $row->{'bps'}) {
+				diag "invalid sequence (aggregated) last_bps: $last_bps, bytes: ".$row->{'bps'}.", nrecs: $nrecs\n";
+#				diag Dumper($row);
+			} else {
+				ok(1);
+			}
+		}
+#		diag Dumper($row);
+		$last_bps = $row->{'bytes'};
 
 	}
 	$flowr->finish();
