@@ -12,7 +12,7 @@ HOSTS="root@hawk.cis.vutbr.cz
 	root@test-solaris.net.vutbr.cz 
 	root@test-openbsd.net.vutbr.cz"
 
-DIST="Net-NfDump-1.16"
+DIST="Net-NfDump-1.17"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 

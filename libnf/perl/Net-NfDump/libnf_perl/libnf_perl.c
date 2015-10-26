@@ -502,7 +502,7 @@ libnf_instance_t *instance = libnf_instances[handle];
 	return 1;
 } 
 
-int libnf_icompatmode(int handle) {
+int libnf_compatmode(int handle) {
 libnf_instance_t *instance = libnf_instances[handle];
 
 	if (instance == NULL ) {

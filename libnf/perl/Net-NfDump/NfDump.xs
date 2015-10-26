@@ -79,9 +79,11 @@ int
 libnf_listmode(handle)
 	int handle
 
+
 int 
 libnf_compatmode(handle)
 	int handle
+
 
 int
 libnf_copy_row(handle, src_handle)
