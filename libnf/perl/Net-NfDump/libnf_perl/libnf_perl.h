@@ -42,4 +42,5 @@ void libnf_finish(int handle);
 
 int libnf_aggr_add(int handle, int field, int flags, int numbits, int numbits6);
 int libnf_listmode(int handle);
+int libnf_compatmode(int handle);
 

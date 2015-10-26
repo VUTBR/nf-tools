@@ -349,6 +349,12 @@ Flag indicating that output file contains anonymized data.
 
 String identificator of files. The value is stored in the file header. 
 
+=item * B<CompatMode> => 0
+
+Enable nfdump compatibility features. Some features are implemented differently 
+comparing to original nfdump. Currently thi option enables only 
+LNF_OPT_COMP_STATSCMP for aggregated statistics computation. 
+
 =back 
 
 =head2 Constructor, status information methods
@@ -524,7 +530,7 @@ sub query {
 	my $o = $self->merge_opts(%opts);
 
 	if (@{$o->{InputFiles}} == 0) {
-		croak("No imput files defined");
+		croak("No input files defined");
 	} 
 
 	my @resfields = ();
@@ -541,7 +547,7 @@ sub query {
 
 		if (defined($o->{Aggreg}) && $o->{Aggreg}) {
 			if ($fld eq '*') {
-				croak("Symbol '*' is not allower for aggregated items");
+				croak("Symbol '*' is not allowed for aggregated items");
 			}
 		
 			if (!defined($Net::NfDump::Fields::NFL_FIELDS_TXT{$fld})) {
@@ -571,6 +577,11 @@ sub query {
 	}
 
 	$self->set_fields([ @resfields ]);
+
+	if (defined($o->{CompatMode}) && $o->{CompatMode}) {
+		Net::NfDump::libnf_compatmode($self->{handle});
+	}
+
 
 	# handle, filter, windows start, windows end, ref to filelist 
 	Net::NfDump::libnf_read_files($self->{handle}, $o->{Filter}, 
@@ -857,7 +868,7 @@ sub ip2txt ($) {
 	} elsif (length($addr) == 16) {
 		$type = AF_INET6;
 	} else {
-		carp("Invalid IP address length in binnary representation");
+		carp("Invalid IP address length in binary representation");
 		return undef;
 	}
 
@@ -913,7 +924,7 @@ sub mac2txt ($) {
 	}
 
 	if (length($addr) != 6) {
-		carp("Invalid MAC address length in binnary representation");
+		carp("Invalid MAC address length in binary representation");
 		return undef;
 	}
 
