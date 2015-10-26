@@ -7,7 +7,7 @@ BEGIN {
 	}
 }
 
-use Test::More tests => 19502;
+use Test::More tests => 19506;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
@@ -90,12 +90,11 @@ ok($numrows == 20);
 # we will perform test for 0 to 1000 records in dataset in reverse order 
 for ( my $nrecs = 1; $nrecs < 100; $nrecs++ ) {
 #for ( my $nrecs = 10; $nrecs < 11; $nrecs++ ) {
-	
+
 	# create dataset with n records 
 	$floww = new Net::NfDump(OutputFile => "t/sort_dataset1.tmp", OrderBy => "bytes" );
 
-	#for ($i = 0; $i < $nrecs; $i++) {
-	for ($i = 1; $i < $nrecs; $i++) {
+	for ($i = 0; $i < $nrecs; $i++) {
 		$row6{'srcip'} = sprintf("2001:67c:1220:%d::10", $i);
 		$row6{'bytes'} = $i * 8;
 		$row6{'first'} = 1 * 1000;
