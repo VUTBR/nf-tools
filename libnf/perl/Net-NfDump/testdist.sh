@@ -2,6 +2,8 @@
 
 set -x
 
+export COPYFILE_DISABLE=1
+
 HOSTS="root@hawk.cis.vutbr.cz 
 	root@coyote.cis.vutbr.cz 
 	tpoder@185.62.109.9 

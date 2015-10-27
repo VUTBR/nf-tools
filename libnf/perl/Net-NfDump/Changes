@@ -1,9 +1,10 @@
 Revision history for C and Perl extension of nfdump.
 
-1.17 2015-10-xx
+1.17 2015-10-27
 	-perl: added test t/09-instances.t
 	-perl: test for calculated items in test t/08-aggreg-sort.t
 	-perl: net option CompatMode
+	-c: time fields can be user as aggregation key with alligned time
 	-c: new lnf_mem option LNF_OPT_COMP_STATSCMP 
 	-c: sort support for calculated fields
 	-c: removed bug when thread key was nor released after lnf_mem release
@@ -15,6 +16,7 @@ Revision history for C and Perl extension of nfdump.
 	    fields (Thanks to Jan Wrona)
 	-c: new fields LNF_FLD_INGRESS_ACL and LNF_FLD_EGRESS_ACL representing 
 	    all fields *_ACL_ID, *_ACE_ID, *_XACE_ID in one structure lnf_acl_t
+	-nfdumpp: redesigned command options 
 
 1.16 2015-09-07
 	-c: added license and copyright information 
