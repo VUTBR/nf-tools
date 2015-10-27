@@ -7,7 +7,7 @@ BEGIN {
 	}
 }
 
-use Test::More tests => 19506;
+use Test::More tests => 1;
 use Net::NfDump qw ':all';
 use Data::Dumper;
 
@@ -28,18 +28,18 @@ for (my $i = 0; $i < 7200; $i++) {
 }
 $floww->finish();
 
-#$flowr = new Net::NfDump(InputFiles => [ "t/agg_time_data.tmp" ], 
-#			Fields => "first,bytes", 
-#			Aggreg => 1, OrderBy => "first");
-#$flowr->query();
-#$numrows = 0;
-#while ( my $row = $flowr->fetchrow_hashref() )  {
-#	$row = flow2txt($row);
-#	$numrows++;
+$flowr = new Net::NfDump(InputFiles => [ "t/agg_time_data.tmp" ], 
+			Fields => "first/300,bytes", 
+			Aggreg => 1, OrderBy => "first");
+$flowr->query();
+$numrows = 0;
+while ( my $row = $flowr->fetchrow_hashref() )  {
+	$row = flow2txt($row);
+	$numrows++;
 #	diag Dumper($row);
 #	printf "NUMROWS: $numrows\n";
-#}
+}
 
-#$flowr->finish();
+$flowr->finish();
 
-
+ok($numrows == 24);

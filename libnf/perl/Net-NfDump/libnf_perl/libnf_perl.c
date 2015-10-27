@@ -468,12 +468,15 @@ int ret = 0;
 			return 0;
 		}
 		/* first and last is always present */
-		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_FIRST, LNF_AGGR_MIN, 0, 0) != LNF_OK ) {
-			return 0;
-		}	
-		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_LAST, LNF_AGGR_MAX, 0, 0) != LNF_OK ) {
-			return 0;
-		}	
+		/* no need for that - solved in dependency */
+		//if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_FIRST, LNF_AGGR_MIN, 0, 0) != LNF_OK ) {
+//		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_FIRST, 0, numbits, 0) != LNF_OK ) {
+//			return 0;
+//		}	
+		//if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_LAST, LNF_AGGR_MAX, 0, 0) != LNF_OK ) {
+//		if (lnf_mem_fadd(instance->lnf_mem, LNF_FLD_LAST, 0, numbits, 0) != LNF_OK ) {
+//			return 0;
+//		}	
 	}
 
 	if (lnf_mem_fadd(instance->lnf_mem, field, flags, numbits, numbits6) != LNF_OK ) {

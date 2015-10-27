@@ -72,6 +72,13 @@ XSLoader::load('Net::NfDump', $VERSION);
 
 # Below is stub documentation for your module. You'd better edit it!
 
+# how to convert particular type to 
+my %CVTTYPE = ( 
+	'ip' => 'ip', 'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
+	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
+	'mpls' => 'mpls',
+	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip' );
+
 =head1 NAME
 
 Net::NfDump - Perl API for manipulating with nfdump files based on libnf.net library 
@@ -535,8 +542,12 @@ sub query {
 
 	my @resfields = ();
 	foreach my $fld (@{$o->{Fields}}) {
-		my $numbits = 32;
-		my $numbits6 = 128;
+		my $numbits = 0;
+		my $numbits6 = 0;
+		if (defined($CVTTYPE{$fld}) && $CVTTYPE{$fld} eq 'ip') {
+			$numbits = 32;
+			$numbits6 = 128;
+		} 
 
 		if ($fld =~ /\//) {
 			($fld, $numbits, $numbits6) = split(/\//, $fld);
@@ -555,7 +566,8 @@ sub query {
 			}
 
 			my $id = $Net::NfDump::Fields::NFL_FIELDS_TXT{$fld};
-			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_AGGR{$id};
+#			my $flags = $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_AGGR{$id};
+			my $flags = 0;
 
 			if (defined($o->{OrderBy}) && $fld eq $o->{OrderBy}) {
 				$flags |= $Net::NfDump::Fields::NFL_FIELDS_DEFAULT_SORT{$id};
@@ -1028,12 +1040,6 @@ txt2flow does the exact opossite.
 
 =cut 
 
-# how to convert particular type to 
-my %CVTTYPE = ( 
-	'ip' => 'ip', 'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
-	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
-	'mpls' => 'mpls',
-	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip' );
 	
 
 sub flow2txt ($) {
