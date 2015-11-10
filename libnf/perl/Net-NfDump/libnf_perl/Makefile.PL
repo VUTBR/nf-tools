@@ -44,6 +44,7 @@ libnf_perl$(LIB_EXT): $(O_FILES) libnf_perl.c
 		../libnf/src/libnf-info | ./info2fields.pl > ../lib/Net/NfDump/Fields.pm 
 #		$(AR) x ../libnf/src/.libs/libnf.a
 		$(CP) ../libnf/src/.libs/*.o .
+		$(CP) ../libnf/src/ffilter/.libs/*.o .
 		$(AR) cr libnf_perl$(LIB_EXT) *.o
 		$(RANLIB) libnf_perl$(LIB_EXT)
 ';
