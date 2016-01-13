@@ -290,6 +290,9 @@ sub set_fields {
 		}
 	}
 
+	$self->{NAME} = $self->{fields_txt};
+	$self->{NUM_OF_FIELDS} = scalar @{$self->{fields_txt}};
+
 	$self->{opts}->{Fields} = $self->{fields_txt};
 
 	return Net::NfDump::libnf_set_fields($self->{handle}, $self->{fields_num});
@@ -521,6 +524,13 @@ sub DESTROY {
 
 
 This method has to be applied before any of the C<fetchrow_*> methods is used. Any option described before can be used as a parameter of the method. 
+
+After executing query command it possible to access $flow->{NUM_OF_FIELDS} and $flow->{NAME} variable to get returnd 
+number of fields and field names. Here is an exmaple of code to acces field names: 
+
+    foreach $colno (0..$flow->{NUM_OF_FIELDS}-1) {
+        print $flow->{NAME}->[$colno]."\t";
+    }
 
 =cut 
 

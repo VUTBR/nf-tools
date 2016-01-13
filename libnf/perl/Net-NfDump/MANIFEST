@@ -25,6 +25,7 @@ t/07-nel-nsel.t
 t/08-aggreg-sort.t
 t/09-instances.t
 t/10-aggreg-time.t
+t/11-fields-name.t
 t/51-libnf-threads.t
 t/52-libnf-examples.t
 t/91-perl-performance.t
