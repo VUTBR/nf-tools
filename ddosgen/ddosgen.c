@@ -1,3 +1,5 @@
+
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,6 +11,7 @@
 #include <netinet/in_systm.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#define __FAVOR_BSD 1
 #include <netinet/udp.h>
 #include <netinet/if_ether.h>
 #include <arpa/inet.h>
@@ -24,7 +27,6 @@
 #define PIM_HELLO_INTERVAL 1
 #define VERSION "2012-02-17.01"
 #define MAX_DATA_SIZE 2000
-#define __FAVOR_BSD 1
 
 //int debug = 0;						/* 1 = debug mode */
 pthread_t thread, pim_thread;		/* pim hello thread */
@@ -44,6 +46,7 @@ typedef struct opts_s {
 	pthread_mutex_t mutex;
 
 	unsigned long pkts_send;
+	unsigned long bytes_send;
 	int time_start; 
 	int refresh; 
 
@@ -185,12 +188,15 @@ void *stats_loop(opts_t *opts) {
 		tm = time(NULL);
 
 		pthread_mutex_lock(&opts->mutex);
-		printf("Send %lu pkts in %d secs (%lu pps)\n", 
+		printf("Send %lu pkts in %d secs (%lu kpps, %lu Mbps)\n", 
 			opts->pkts_send, 
 			tm - opts->time_start,
-			opts->pkts_send / (tm - opts->time_start)  );
+			opts->pkts_send  / (tm - opts->time_start) / 1000, 
+			opts->bytes_send * 8  / (tm - opts->time_start) / 1000 / 1000 
+			);
 
 		opts->pkts_send = 0;
+		opts->bytes_send = 0;
 		opts->time_start = tm;
 		pthread_mutex_unlock(&opts->mutex);
 
@@ -226,9 +232,10 @@ void *gen_pkt_loop(opts_t *opts) {
 		} 
 		if (opts->debug) { printf("UDP sent \n"); }
 
-		if (pkts > 1000) {
+		if (pkts > 10000) {
 			pthread_mutex_lock(&opts->mutex);
 			opts->pkts_send += pkts;
+			opts->bytes_send += pkts * udpp.ip.ip_len;
 			pthread_mutex_unlock(&opts->mutex);
 			pkts = 0;
 		}
