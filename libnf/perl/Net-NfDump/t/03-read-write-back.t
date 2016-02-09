@@ -41,7 +41,7 @@ SKIP: {
 	system("libnf/nfdump/bin/nfdump -q -r t/data1 -o raw | grep -v size > t/data2.txt.tmp");
 	system("libnf/nfdump/bin/nfdump -q -r t/data2.tmp -o raw | grep -v size > t/data1.txt.tmp");
 
-	system("diff t/data2.txt.tmp t/data1.txt.tmp");
+	system("diff -u t/data1.txt.tmp t/data2.txt.tmp");
 
 	ok( $? == 0 );
 }
