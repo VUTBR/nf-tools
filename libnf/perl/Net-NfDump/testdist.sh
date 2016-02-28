@@ -4,6 +4,9 @@ set -x
 
 export COPYFILE_DISABLE=1
 
+make dist 
+make dist 
+
 HOSTS="root@hawk.cis.vutbr.cz 
 	root@coyote.cis.vutbr.cz 
 	tpoder@185.62.109.9 
@@ -14,7 +17,7 @@ HOSTS="root@hawk.cis.vutbr.cz
 	root@test-solaris.net.vutbr.cz 
 	root@test-openbsd.net.vutbr.cz"
 
-DIST="Net-NfDump-1.17"
+DIST="Net-NfDump-1.18"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 

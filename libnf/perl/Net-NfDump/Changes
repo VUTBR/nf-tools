@@ -1,5 +1,29 @@
 Revision history for C and Perl extension of nfdump.
 
+1.18 2016-01-29
+	-perl: new variables $flow->{NUM_OF_FIELDS} and $flow->{NAME} can be accesed 
+/bin/bash: q: command not found
+	       Zangerl, Report #110170)
+	-c: adjusted to nfdump-1.6.14
+	-c: two new lnf_open flags LNF_COMP_LZO and LNF_COMP_BZ2
+	-c: two new info options LNF_INFO_LZO_COMPRESSED and LNF_INFO_BZ2_COMPRESSED
+	-c: separation of new filter code. The new filter can also be used in 
+		other projects (include/ffliter.h and src/ffiltler,
+		thank to Lukas Hutak for cooperation). 
+	-c: removed memory leak in lnf_lookup_map and lnf_close (tnaks for Lukas
+	    Hutak)
+	-c: fixed size of some fields (patch submitted by Lukas Hutak)
+	-c: API change - tha value of LNF_AGGR_KEY is 0x0008
+	-c: API change - new LNF_AGGR_AUTO for autodetection of aggregation mode
+	-nfdumpp: new -w and -o options 
+	-nfdumpp: new modular output system 
+	-nfdumpp: invalid dispaly of duration field 
+	-nfdumpp: multiple outputs when multiple -A switch is used 
+	          Examples: 
+	           nfdumpp -R DIR -A proto -O bytes -A srcvlan -O bps
+	           nfdumpp -R DIR -A ip -O pkts -A port -O bytes -A proto 
+	           nfdumpp -R DIR -A ip/16 -O bytes -A ip/24 
+	
 1.17 2015-10-27
 	-perl: added test t/09-instances.t
 	-perl: test for calculated items in test t/08-aggreg-sort.t
