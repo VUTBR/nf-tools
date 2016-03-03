@@ -45,6 +45,7 @@ libnf_perl$(LIB_EXT): $(O_FILES) libnf_perl.c
 #		$(AR) x ../libnf/src/.libs/libnf.a
 		$(CP) ../libnf/src/.libs/*.o .
 		$(CP) ../libnf/src/ffilter/.libs/*.o .
+		$(CP) ../libnf/bzip2/.libs/*.o .
 		$(AR) cr libnf_perl$(LIB_EXT) *.o
 		$(RANLIB) libnf_perl$(LIB_EXT)
 ';
