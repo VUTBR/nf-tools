@@ -68,7 +68,7 @@ ok($count == 24);
 
 
 # statistics
-open F1, "libnf/examples/lnf_ex08_statistics -P -f t/testfile 2>&1 |";
+open F1, "libnf/examples/lnf_ex08_statistics -f t/testfile 2>&1 |";
 $count = 0;
 while (<F1>) { $count++; };
 close F1;

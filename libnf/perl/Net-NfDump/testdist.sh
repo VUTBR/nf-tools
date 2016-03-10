@@ -7,17 +7,19 @@ export COPYFILE_DISABLE=1
 make dist 
 make dist 
 
-HOSTS="root@hawk.cis.vutbr.cz 
+HOSTS="
+	root@hawk.cis.vutbr.cz 
 	root@coyote.cis.vutbr.cz 
-	tpoder@185.62.109.9 
+#	tpoder@185.62.109.9 
 	root@test-ubuntu.net.vutbr.cz 
 	root@r101.cis.vutbr.cz 
 	root@test-freebsd.net.vutbr.cz 
 	root@test-gnukfreebsd.net.vutbr.cz 
 	root@test-solaris.net.vutbr.cz 
-	root@test-openbsd.net.vutbr.cz"
+	root@test-openbsd.net.vutbr.cz
+"
 
-DIST="Net-NfDump-1.19"
+DIST="Net-NfDump-1.20"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 
