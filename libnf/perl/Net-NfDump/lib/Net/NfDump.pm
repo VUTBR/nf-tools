@@ -28,6 +28,7 @@ our $VERSION = '1.20';
 our %EXPORT_TAGS = ( 'all' => [ qw(
 	ip2txt txt2ip 
 	mac2txt txt2mac
+	family2txt txt2family
 	mpls2txt txt2mpls
 	flow2txt txt2flow 
 	file_info 
@@ -77,7 +78,8 @@ my %CVTTYPE = (
 	'ip' => 'ip', 'srcip' => 'ip', 'dstip' => 'ip', 'nexthop' => 'ip', 'bgpnexthop' => 'ip', 'router' => 'ip',
 	'insrcmac' => 'mac', 'outsrcmac' => 'mac', 'indstmac' => 'mac', 'outdstmac' => 'mac',
 	'mpls' => 'mpls',
-	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip' );
+	'xsrcip' => 'ip', 'xdstip' => 'ip', 'nsrcip' => 'ip', 'ndstip' => 'ip',
+	'inetfamily' => 'family' );
 
 =head1 NAME
 
@@ -972,6 +974,57 @@ sub txt2mac ($) {
 
 =pod
 
+=item * B<< $txt = family2txt( $bin ) >>
+
+=item * B<< $bin = txt2family( $txt ) >>
+
+
+  $fam = txt2family('ipv6');
+  print family2txt($fam);
+
+
+It converts internall address family (AF_INET, AF_INET6) to ipv4 or ipv6 string (or back). 
+
+Function txt2family returns the binnary format of the family representation 
+on the particular platform or "undef" if the conversion is not possible. 
+
+=cut 
+
+sub family2txt ($) {
+	my ($fam) = @_;
+
+	if (!defined($fam)) {
+		return undef;
+	}
+
+	if ($fam == AF_INET) {
+		return 'ipv4';
+	} elsif ($fam == AF_INET6) {
+		return 'ipv6';
+	} else {
+		return undef;
+	}
+}
+
+
+sub txt2family ($) {
+	my ($fam) = @_;
+
+	if (!defined($fam)) {
+		return undef;
+	}
+
+	if ($fam eq 'ipv4') {
+		return AF_INET;
+	} elsif ($fam eq 'ipv6') {
+		return AF_INET6;
+	} else {
+		return undef;
+	}
+}
+
+=pod
+
 =item * B<< $txt = mpls2txt( $mpls ) >>
 
 =item * B<< $mpls = txt2mpls( $txt ) >>
@@ -1064,6 +1117,8 @@ sub flow2txt ($) {
 				$res{$key} = ip2txt($val);
 			} elsif ($cvt eq 'mac') {
 				$res{$key} = mac2txt($val);
+			} elsif ($cvt eq 'family') {
+				$res{$key} = family2txt($val);
 			} elsif ($cvt eq 'mpls') {
 				$res{$key} = mpls2txt($val);
 			} else {
@@ -1090,6 +1145,8 @@ sub txt2flow ($) {
 				$res{$key} = txt2ip($val);
 			} elsif ($cvt eq 'mac') {
 				$res{$key} = txt2mac($val);
+			} elsif ($cvt eq 'family') {
+				$res{$key} = txt2family($val);
 			} elsif ($cvt eq 'mpls') {
 				$res{$key} = txt2mpls($val);
 			} else {
