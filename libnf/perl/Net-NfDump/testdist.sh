@@ -19,7 +19,7 @@ HOSTS="
 	root@test-openbsd.net.vutbr.cz
 "
 
-DIST="Net-NfDump-1.21"
+DIST="Net-NfDump-1.22"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 
