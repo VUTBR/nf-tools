@@ -10,7 +10,7 @@ make dist
 HOSTS="
 	root@hawk.cis.vutbr.cz 
 	root@coyote.cis.vutbr.cz 
-#	tpoder@185.62.109.9 
+	tpoder@147.229.3.110
 	root@test-ubuntu.net.vutbr.cz 
 	root@r101.cis.vutbr.cz 
 	root@test-freebsd.net.vutbr.cz 
@@ -19,7 +19,7 @@ HOSTS="
 	root@test-openbsd.net.vutbr.cz
 "
 
-DIST="Net-NfDump-1.22"
+DIST="Net-NfDump-1.23"
 EXT=".tar.gz"
 
 for h in $HOSTS; do 
