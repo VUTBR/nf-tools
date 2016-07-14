@@ -23,6 +23,7 @@
 
 #include "ffilter_internal.h"
 #include "ffilter_gram.h"
+#include "ffilter.h"
 
 /*
  * \brief Convert unit character to positive power of 10
@@ -37,6 +38,7 @@ uint64_t get_unit(char *unit)
 		case 'k':
 		case 'K':
 			return FF_SCALING_FACTOR;
+		case 'm':
 		case 'M':
 			return FF_SCALING_FACTOR * FF_SCALING_FACTOR;
 		case 'g':
@@ -185,15 +187,18 @@ int str_to_int(char *str, int type, char **res, int *vsize)
 //TODO: Solve masked addresses (maybe add one more ip addr as mask so eval wold be & together ip and mask then eval
 int str_to_addr(ff_t *filter, char *str, char **res, int *numbits)
 {
-
 	ff_ip_t *ptr;
 
 	ptr = malloc(sizeof(ff_ip_t));
 
-
 	if (ptr == NULL) {
 		return 0;
 	}
+
+	char *saveptr;
+	char *ip_str = strdup(str);
+	char *ip;
+	char *mask;
 
 	memset(ptr, 0x0, sizeof(ff_ip_t));
 
@@ -201,18 +206,122 @@ int str_to_addr(ff_t *filter, char *str, char **res, int *numbits)
 
 	*res = (char *)ptr;
 
-	if (inet_pton(AF_INET, str, &((*ptr).data[3]))) {
+	ip = strtok_r(ip_str, "\\/", &saveptr);
+	mask = strtok_r(NULL, "\\/", &saveptr);
+
+	/* IPv4 only */
+	if (mask != NULL) {
+		*numbits = strtoul(mask, &saveptr, 10);
+		if (*saveptr){
+			return 1;
+		}
+
+		int req_oct = (*numbits - 1) / 8 + 1;
+
+		/* If string passes this filter, it has enough octets, rest ist concatenated */
+		char *ip_dup = strdup(ip_str);
+		int octet = 0;
+		for (ip = strtok_r(ip_dup, ".", &saveptr); octet < req_oct; octet++ ) {
+			if (ip == NULL) {
+				free(ip_str);
+				free(ip_dup);
+				return 0;
+			}
+
+			ip = strtok_r(NULL, ".", &saveptr);
+		}
+		free(ip_dup);
+
+		char *suffix = malloc(8);
+		suffix[0] = 0;
+		for (; req_oct < 4; req_oct++) {
+			strcat(suffix, ".0");
+		}
+		ip = realloc(ip_str, strlen(ip_str)+8);
+		strcat(ip, suffix);
+
+	}
+
+	if (inet_pton(AF_INET, ip, &((*ptr).data[3]))) {
+		free(ip);
 		return 1;
 	}
 
-	if (inet_pton(AF_INET6, str, ptr)) {
+	if (inet_pton(AF_INET6, ip, ptr)) {
+		free(ip);
 		return 1;
 	}
 
 	ff_set_error(filter, "Can't convert '%s' into IP address", str);
 
+	free(ip_str);
 	return 0;
 }
+
+ff_error_t ff_type_cast(yyscan_t *scanner, ff_t *filter, char *valstr, ff_node_t* node){
+
+	/* determine field type and assign data to lvalue */
+	switch (node->type) {
+		//switch (lnf_fld_type(field)) {
+
+		case FF_TYPE_UINT64:
+		case FF_TYPE_UINT32:
+		case FF_TYPE_UINT16:
+		case FF_TYPE_UINT8:
+			if (str_to_uint(valstr, node->type, &node->value, &node->vsize) == 0) {
+				ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
+				return FF_ERR_OTHER;
+			}
+			break;
+		case FF_TYPE_INT64:
+		case FF_TYPE_INT32:
+		case FF_TYPE_INT16:
+		case FF_TYPE_INT8:
+			if (str_to_int(valstr, node->type, &node->value, &node->vsize) == 0) {
+				ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
+
+				return FF_ERR_OTHER;
+			}
+			break;
+		case FF_TYPE_ADDR:
+			if (str_to_addr(filter, valstr, &node->value, &node->numbits) == 0) {
+				return FF_ERR_OTHER;
+			}
+			node->vsize = sizeof(ff_ip_t);
+			break;
+
+		case FF_TYPE_UNSIGNED_BIG:
+			/* unsigned with undefined data size (internally mapped to uint64_t in network order) */
+		case FF_TYPE_UNSIGNED:
+			if (str_to_uint(valstr, FF_TYPE_UINT64, &node->value, &node->vsize) == 0) {
+				node->value = malloc(sizeof(uint64_t));
+				node->vsize = sizeof(uint64_t);
+				if (node->value == NULL || filter->options.ff_translate_func == NULL) {
+					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
+					return FF_ERR_OTHER;
+				} else if (filter->options.ff_translate_func(filter, valstr, node->field,
+									     node->value) != FF_OK) {
+					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
+					return FF_ERR_OTHER;
+				}
+			}
+//				*(uint64_t *)node->value = htonll(*(uint64_t *)node->value);
+			break;
+		case FF_TYPE_SIGNED_BIG:
+		case FF_TYPE_SIGNED:
+			if (str_to_uint(valstr, FF_TYPE_INT64, &node->value, &node->vsize) == 0) {
+				ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
+				return FF_ERR_OTHER;
+			}
+//				*(uint64_t *)node->value = htonll(*(uint64_t *)node->value);
+			break;
+
+		default:
+			return FF_ERR_OTHER;
+	}
+	return FF_OK;
+}
+
 
 /* set error to error buffer */
 /* set error string */
@@ -232,10 +341,37 @@ const char* ff_error(ff_t *filter, const char *buf, int buflen) {
 
 }
 
+//TODO: suppport more ids
+ff_node_t* ff_branch_node(ff_node_t *node, ff_oper_t oper, ff_lvalue_t* lvalue) {
 
+	ff_node_t *nodeR = ff_new_node(NULL, NULL, NULL, oper, NULL);
+	if (nodeR == NULL){
+		return NULL;
+	}
+	ff_node_t *root = ff_new_node(NULL, NULL, node,
+				      lvalue->options == -1 ? FF_OP_OR : lvalue->options, nodeR);
+	if (root == NULL) {
+		free(nodeR);
+		return NULL;
+	}
+
+	*nodeR = *node;
+	nodeR->field = lvalue->id2;
+
+	nodeR->value = malloc(nodeR->vsize);
+	memcpy(nodeR->value, node->value, nodeR->vsize);
+
+	if (nodeR->value == NULL) {
+		free(nodeR);
+		free(root);
+		return NULL;
+	}
+	return root;
+}
 
 /* add leaf entry into expr tree */
-ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter,char *fieldstr, ff_oper_t oper, char *valstr) {
+//TODO: Free allocated memory for more ids in lvalue
+ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter, char *fieldstr, ff_oper_t oper, char *valstr) {
 	//int field;
 	ff_node_t *node;
 	ff_node_t *root, *nodeR;
@@ -244,11 +380,27 @@ ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter,char *fieldstr, ff_oper_t 
 
 	/* callback to fetch field type and additional info */
 	if (filter->options.ff_lookup_func == NULL) {
-		ff_set_error(filter, "Filter lookup function not defined for %s", fieldstr);
+		ff_set_error(filter, "Filter lookup function not defined");
 		return NULL;
 	}
 
 	memset(&lvalue, 0x0, sizeof(ff_lvalue_t));
+	lvalue.num = 0;
+	lvalue.more = NULL;
+
+	switch (*fieldstr) {
+		case '|':
+			lvalue.options = FF_OP_OR;
+			fieldstr++;
+			break;
+		case '&':
+			lvalue.options = FF_OP_AND;
+			fieldstr++;
+			break;
+		default:
+			lvalue.options = -1;
+	}
+
 	if (filter->options.ff_lookup_func(filter, fieldstr, &lvalue) != FF_OK) {
 		ff_set_error(filter, "Can't lookup field type for %s", fieldstr);
 		return NULL;
@@ -262,90 +414,35 @@ ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter,char *fieldstr, ff_oper_t 
 	node->type = lvalue.type;
 	node->field = lvalue.id;
 
-	/* determine field type and assign data to lvalue */
-	switch (node->type) {
-	//switch (lnf_fld_type(field)) {
+	if (oper == FF_OP_IN) {
+		//Htab nieje moc dobre riesenie
+		//node->value = ff_htab_from_node(node, (ff_node_t*)valstr);
+		node->value = valstr;
+		return node;
+	}
 
-		case FF_TYPE_UINT64:
-		case FF_TYPE_UINT32:
-		case FF_TYPE_UINT16:
-		case FF_TYPE_UINT8:
-				if (str_to_uint(valstr, node->type, &node->value, &node->vsize) == 0) {
-					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
-					return NULL;
-				}
-				break;
-		case FF_TYPE_INT64:
-		case FF_TYPE_INT32:
-		case FF_TYPE_INT16:
-		case FF_TYPE_INT8:
-				if (str_to_int(valstr, node->type, &node->value, &node->vsize) == 0) {
-					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
-					return NULL;
-				}
-				break;
-		case FF_TYPE_ADDR:
-				if (str_to_addr(filter, valstr, &node->value, &node->numbits) == 0) {
-					return NULL;
-				}
-				node->vsize = sizeof(ff_ip_t);
-				break;
-
-		case FF_TYPE_UNSIGNED_BIG:
-			/* unsigned with undefined data size (internally mapped to uint64_t in network order) */
-		case FF_TYPE_UNSIGNED:
-				if (str_to_uint(valstr, FF_TYPE_UINT64, &node->value, &node->vsize) == 0) {
-					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
-					return NULL;
-				}
-//				*(uint64_t *)node->value = htonll(*(uint64_t *)node->value);
-				break;
-		case FF_TYPE_SIGNED_BIG:
-		case FF_TYPE_SIGNED:
-				if (str_to_uint(valstr, FF_TYPE_INT64, &node->value, &node->vsize) == 0) {
-					ff_set_error(filter, "Can't convert '%s' into numeric value", valstr);
-					return NULL;
-				}
-//				*(uint64_t *)node->value = htonll(*(uint64_t *)node->value);
-				break;
-
+	if(ff_type_cast(scanner, filter, valstr, node) != FF_OK) {
+		return NULL;
 	}
 
 	node->left = NULL;
 	node->right = NULL;
 
 	if (lvalue.id2.index == 0) {
+		if (lvalue.options != -1) {
+			free(node);
+			return NULL;
+		}
 		return node;
 	} else {
 		//Setup nodes in or configuration for pair fields (src/dst etc.)
-
-		nodeR = ff_new_node(scanner, filter, NULL, oper, NULL);
-		if (nodeR == NULL){
-			goto err_free1;
+		ff_node_t* new_leaf = ff_branch_node(node, oper, &lvalue);
+		if (new_leaf == NULL) {
+			free(lvalue.more);
+			free(node);
 		}
-		root = ff_new_node(scanner, filter, node, FF_OP_OR, nodeR);
-		if (root == NULL){
-			goto err_free2;
-		}
-
-		*nodeR = *node;
-		nodeR->field = lvalue.id2;
-
-		nodeR->value = malloc(nodeR->vsize);
-		if (nodeR->value == NULL) {
-			goto err_free3;
-		}
-
-		return root;
+		return new_leaf;
 	}
-
-err_free3:
-	ff_free_node(root);
-err_free2:
-	ff_free_node(nodeR);
-err_free1:
-	ff_free_node(node);
-	return NULL;
 }
 
 /* add node entry into expr tree */
@@ -365,6 +462,28 @@ ff_node_t* ff_new_node(yyscan_t scanner, ff_t *filter, ff_node_t* left, ff_oper_
 
 	node->left = left;
 	node->right = right;
+
+	return node;
+}
+
+/* add new item to tree */
+ff_node_t* ff_new_mval(yyscan_t scanner, ff_t *filter, char *valstr, ff_oper_t oper, ff_node_t* nptr) {
+
+	ff_node_t *node;
+
+	node = malloc(sizeof(ff_node_t));
+
+	if (node == NULL) {
+		return NULL;
+	}
+
+	node->vsize = strlen(valstr);
+	node->value = strdup(valstr);
+	node->type = FF_TYPE_STRING;
+	node->oper = oper;
+
+	node->left = NULL;
+	node->right = nptr;
 
 	return node;
 }
@@ -408,6 +527,44 @@ int ff_eval_node(ff_t *filter, ff_node_t *node, void *rec) {
 	if (filter->options.ff_data_func(filter, rec, node->field, buf, &size) != FF_OK) {
 		ff_set_error(filter, "Can't get data");
 		return -1;
+	}
+
+	/* Equality of tcpControlBits must be handled differently */
+	if (node->field.index == 6 && node->oper == FF_OP_EQ) {
+
+		switch (node->type) {
+		case FF_TYPE_UNSIGNED_BIG:
+			switch (size) {
+				case sizeof(uint16_t):
+					res = (ntohs(*(uint16_t *) buf) & *(uint16_t *)node->value) ^
+					      *(uint16_t *) node->value;
+					break;
+				case sizeof(uint8_t):
+					res = ((*(uint8_t *) buf) & *(uint8_t *)node->value) ^
+					      *(uint8_t *)node->value;
+					break;
+				default:
+					return -1;
+			}
+			break;
+		case FF_TYPE_UNSIGNED:
+			switch (size) {
+				case sizeof(uint16_t):
+					res = ((*(uint16_t *) buf) & *(uint16_t *) node->value) ^
+					      *(uint16_t *) node->value;
+					break;
+				case sizeof(uint8_t):
+					res = ((*(uint8_t *) buf) & *(uint8_t *) node->value) ^
+					      *(uint8_t *) node->value;
+					break;
+				default:
+					return -1;
+			}
+			break;
+
+			default: return -1;
+		}
+		return res == 0 ;
 	}
 
 	switch (node->type) {
@@ -465,6 +622,7 @@ int ff_eval_node(ff_t *filter, ff_node_t *node, void *rec) {
 
 			break;
 		}
+
 		case FF_TYPE_SIGNED_BIG: {
 
 			if (size > node->vsize) { return -1; }		/* too big integer */
@@ -515,21 +673,48 @@ int ff_eval_node(ff_t *filter, ff_node_t *node, void *rec) {
 
 			break;
 		}
-		/*Compare 32bit ip to 128bit encapsulated ip*/
+		/* Compare 32bit ip to 128bit encapsulated ip */
 		case FF_TYPE_ADDR: {
 
-			switch (size) {
-			case sizeof(ff_ip_t):
-				res = memcmp(buf, node->value, node->vsize);
-				break;
-			case sizeof(ff_ip_t)/4:
-				res = memcmp(buf, &(((ff_ip_t *)node->value)->data[3]), node->vsize/4);
-				break;
-			default: return -1;
-			}
+			/* Compare ip addresses by full length comparation*/
+			char *node_data;
+			int cmp_bytes_n;
+			uint8_t mask = ~0;
 
+			if (!node->numbits) {
+				switch (size) {
+					case sizeof(ff_ip_t):
+						res = memcmp(buf, node->value, node->vsize);
+						break;
+					case sizeof(ff_ip_t) >> 2:
+						res = memcmp(buf, &(((ff_ip_t *) node->value)->data[3]), node->vsize >> 2);
+						break;
+					default:
+						return -1;
+				}
+			/* Compare masked ip addresses or ranges of addresses */
+			} else if (node->oper == FF_OP_EQ){
+				switch (size) {
+					case sizeof(ff_ip_t):
+						node_data = node->value;
+						break;
+					case sizeof(ff_ip_t) >> 2:
+						node_data = &(((ff_ip_t *) node->value)->data[3]);
+						break;
+					default:
+						return -1;
+				}
+
+				cmp_bytes_n = node->numbits >> 3; // div 8
+				mask = ~(mask >> (node->numbits & 0b111));
+
+				res = memcmp(node_data, buf, cmp_bytes_n);
+
+				res += (node_data[cmp_bytes_n] & mask) ^ (buf[cmp_bytes_n] & mask);
+			}
 			break;
 		}
+
 	default: res = memcmp(buf, node->value, node->vsize); break;
 	}
 
@@ -542,8 +727,6 @@ int ff_eval_node(ff_t *filter, ff_node_t *node, void *rec) {
 	case FF_OP_NE:  return res != 0; break;
 	case FF_OP_GT:  return res > 0; break;
 	case FF_OP_LT:  return res < 0; break;
-	case FF_OP_BITAND:  break;
-	case FF_OP_IN:  break;
 	}
 
 	return -1;
@@ -569,7 +752,7 @@ ff_error_t ff_options_init(ff_options_t **poptions) {
 /* release all resources allocated by filter */
 ff_error_t ff_options_free(ff_options_t *options) {
 
-	/* !!! memory clenaup */
+	/* !!! memory cleanup */
 	free(options);
 
 	return FF_OK;
@@ -633,14 +816,15 @@ int ff_eval(ff_t *filter, void *rec) {
 
 void ff_free_node(ff_node_t* node) {
 
-	if (node->left != NULL) {
-		ff_free_node(node->left);
-	}
-	if (node->right != NULL) {
-		ff_free_node(node->right);
+	if (node == NULL) {
+		return;
 	}
 
+	ff_free_node(node->left);
+	ff_free_node(node->left);
+
 	free(node->value);
+
 	free(node);
 
 }
@@ -648,14 +832,10 @@ void ff_free_node(ff_node_t* node) {
 /* release all resources allocated by filter */
 ff_error_t ff_free(ff_t *filter) {
 
-	/* !!! memory clenaup */
+	/* !!! memory cleanup */
 
 	if (filter != NULL) {
-
-		if (filter->root != NULL) {
-			ff_free_node(filter->root);
-		}
-
+		ff_free_node(filter->root);
 		free(filter);
 	}
 
