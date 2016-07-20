@@ -8,7 +8,7 @@ open(STDOUT, ">&STDERR");
 #			N - nfdump, 
 #			L - libnf, 
 #			B - nfdump and libnf and compare results
-#			E - expected error (3rd argumed regexp of error string)
+#			E - expected error (3rd argumed is a regexp of error string)
 # filter : filter expression 
 # expected rows: (undef if no check required)
 #			for test N,L,B - number of rows in result
