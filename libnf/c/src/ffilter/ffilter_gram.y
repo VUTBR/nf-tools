@@ -1,7 +1,7 @@
-/* 
+/*
 
  Copyright (c) 2013-2015, Tomas Podermanski
-    
+
  This file is part of libnf.net project.
 
  Libnf is free software: you can redistribute it and/or modify
@@ -53,10 +53,11 @@
 };
 
 %token AND OR NOT
-%token EQ LT GT
+%token EQ LT GT ISSET
 %token LP RP
 %token LPS RPS IN
 %token <string> STRING DIR BIDIR_AND BIDIR_OR DIR_DIR_MAC
+%token BAD_TOKEN
 
 %type <string> field value
 %type <node> expr filter list
@@ -75,7 +76,7 @@ filter:
 field:
 	STRING 			{ strncpy($$, $1, FF_MAX_STRING - 1); }
 	| DIR STRING		{ snprintf($$, FF_MAX_STRING - 1, "%s %s", $1, $2); }
-	| BIDIR_OR STRING		{ snprintf($$, FF_MAX_STRING - 1, "%c%s", '|', $2); }
+	| BIDIR_OR STRING	{ snprintf($$, FF_MAX_STRING - 1, "%c%s", '|', $2); }
 	| BIDIR_AND STRING	{ snprintf($$, FF_MAX_STRING - 1, "%c%s", '&', $2); }
 	| DIR_DIR_MAC STRING	{ snprintf($$, FF_MAX_STRING - 1, "%s %s", $1, $2); }
 	;
@@ -91,11 +92,12 @@ expr:
 	| expr OR expr	 	{ $$ = ff_new_node(scanner, filter, $1, FF_OP_OR, $3); if ($$ == NULL) { YYABORT; }; }
 	| LP expr RP		{ $$ = $2; }
 	| field value		{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_EQ, $2); if ($$ == NULL) { YYABORT; } }
+	| field ISSET value	{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_ISSET, $3); if ($$ == NULL) { YYABORT; } }
 	| field EQ value	{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_EQ, $3); if ($$ == NULL) { YYABORT; } }
 	| field LT value	{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_LT, $3); if ($$ == NULL) { YYABORT; } }
 	| field GT value	{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_GT, $3); if ($$ == NULL) { YYABORT; } }
 
-	| field IN list	{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_IN, $3); if ($$ == NULL) { YYABORT; } }
+	| field IN list		{ $$ = ff_new_leaf(scanner, filter, $1, FF_OP_IN, $3); if ($$ == NULL) { YYABORT; } }
 	;
 
 list:

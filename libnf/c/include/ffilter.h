@@ -1,7 +1,7 @@
-/* 
+/*
 
- Copyright (c) 2015, Tomas Podermanski, Lukas Hutak 
-    
+ Copyright (c) 2015, Tomas Podermanski, Lukas Hutak
+
  This file is part of libnf.net project.
 
  Libnf is free software: you can redistribute it and/or modify
@@ -23,7 +23,7 @@
     \brief netflow fiter implementation - C interface
 */
 #ifndef _FLOW_FILTER_H_
-#define _FLOW_FILTER_H_
+#define _FLOW_FILTER_H_//
 
 #include <stdint.h>
 #include <stddef.h>
@@ -33,7 +33,7 @@
 
 
 typedef struct ff_ip_s { uint32_t data[4]; } ff_ip_t; /*!< IPv4/IPv6 address */
-
+typedef struct ff_net_s { ff_ip_t ip; ff_ip_t mask; } ff_net_t;
 
 /*! \brief Supported data types */
 typedef enum {
@@ -88,6 +88,10 @@ typedef enum {
 	FF_ERR_OTHER_MSG  = -0xF,
 } ff_error_t;
 
+typedef enum {
+	FFOPTS_MULTINODE = 0x01,
+	FFOPTS_FLAGS = 0x02,
+} ff_opts_t;
 
 /*! \brief External identification of value */
 typedef union {
@@ -110,7 +114,7 @@ typedef struct ff_lvalue_s {
 
 	// POZN: velikost datoveho typu nemuze byt garantovana IPFIXcolem a muze
 	//       se lisit v zavislosti na velikostech dat posilanych exporterem
-	//       -> velikost dat si bude muset zjistit komparacni funkce a podle 
+	//       -> velikost dat si bude muset zjistit komparacni funkce a podle
 	//       toho se bude muset zachovat
 } ff_lvalue_t;
 
@@ -126,26 +130,26 @@ struct ff_s;
 typedef ff_error_t (*ff_lookup_func_t) (struct ff_s *, const char *, ff_lvalue_t *);
 typedef ff_error_t (*ff_data_func_t) (struct ff_s*, void *, ff_extern_id_t, char*, size_t *);
 
-typedef ff_error_t (*ff_translate_func_t) (struct ff_s *, const char *, ff_extern_id_t, uint64_t *);
+typedef ff_error_t (*ff_rval_map_func_t) (struct ff_s *, const char *, ff_extern_id_t, uint64_t *);
 
 //typedef ff_error_t (*ff__func_t) (struct ff_s*, void *, ff_extern_id_t, char*, size_t *);
 
 
 /** \brief Options  */
 typedef struct ff_options_s {
-	
+
 	/** Element lookup function */
 	ff_lookup_func_t ff_lookup_func;
 	/** Value comparation function */
 	ff_data_func_t ff_data_func;
 	/** Literal constants translation function eg. TCP->6 */
-	ff_translate_func_t ff_translate_func;
+	ff_rval_map_func_t ff_rval_map_func;
 } ff_options_t;
 
 
 /** \brief Filter instance */
 typedef struct ff_s {
-	
+
 	ff_options_t	options;
 
 	void *root;
