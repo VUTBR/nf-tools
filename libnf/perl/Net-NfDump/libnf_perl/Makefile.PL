@@ -10,7 +10,7 @@ WriteMakefile(
 		'libnf_perl.c',
 		],	
 #	SKIP   => [qw(all static static_lib dynamic dynamic_lib)],
-	SKIP   => [qw(all static dynamic )],
+	SKIP   => [qw(all static pure_all )],
 #	CCFLAGS => '-DNSEL=1 -D__SUNPRO_C=1 ', # see note 
 #	CCFLAGS => '-D__SUNPRO_C=1', # see note 
 	clean => { 'FILES' => '*$(LIB_EXT) *$(OBJ_EXT) $(O_FILES)' },

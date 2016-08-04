@@ -16,6 +16,7 @@ $DS{'v4_basic_txt'} = {
 
 	'srcip' => '147.229.3.135',
 	'dstip' => '10.255.5.6',
+	'inetfamily' => 'ipv4',
 	'nexthop' => '10.255.5.1',
 
 	'proto' => '6',
@@ -49,6 +50,7 @@ $DS{'v4_txt'} = {
 
 	'srcip' => '147.229.3.135',
 	'dstip' => '10.255.5.6',
+	'inetfamily' => 'ipv4',
 	'nexthop' => '10.255.5.1',
 	'srcmask' => '24',
 	'dstmask' => '32',
@@ -101,6 +103,7 @@ $DS{'v4_txt'} = {
 $DS{'v6_txt'} = { %{$DS{'v4_txt'}} };
 $DS{'v6_txt'}->{'srcip'} ='2001:67c:1220:f565::93e5:f0fb';
 $DS{'v6_txt'}->{'dstip'} ='2001:abc:1220:f565::93e5:f0fb';
+$DS{'v6_txt'}->{'inetfamily'} = 'ipv6';
 $DS{'v6_txt'}->{'nexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'bgpnexthop'} ='2001:67c:1220:f565::1';
 $DS{'v6_txt'}->{'router'} ='2001:67c:1220:f565::10';

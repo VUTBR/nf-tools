@@ -1,4 +1,4 @@
-libnf-1.19.tar.gz
+libnf-1.25.tar.gz
 Changes
 Makefile.PL
 MANIFEST
@@ -28,6 +28,7 @@ t/10-aggreg-time.t
 t/11-fields-name.t
 t/51-libnf-threads.t
 t/52-libnf-examples.t
+t/53-libnf-filter.t
 t/91-perl-performance.t
 t/92-c-performance.t
 t/record_v4
