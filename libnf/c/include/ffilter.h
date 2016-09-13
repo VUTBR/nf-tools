@@ -64,11 +64,10 @@ typedef enum {
 	FF_TYPE_ADDR,
 	FF_TYPE_MAC,
 	FF_TYPE_STRING,
+	//TODO: Implement
 	FF_TYPE_MPLS,
 	FF_TYPE_TIMESTAMP,      /* uint64_t bit timestamp eval as unsigned, milliseconds from 1-1-1970 00:00:00 */
-	FF_TYPE_TIMESTAMP_BIG,  /* uint64_t bit timestamp eval as signed */
-	FF_TYPE_TIME,			/* implement or use some type */
-	FF_TYPE_TIME_BIG
+	FF_TYPE_TIMESTAMP_BIG,  /* uint64_t bit timestamp eval as unsigned, to host endian conversion required on data */
 } ff_type_t;
 
 #define FF_TYPE_UNSUPPORTED_T void
@@ -109,9 +108,10 @@ typedef double ff_double_t;
 typedef ff_ip_t ff_addr_t;
 typedef char ff_mac_t[8];
 typedef char* ff_string_t;
-typedef uint32_t ff_mpls_t[10];
+//typedef uint32_t ff_mpls_t[10];		//WTF ? why 10 ? is it because of way libnf treats mpls
+typedef uint32_t ff_mpls_t[1];		//WTF ? why 10 ? is it because of way libnf treats mpls
 typedef uint64_t ff_timestamp_t;
-typedef struct tm ff_time_t;
+//typedef struct tm ff_time_t;
 
 /**
  * \typedef ffilter interface return codes
@@ -152,7 +152,7 @@ typedef struct ff_lvalue_s {
 	ff_extern_id_t id[FF_MULTINODE_MAX];
 	/** Extra options that modiflies evaluation of data */
 	//TODO: Clarify purpose, maybe create getters and setters
-	ff_opts_t options;
+	int options;
 } ff_lvalue_t;
 
 //typedef struct ff_s ff_t;
@@ -167,12 +167,12 @@ struct ff_s;
  * \brief Lookup the field name found in filter expresson and identify its type one of and associated data elements
  * Callback fills in information about field into ff_lvalue_t sturcture. Required information are external
  * identification of field as understood by data function, data type of filed as one of ff_type_t enum
- * \param ff_s Filter object
- * \param[in] string Name of element to identify
+ * \param filter Filter object
+ * \param[in] fieldstr Name of element to identify
  * \param[out] lvalue identification representing field
  * \return FF_OK on success
  */
-typedef ff_error_t (*ff_lookup_func_t) (struct ff_s *, const char *, ff_lvalue_t *);
+typedef ff_error_t (*ff_lookup_func_t) (struct ff_s *filter, const char *fieldstr, ff_lvalue_t *lvalue);
 /**
  * \typedef Data Callback signature
  * \brief Select requested data from record.
@@ -185,6 +185,7 @@ typedef ff_error_t (*ff_lookup_func_t) (struct ff_s *, const char *, ff_lvalue_t
  * \param[out] vsize Length of retrieved data
  */
 //TODO: Eliminate the need to copy data from record, pass only pointer and valid length. This should speed up data retrieval process
+//Not neccesarily
 typedef ff_error_t (*ff_data_func_t) (struct ff_s*, void *, ff_extern_id_t, char*, size_t *);
 /**
  * \typedef Rval_map Callback signature
@@ -194,12 +195,12 @@ typedef ff_error_t (*ff_data_func_t) (struct ff_s*, void *, ff_extern_id_t, char
  * \param[in] valstr String representation of value
  * \param[in] type Required ffilter internal type
  * \param[in] id External identification of field (form transforming exceptions like flags)
- * \param[out] buf Buffer to store result
+ * \param[out] buf Buffer to copy data
  * \param[out] size Length of valid data in buffer
  */
 typedef ff_error_t (*ff_rval_map_func_t) (struct ff_s *, const char *, ff_type_t, ff_extern_id_t, char*, size_t* );
 
-/** \brief Filter options callbacks  */
+/** \typedef Filter options callbacks  */
 typedef struct ff_options_s {
 	/** Element lookup function */
 	ff_lookup_func_t ff_lookup_func;

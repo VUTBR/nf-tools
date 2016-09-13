@@ -245,7 +245,7 @@ int str_to_real(ff_t *filter, char *str, char **res, size_t *vsize)
  * from number of network bits format to full bit-mask
  * \param numbits Number of network portion bits
  * \param mask Ip address containing full mask
- * \return Zero on succe
+ * \return Zero on succes
  */
 int int_to_netmask(int *numbits, ff_ip_t *mask)
 {
@@ -645,11 +645,28 @@ ff_node_t* ff_branch_node(ff_node_t *node, ff_oper_t oper, ff_lvalue_t* lvalue) 
 
 ff_node_t* ff_duplicate_node(ff_node_t* original) {
 
-	ff_node_t *copy;
+	ff_node_t *copy, *lc, *rc;
+	lc = rc = NULL;
+
+	if (original->left) {
+		lc = ff_duplicate_node(original->left);
+		if (!lc) {
+			return NULL;
+		}
+	}
+	if (original->right) {
+		rc = ff_duplicate_node(original->right);
+		if (!rc) {
+			ff_free_node(lc);
+			return NULL;
+		}
+	}
 
 	copy = malloc(sizeof(ff_node_t));
 
 	if (copy == NULL) {
+		ff_free_node(lc);
+		ff_free_node(rc);
 		return NULL;
 	}
 
@@ -657,12 +674,14 @@ ff_node_t* ff_duplicate_node(ff_node_t* original) {
 
 	copy->value = malloc(original->vsize);
 	copy->vsize = original->vsize;
+	copy->left = lc;
+	copy->right = rc;
 
 	if(copy->value) {
 		memcpy(copy->value, original->value, original->vsize);
 		return copy;
 	}
-	free(copy);
+	ff_free_node(copy);
 	return NULL;
 }
 
@@ -727,6 +746,7 @@ ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter, char *fieldstr, ff_oper_t
 		node->type = lvalue.type;
 		node->field = lvalue.id[0];
 
+		//TODO: Fix bug when list of values is used on multinode
 		if (oper == FF_OP_IN) {
 			void* tmp;
 			int err = FF_OK;
@@ -735,35 +755,34 @@ ff_node_t* ff_new_leaf(yyscan_t scanner, ff_t *filter, char *fieldstr, ff_oper_t
 			node->right = elem;
 			retval = node;
 
+			//TODO: Fix double free bug if conversion fails on one of elements in list
 			do {
 				elem->type = node->type;
 				elem->field = node->field;
 				err = ff_type_cast(scanner, filter, tmp = elem->value, elem);
-				free(tmp);
-				tmp = elem;
-				elem = elem->right;
-				if(err != FF_OK) {
+				if(err == FF_OK) {
+					free(tmp);
+					elem = elem->right;
+				} else {
 					ff_free_node(node);
 					retval = NULL;
 					break;
 				}
 			} while (elem);
 
-			break;
-		}
+			node->left = NULL;
+		} else if (ff_type_cast(scanner, filter, valstr, node) != FF_OK) {
 
-
-		if (ff_type_cast(scanner, filter, valstr, node) != FF_OK) {
 			if (oper == FF_OP_EXIST) {
 			} else {
 				retval = NULL;
 				ff_free_node(node);
 				break;
 			}
-		}
 
-		node->left = NULL;
-		node->right = NULL;
+			node->left = NULL;
+			node->right = NULL;
+		}
 
 		if (!(lvalue.options & FF_OPTS_MULTINODE)) {
 			if (multinode) {
@@ -1075,6 +1094,29 @@ int ff_oper_eval(char* buf, size_t size, ff_node_t *node)
 	}
 }
 
+int get_mpls_field(char *buf, ff_oper_t op, char *val, int req)
+{
+	uint32_t data;
+	size_t size;
+	data = 0;
+	memcpy(((char*)(&data))+1, buf, 3);
+	switch (req) {
+	case 1:
+		data >>= 4;
+		break;
+	case 2:
+		data &= 0xeL;
+		data >>= 1;
+		break;
+	case 3:
+		data &= 0x1L;
+		break;
+	default :
+		return -1;
+	}
+	return data;
+}
+
 /* add new item to list */
 ff_node_t* ff_new_mval(yyscan_t scanner, ff_t *filter, char *valstr, ff_oper_t oper, ff_node_t* nptr) {
 
@@ -1184,7 +1226,6 @@ ff_error_t ff_options_init(ff_options_t **poptions) {
 	*poptions = options;
 
 	return FF_OK;
-
 }
 
 /* release all resources allocated by filter */
@@ -1194,7 +1235,6 @@ ff_error_t ff_options_free(ff_options_t *options) {
 	free(options);
 
 	return FF_OK;
-
 }
 
 
@@ -1248,9 +1288,7 @@ int ff_eval(ff_t *filter, void *rec) {
 
 	/* call eval node on root node */
 	return ff_eval_node(filter, filter->root, rec) > 0;
-
 }
-
 
 /* recursively release all resources allocated in filter tree */
 void ff_free_node(ff_node_t* node) {
@@ -1279,6 +1317,5 @@ ff_error_t ff_free(ff_t *filter) {
 	free(filter);
 
 	return FF_OK;
-
 }
 
