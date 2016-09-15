@@ -1,0 +1,6 @@
+[submodule "libnf/c"]
+	path = libnf/c
+	url = https://github.com/VUTBR/libnf.git
+[submodule "libnf/perl/Net-NfDump"]
+	path = libnf/perl/Net-NfDump
+	url = https://github.com/VUTBR/libnf-perl.git
